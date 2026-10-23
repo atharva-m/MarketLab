@@ -1,0 +1,23 @@
+[
+  {
+    "trade_id": "SYN-42-000000",
+    "symbol": "SYN.C",
+    "executed_at": "2025-01-02T14:30:00Z",
+    "price": "146.92",
+    "quantity": "0.410"
+  },
+  {
+    "trade_id": "SYN-42-000001",
+    "symbol": "SYN.C",
+    "executed_at": "2025-01-02T14:30:00.001000Z",
+    "price": "361.48",
+    "quantity": "4.013"
+  },
+  {
+    "trade_id": "SYN-42-000002",
+    "symbol": "SYN.A",
+    "executed_at": "2025-01-02T14:30:00.002000Z",
+    "price": "183.89",
+    "quantity": "1.680"
+  }
+]

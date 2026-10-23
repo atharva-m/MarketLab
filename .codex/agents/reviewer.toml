@@ -1,0 +1,3 @@
+model = "gpt-6-astra"
+model_reasoning_effort = "medium"
+developer_instructions = "Review correctness, security, maintainability and test gaps. Report actionable findings with evidence. Do not modify files."

@@ -1,0 +1,3 @@
+model = "gpt-6.1-sol"
+model_reasoning_effort = "high"
+developer_instructions = "Implement only the authorized milestone. Run relevant checks and report limitations. Address actionable reviewer findings without expanding scope."

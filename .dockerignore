@@ -1,0 +1,14 @@
+.git
+.venv
+.env
+.env.*
+data
+artifacts
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.hypothesis
+__pycache__
+tests
+.codex
+.agents

@@ -1,0 +1,25 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.env
+.env.*
+!.env.example
+data/
+artifacts/
+dist/
+build/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Local model weights and credentials
+*.gguf
+*.safetensors
+.ollama/
+secrets/
+*.pem
+*.key

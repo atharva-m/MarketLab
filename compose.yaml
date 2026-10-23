@@ -1,0 +1,71 @@
+name: marketlab
+x-app: &app
+  image: marketlab:local
+  build: .
+  environment: &app-env
+    MARKETLAB_DATABASE_URL: postgresql+psycopg://marketlab@postgres:5432/marketlab
+    MARKETLAB_DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-marketlab}
+    MARKETLAB_REDIS_URL: redis://redis:6379/0
+    MARKETLAB_OLLAMA_URL: ${OLLAMA_HOST_URL:-http://host.docker.internal:11434}
+    MARKETLAB_STORAGE_PATH: /data/marketlab
+  extra_hosts:
+    - host.docker.internal:host-gateway
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: marketlab
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-marketlab}
+      POSTGRES_DB: marketlab
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marketlab -d marketlab"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  migrate:
+    <<: *app
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  api:
+    <<: *app
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    volumes:
+      - marketlab_data:/data/marketlab
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/ready', timeout=5)"]
+      interval: 10s
+      timeout: 6s
+      start_period: 10s
+      retries: 6
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  marketlab_data:

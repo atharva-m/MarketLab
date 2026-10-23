@@ -1,0 +1,54 @@
+name: CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  quality:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.13.5'
+          enable-cache: true
+      - run: uv python install 3.13
+      - run: uv sync --locked
+      - run: uv run --locked ruff check .
+      - run: uv run --locked ruff format --check .
+      - run: uv run --locked mypy
+      - run: uv run --locked pytest -m "not integration"
+  integration:
+    runs-on: ubuntu-latest
+    env:
+      MARKETLAB_DATABASE_URL: postgresql+psycopg://marketlab:marketlab@127.0.0.1:5432/marketlab
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.13.5'
+          enable-cache: true
+      - run: uv python install 3.13
+      - run: uv sync --locked
+      - run: docker compose config --quiet
+      - run: docker compose build api
+      - run: docker compose up --detach --wait --wait-timeout 120
+      - run: uv run --locked pytest -m integration
+      - run: uv run --locked python scripts/api_smoke.py
+      - name: Verify Redis initially healthy
+        run: uv run --locked python -c "import json, urllib.request; r=json.load(urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=10)); assert r['checks']['redis']['status']=='up', r"
+      - name: Verify optional Redis outage
+        run: |
+          docker compose stop redis
+          uv run --locked python scripts/api_smoke.py
+          uv run --locked python -c "import json, urllib.request; r=json.load(urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=10)); assert r['status']=='degraded', r; assert r['checks']['redis']['status']=='down', r"
+      - name: Logs
+        if: failure()
+        run: docker compose logs --no-color
+      - name: Cleanup
+        if: always()
+        run: docker compose down --volumes
