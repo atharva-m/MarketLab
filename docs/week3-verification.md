@@ -215,11 +215,24 @@ and smoke-check logs showed no issues. These checks verify the applied local
 deployment; the earlier isolated outage/recovery and live model-generation results
 remain documented above.
 
+## GitHub Actions completed
+
+GitHub Actions [run 39906298270](https://github.com/atharva-m/MarketLab/actions/runs/39906298270)
+completed successfully for main commit
+`60d272736bf699de17dadd7310add148be48ee92`, which includes week 3 and the Redis DNS
+fix from `05f75f2` and preserves the remote's existing license history.
+
+All three jobs passed: `quality (ubuntu-latest)`, `quality (windows-latest)` and
+`integration`. The integration job covered the Docker build and startup, migrations,
+PostgreSQL integration tests, API smoke checks, and the initially healthy Redis
+check followed by the optional Redis outage check.
+
 ## Limits
 
 No final local check above was skipped or blocked; the Redis diagnostic caveat is
-resolved by the follow-up. Hosted CI was not run; Windows and Linux local quality
-checks, the Linux production image build and deployed container smoke checks passed.
+resolved by the follow-up. Hosted GitHub Actions passed as recorded above, alongside
+the Windows and Linux local quality checks, Linux production image build and
+deployed container smoke checks.
 The existing local Compose application now runs the rebuilt API with the Redis DNS
 fix and migration `0002_trades`, with its original data volumes preserved. Decimal
 numeric values and UTC instants are preserved, while original trailing-zero counts
