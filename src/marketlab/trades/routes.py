@@ -1,9 +1,9 @@
 """Small HTTP adapter over the existing transactional synthetic trade service."""
 
 from collections.abc import Callable
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Query, Request
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
@@ -14,8 +14,9 @@ from marketlab.trades.persistence import (
     get_trade,
     import_trades_csv,
     import_trades_json,
+    list_trades,
 )
-from marketlab.trades.schemas import Trade
+from marketlab.trades.schemas import TRADE_ID_PATTERN, Trade, TradePage
 
 MAX_IMPORT_BYTES = 1024 * 1024
 router = APIRouter(prefix="/trades", tags=["synthetic trades"])
@@ -96,6 +97,37 @@ async def import_json(request: Request) -> dict[str, int]:
 )
 async def import_csv(request: Request) -> dict[str, int]:
     return await _import(request, "text/csv", import_trades_csv)
+
+
+@router.get(
+    "",
+    response_model=TradePage,
+    summary="Browse synthetic trades in bounded, case-sensitive ID order",
+    description=(
+        "Orders trade_id ascending using PostgreSQL C collation. after_id is an exclusive "
+        "boundary and need not exist. Fetches at most limit + 1 records; next_after_id is null "
+        "at the end. Each request reads current committed data without a cross-page snapshot. "
+        "Prices and quantities are decimal strings; timestamps are UTC."
+    ),
+    responses={422: {"description": "Invalid pagination parameters"}, 503: _IMPORT_RESPONSES[503]},
+)
+def browse_trades(
+    request: Request,
+    limit: Annotated[int, Query(ge=1, le=500, description="Maximum trades per page")] = 100,
+    after_id: Annotated[
+        str | None,
+        Query(
+            pattern=TRADE_ID_PATTERN,
+            min_length=1,
+            max_length=64,
+            description="Exclusive trade_id boundary; need not exist in storage",
+        ),
+    ] = None,
+) -> TradePage:
+    try:
+        return list_trades(request.app.state.trade_engine, limit, after_id)
+    except SQLAlchemyError as error:
+        raise HTTPException(503, "Trade database unavailable") from error
 
 
 @router.get(

@@ -7,6 +7,7 @@ from marketlab.trades.persistence import (
     get_trade,
     import_trades_csv,
     import_trades_json,
+    list_trades,
 )
 from marketlab.trades.schemas import Trade
 
@@ -17,6 +18,7 @@ __all__ = [
     "get_trade",
     "import_trades_csv",
     "import_trades_json",
+    "list_trades",
     "parse_trades_csv",
     "parse_trades_json",
     "synthetic_trades",

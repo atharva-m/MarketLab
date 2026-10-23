@@ -1,7 +1,7 @@
 # MarketLab
 
-Week 4 adds a minimal HTTP interface for synthetic JSON/CSV trade imports and exact-ID retrieval,
-building on week 3 transactional PostgreSQL persistence and the week 2 contract on Python 3.13.
+Week 5 adds bounded, read-only synthetic trade browsing to the week 4 HTTP imports and exact-ID
+retrieval, building on week 3 transactional PostgreSQL persistence and the week 2 contract on Python 3.13.
 The week 1 foundation includes an app factory, health probes, request observability and local
 infrastructure. External ingestion, jobs, analytical queries, caching behavior
 and UI come later.
@@ -39,6 +39,12 @@ error responses and verification. `POST /trades/import/json` accepts an `applica
 `POST /trades/import/csv` accepts `text/csv`. Each import is atomic and accepts at most **1 MiB
 (1,048,576 bytes)**, counted from the actual streamed body. Success returns `{"imported": N}`.
 `GET /trades/{trade_id}` returns one trade with exact decimal strings and a UTC timestamp.
+
+[The week 5 browsing contract](docs/week5-browsing.md) documents `GET /trades?limit=100&after_id=SYN-001`.
+It returns `{"items": [...], "next_after_id": "..."}` in ascending, case-sensitive PostgreSQL `C`
+order. The default page size is 100, with a range of 1–500; the cursor is an exclusive ID boundary
+and is `null` at the end. Each page reads current committed data. See
+[week 5 verification](docs/week5-verification.md) for checks and limitations.
 
 ## Windows quick start
 
@@ -147,6 +153,6 @@ docker compose down
 storage contents; do so only when intentionally resetting the environment. Integration tests require
 a disposable database migrated to `0002_trades`. Persistence tests clone the migrated trade
 table into temporary schemas and remove those schemas afterward. Week 4 HTTP integration tests
-use the same isolation and real transactional service. They skip when
+and week 5 browsing tests use the same isolation and real PostgreSQL service. They skip when
 `MARKETLAB_DATABASE_URL` is absent; a skip is not an integration pass. Apply migrations to the
 disposable database before running `scripts/check.ps1 -Integration`.
