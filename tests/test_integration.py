@@ -3,7 +3,7 @@ from pathlib import Path
 
 import httpx
 import pytest
-from sqlalchemy import create_engine, text
+from sqlalchemy import DateTime, Numeric, create_engine, inspect, text
 
 from marketlab.app import create_app
 from marketlab.config import Settings
@@ -32,7 +32,7 @@ async def test_real_postgres_and_readiness(tmp_path: Path) -> None:
     assert response.json()["checks"]["storage"]["status"] == "up", response.text
 
 
-def test_empty_baseline_migration() -> None:
+def test_trade_migration() -> None:
     if "MARKETLAB_DATABASE_URL" not in os.environ:
         pytest.skip("Set MARKETLAB_DATABASE_URL to a migrated PostgreSQL instance")
     settings = Settings()
@@ -53,7 +53,20 @@ def test_empty_baseline_migration() -> None:
                 .scalars()
                 .all()
             )
-        assert revision == "0001_baseline"
-        assert tables == ["alembic_version"]
+        assert revision == "0002_trades"
+        assert set(tables) == {"alembic_version", "trades"}
+        inspector = inspect(engine)
+        columns = {column["name"]: column for column in inspector.get_columns("trades")}
+        assert set(columns) == {"trade_id", "symbol", "executed_at", "price", "quantity"}
+        assert all(not column["nullable"] for column in columns.values())
+        assert columns["trade_id"]["type"].length == 64
+        assert columns["symbol"]["type"].length == 20
+        assert isinstance(columns["executed_at"]["type"], DateTime)
+        assert columns["executed_at"]["type"].timezone
+        for name in ("price", "quantity"):
+            numeric = columns[name]["type"]
+            assert isinstance(numeric, Numeric)
+            assert (numeric.precision, numeric.scale) == (20, 8)
+        assert inspector.get_pk_constraint("trades")["constrained_columns"] == ["trade_id"]
     finally:
         engine.dispose()

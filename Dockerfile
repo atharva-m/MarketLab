@@ -14,4 +14,5 @@ COPY migrations ./migrations
 USER marketlab
 ENV PATH="/app/.venv/bin:$PATH" MARKETLAB_STORAGE_PATH=/data/marketlab
 EXPOSE 8000
-CMD ["uvicorn", "marketlab.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]
+# uvloop 0.23 can orphan DNS futures when a readiness timeout cancels a connection.
+CMD ["uvicorn", "marketlab.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--loop", "asyncio", "--no-access-log"]

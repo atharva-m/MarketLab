@@ -1,9 +1,10 @@
 # MarketLab
 
-Week 2 adds an in-memory trade contract, deterministic synthetic fixtures and JSON/CSV
-parser validation, running Python 3.13. The week 1 foundation includes an app factory,
-health probes, request observability, an empty migration baseline and local infrastructure.
-Ingestion, market domain database tables, jobs, analytical queries, caching behavior and UI come later.
+Week 3 adds transactional PostgreSQL persistence of in-memory synthetic JSON/CSV trade batches
+and exact-ID retrieval, building on the week 2 contract, fixtures and parsers on Python 3.13.
+The week 1 foundation includes an app factory, health probes, request observability and local
+infrastructure. External ingestion, API import routes, jobs, analytical queries, caching behavior
+and UI come later.
 
 ## Synthetic trade contract
 
@@ -22,6 +23,14 @@ assert parse_trades_json(payload) == trades
 
 Run `.\scripts\check.ps1` for the existing quality checks and all unit tests, including
 trade parser, validation, fixture and property tests.
+
+## Transactional synthetic trade persistence
+
+[The week 3 service contract](docs/week3-persistence.md) documents the migration and Python API.
+After `alembic upgrade head`, imports validate the complete in-memory batch through the existing
+parsers and commit it in one transaction. A conflicting stored ID rejects the whole batch.
+Exact-ID retrieval returns a `Trade` or `None`; empty imports return zero without connecting.
+All examples and tests use synthetic inputs.
 
 ## Windows quick start
 
@@ -77,8 +86,12 @@ initial credentials apply only when creating its volume. Keep `.env` and local d
 PostgreSQL uses `SELECT 1`. Storage writes, flushes, reads back and removes a temporary probe file.
 Redis and Ollama are optional: an outage reports `degraded` and preserves readiness. Checks run
 concurrently with a timeout per dependency. Ollama checks `/api/tags`, with no model download or
-generation. Database connections also have a five-second driver timeout (configurable through
-`MARKETLAB_DATABASE_CONNECT_TIMEOUT_SECONDS`), including migrations and integration tests.
+generation. The Linux container explicitly runs Uvicorn with `--loop asyncio`: the locked uvloop
+runtime can leave a DNS future unobserved when a dependency timeout cancels a connection before
+name resolution fails. The standard loop handles this cancellation without changing the health
+responses or timeouts. Keep the explicit `asyncio:SelectorEventLoop` in the Windows launch command
+for psycopg compatibility. Database connections also have a five-second driver timeout (configurable
+through `MARKETLAB_DATABASE_CONNECT_TIMEOUT_SECONDS`), including migrations and integration tests.
 PostgreSQL and API data use named volumes; Redis is an expendable cache configured
 with 256 MiB, `allkeys-lru`, no snapshots and no append-only file.
 
@@ -109,8 +122,9 @@ exit code. `--model`, `--url` and `--timeout` override defaults. First load may 
 
 ## Migrations and CI
 
-`alembic upgrade head` installs the empty `0001_baseline`; only Alembic's bookkeeping table is
-created. Compose waits for PostgreSQL, runs this migration and then starts the API. CI syncs
+`alembic upgrade head` applies `0001_baseline` and `0002_trades`, creating Alembic's bookkeeping
+table and the five-field `trades` table. Compose waits for PostgreSQL, runs migrations and then
+starts the API. CI syncs
 `uv.lock` with `--locked`, runs lint, formatting, strict source type checks and unit tests on Windows
 and Linux, validates Compose, builds the image, applies migrations, tests real PostgreSQL and
 smokes the deployed API. It also stops Redis and verifies degraded readiness. Ollama generation
@@ -123,5 +137,7 @@ docker compose down
 
 `docker compose down` preserves persistent volumes. Removing volumes deletes local database and
 storage contents; do so only when intentionally resetting the environment. Integration tests require
-a disposable database containing only the empty baseline. They skip when `MARKETLAB_DATABASE_URL`
-is absent; a skip is not an integration pass.
+a disposable database migrated to `0002_trades`. Persistence tests clone the migrated trade
+table into temporary schemas and remove those schemas afterward. They skip when
+`MARKETLAB_DATABASE_URL` is absent; a skip is not an integration pass. Apply migrations to the
+disposable database before running `scripts/check.ps1 -Integration`.
