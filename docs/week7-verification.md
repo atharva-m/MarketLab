@@ -192,11 +192,33 @@ API/PostgreSQL/Redis container IDs before and after cleanup. Ignored verificatio
 evidence remains available. Final `git diff --check` passed. No full-suite rerun
 was needed for this evidence/documentation-only follow-up.
 
+## Hosted CI after commit and push
+
+Week 7 implementation and verification were committed as
+`6cfa7f46d93173576971932b4002c7a5e5679bd9`
+(`Add verified week 7 execution-time trade filtering`) and pushed to `origin/main`.
+The [GitHub Actions CI run](https://github.com/atharva-m/MarketLab/actions/runs/40025111978)
+completed successfully for that commit. The retrieved Actions API job and step
+statuses confirmed:
+
+- Both `quality` matrix jobs, on `ubuntu-latest` and `windows-latest`, passed lint,
+  formatting, strict mypy and offline pytest.
+- The `integration` job passed Compose configuration, production-image build,
+  service startup, PostgreSQL pytest, API smoke, Redis healthy/outage checks and
+  cleanup. The failure-only `Logs` step was skipped as expected; this was not a
+  skipped test suite.
+
+No CI fixes were needed. Hosted pytest totals were not retrieved, so the local
+359-offline/71-integration counts above are not presented as hosted counts.
+The hosted jobs provide the additional Linux offline/integration verification
+previously outstanding. This subsequent documentation-only update was checked
+with `git diff --check`; no application or test changes were made.
+
 ## Limits
 
-Hosted GitHub Actions and a separate Linux offline/integration test-suite run have
-not been rerun for week 7. The earlier Windows offline/integration suites and the
-additional Linux production build, live TCP/outage/recovery checks and installed
-model generation described above passed. No changes were committed or deployed to
-the original local Compose stack. Returned pages are bounded without a
+The earlier Windows offline/integration suites, additional local Linux production
+build and live TCP/outage/recovery checks, installed model generation and hosted
+Linux/Windows CI jobs described above passed. The hosted result records job and
+step outcomes rather than independently retrieved test totals. The original local
+Compose stack was not redeployed. Returned pages are bounded without a
 large-dataset query-performance guarantee; no index was added.
