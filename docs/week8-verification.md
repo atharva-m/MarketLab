@@ -179,10 +179,33 @@ and original API/PostgreSQL/Redis IDs still matching and healthy. Ignored eviden
 was preserved. Final `git diff --check` passed; no application/test changes or
 additional full-suite run were needed for this evidence/documentation update.
 
+## Hosted CI after commit and push
+
+The verified week 8 CLI, tests and documentation were committed as
+`4f4998d2607225d095c973327a982c0d46c7ce02`
+(`Add verified week 8 local trade browsing CLI`) and pushed to `origin/main`.
+The [GitHub Actions CI run](https://github.com/atharva-m/MarketLab/actions/runs/40029065165)
+completed successfully for that exact commit. Authenticated Actions API run,
+job and step results confirmed:
+
+- Both `quality` jobs, on `ubuntu-latest` and `windows-latest`, passed locked
+  dependency setup, lint, formatting, strict mypy and offline pytest.
+- The Linux `integration` job passed Compose configuration, production-image
+  build, service startup, real PostgreSQL pytest, API smoke, Redis healthy/outage
+  checks and cleanup. The failure-only `Logs` step was skipped as expected;
+  no test-suite step was skipped.
+
+No CI fixes were needed. Hosted pytest totals were not retrieved; the earlier
+409 offline and 73 integration counts remain local results, not claimed hosted
+counts. Raw run/job metadata is retained under ignored `artifacts/week8-ci/`.
+This documentation-only follow-up was checked with `git diff --check`; application
+code and tests were unchanged and the local suites were not rerun.
+
 ## Remaining limits
 
-Hosted Windows/Linux CI, Redis outage checks and installed Ollama generation
-were not rerun in this follow-up. Optional Ollama intentionally used an unreachable
+Hosted Windows/Linux CI and Redis outage checks passed in the run above.
+Installed Ollama generation was not rerun for week 8. Optional Ollama intentionally
+used an unreachable
 loopback address in the isolated stack and reported degraded readiness, so these
 checks make no host-model compatibility claim. Earlier week 7 records remain
 historical evidence for checks not repeated here. The unchanged Ollama smoke's
