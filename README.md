@@ -1,9 +1,9 @@
 # MarketLab
 
-Week 3 adds transactional PostgreSQL persistence of in-memory synthetic JSON/CSV trade batches
-and exact-ID retrieval, building on the week 2 contract, fixtures and parsers on Python 3.13.
+Week 4 adds a minimal HTTP interface for synthetic JSON/CSV trade imports and exact-ID retrieval,
+building on week 3 transactional PostgreSQL persistence and the week 2 contract on Python 3.13.
 The week 1 foundation includes an app factory, health probes, request observability and local
-infrastructure. External ingestion, API import routes, jobs, analytical queries, caching behavior
+infrastructure. External ingestion, jobs, analytical queries, caching behavior
 and UI come later.
 
 ## Synthetic trade contract
@@ -31,6 +31,14 @@ After `alembic upgrade head`, imports validate the complete in-memory batch thro
 parsers and commit it in one transaction. A conflicting stored ID rejects the whole batch.
 Exact-ID retrieval returns a `Trade` or `None`; empty imports return zero without connecting.
 All examples and tests use synthetic inputs.
+
+## Synthetic trade HTTP interface
+
+[The week 4 HTTP contract](docs/week4-http.md) documents raw JSON/CSV requests, exact-ID lookup,
+error responses and verification. `POST /trades/import/json` accepts an `application/json` array;
+`POST /trades/import/csv` accepts `text/csv`. Each import is atomic and accepts at most **1 MiB
+(1,048,576 bytes)**, counted from the actual streamed body. Success returns `{"imported": N}`.
+`GET /trades/{trade_id}` returns one trade with exact decimal strings and a UTC timestamp.
 
 ## Windows quick start
 
@@ -138,6 +146,7 @@ docker compose down
 `docker compose down` preserves persistent volumes. Removing volumes deletes local database and
 storage contents; do so only when intentionally resetting the environment. Integration tests require
 a disposable database migrated to `0002_trades`. Persistence tests clone the migrated trade
-table into temporary schemas and remove those schemas afterward. They skip when
+table into temporary schemas and remove those schemas afterward. Week 4 HTTP integration tests
+use the same isolation and real transactional service. They skip when
 `MARKETLAB_DATABASE_URL` is absent; a skip is not an integration pass. Apply migrations to the
 disposable database before running `scripts/check.ps1 -Integration`.

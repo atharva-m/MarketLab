@@ -6,12 +6,15 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from redis.asyncio import Redis
+from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import create_async_engine
+from starlette.concurrency import run_in_threadpool
 
 from marketlab import __version__
 from marketlab.config import Settings
 from marketlab.health import build_checks, readiness
 from marketlab.observability import RequestMetrics, RequestMiddleware, configure_logging
+from marketlab.trades.routes import router as trade_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -28,6 +31,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             connect_args=settings.database_connect_args,
         )
         redis = Redis.from_url(settings.redis_url.get_secret_value())
+        # This lazy synchronous engine serves the existing week 3 service in worker threads.
+        trade_engine = create_engine(
+            settings.sqlalchemy_url,
+            pool_pre_ping=True,
+            pool_timeout=settings.database_connect_timeout_seconds,
+            connect_args=settings.database_connect_args,
+        )
+        app.state.trade_engine = trade_engine
         async with httpx.AsyncClient(
             base_url=settings.ollama_url, timeout=settings.dependency_timeout_seconds
         ) as client:
@@ -35,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             try:
                 yield
             finally:
+                await run_in_threadpool(trade_engine.dispose)
                 await redis.aclose()
                 await engine.dispose()
 
@@ -42,6 +54,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.metrics = metrics
     app.add_middleware(RequestMiddleware, metrics=metrics)
+    app.include_router(trade_router)
 
     @app.exception_handler(Exception)
     async def unexpected_error(request: Request, exc: Exception) -> JSONResponse:
