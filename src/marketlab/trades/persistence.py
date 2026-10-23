@@ -1,13 +1,20 @@
 """Transactional persistence of supported in-memory synthetic batch formats."""
 
 import re
+from datetime import datetime
 
 from sqlalchemy import Column, DateTime, MetaData, Numeric, String, Table, insert, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 
 from marketlab.trades.parsers import parse_trades_csv, parse_trades_json
-from marketlab.trades.schemas import SYMBOL_PATTERN, TRADE_ID_PATTERN, Trade, TradePage
+from marketlab.trades.schemas import (
+    SYMBOL_PATTERN,
+    TRADE_ID_PATTERN,
+    Trade,
+    TradePage,
+    normalize_timestamp,
+)
 
 metadata = MetaData()
 trades = Table(
@@ -69,7 +76,12 @@ def get_trade(engine: Engine, trade_id: str) -> Trade | None:
 
 
 def list_trades(
-    engine: Engine, limit: int = 100, after_id: str | None = None, symbol: str | None = None
+    engine: Engine,
+    limit: int = 100,
+    after_id: str | None = None,
+    symbol: str | None = None,
+    executed_from: datetime | str | None = None,
+    executed_before: datetime | str | None = None,
 ) -> TradePage:
     """Read at most limit + 1 matching committed rows in PostgreSQL C trade-ID order."""
     if type(limit) is not int or not 1 <= limit <= 500:
@@ -78,12 +90,20 @@ def list_trades(
         raise ValueError("after_id must match the trade_id contract")
     if symbol is not None and re.fullmatch(SYMBOL_PATTERN, symbol) is None:
         raise ValueError("symbol must match the symbol contract")
+    lower = normalize_timestamp(executed_from) if executed_from is not None else None
+    upper = normalize_timestamp(executed_before) if executed_before is not None else None
+    if lower is not None and upper is not None and lower >= upper:
+        raise ValueError("executed_from must be earlier than executed_before")
     ordered_id = trades.c.trade_id.collate("C")
     statement = select(trades).order_by(ordered_id).limit(limit + 1)
     if after_id is not None:
         statement = statement.where(ordered_id > after_id)
     if symbol is not None:
         statement = statement.where(trades.c.symbol == symbol)
+    if lower is not None:
+        statement = statement.where(trades.c.executed_at >= lower)
+    if upper is not None:
+        statement = statement.where(trades.c.executed_at < upper)
     with engine.connect() as connection:
         # Match exact retrieval's protection for year 1/9999 and session timezones.
         connection.execute(text("SET LOCAL TIME ZONE 'UTC'"))

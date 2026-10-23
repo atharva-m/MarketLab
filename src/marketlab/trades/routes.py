@@ -1,9 +1,11 @@
 """Small HTTP adapter over the existing transactional synthetic trade service."""
 
 from collections.abc import Callable
+from datetime import datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, HTTPException, Query, Request
+from pydantic import BeforeValidator
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from starlette.concurrency import run_in_threadpool
@@ -16,9 +18,16 @@ from marketlab.trades.persistence import (
     import_trades_json,
     list_trades,
 )
-from marketlab.trades.schemas import SYMBOL_PATTERN, TRADE_ID_PATTERN, Trade, TradePage
+from marketlab.trades.schemas import (
+    SYMBOL_PATTERN,
+    TRADE_ID_PATTERN,
+    Trade,
+    TradePage,
+    normalize_timestamp,
+)
 
 MAX_IMPORT_BYTES = 1024 * 1024
+ExecutionTimestamp = Annotated[datetime, BeforeValidator(normalize_timestamp)]
 router = APIRouter(prefix="/trades", tags=["synthetic trades"])
 _IMPORT_RESPONSES: dict[int | str, dict[str, Any]] = {
     409: {"description": "Stored trade_id conflict; entire batch rejected"},
@@ -108,12 +117,19 @@ async def import_csv(request: Request) -> dict[str, int]:
         "boundary and need not exist. Fetches at most limit + 1 records; next_after_id is null "
         "at the end. Each request reads current committed data without a cross-page snapshot. "
         "Optional symbol matches the existing symbol syntax exactly, without normalization or "
-        "partial matching. Filtering precedes pagination; retain the same symbol across pages. "
-        "Omitting symbol lists all trades. "
+        "partial matching. Optional executed_from is inclusive and executed_before is exclusive; "
+        "either may be supplied alone. Both require executed_from < executed_before. Timestamp "
+        "syntax requires seconds and timezone, with up to six fractional digits; values normalize "
+        "to UTC. Use uppercase T and Z or a numeric +/-HH:MM offset. "
+        "Filtering precedes pagination; retain the same symbol and time bounds across pages. "
+        "Results remain ordered by ID, not execution time. Omitting time bounds preserves symbol "
+        "filtering; omitting all filters lists all trades. "
         "Prices and quantities are decimal strings; timestamps are UTC."
     ),
     responses={
-        422: {"description": "Invalid pagination or symbol parameter; no database access"},
+        422: {
+            "description": "Invalid pagination, symbol or execution-time bounds; no database access"
+        },
         503: _IMPORT_RESPONSES[503],
     },
 )
@@ -138,9 +154,35 @@ def browse_trades(
             description="Exact symbol; retain the same value across pages (for example SYN.A)",
         ),
     ] = None,
+    executed_from: Annotated[
+        ExecutionTimestamp | None,
+        Query(
+            description=(
+                "Inclusive bound: YYYY-MM-DDTHH:MM:SS[.ffffff]Z or +/-HH:MM offset; "
+                "optional fraction has 1-6 digits. URL-encode '+' as '%2B'."
+            )
+        ),
+    ] = None,
+    executed_before: Annotated[
+        ExecutionTimestamp | None,
+        Query(
+            description=(
+                "Exclusive bound: YYYY-MM-DDTHH:MM:SS[.ffffff]Z or +/-HH:MM offset; "
+                "optional fraction has 1-6 digits. URL-encode '+' as '%2B'."
+            )
+        ),
+    ] = None,
 ) -> TradePage:
+    if (
+        executed_from is not None
+        and executed_before is not None
+        and executed_from >= executed_before
+    ):
+        raise HTTPException(422, "executed_from must be earlier than executed_before")
     try:
-        return list_trades(request.app.state.trade_engine, limit, after_id, symbol)
+        return list_trades(
+            request.app.state.trade_engine, limit, after_id, symbol, executed_from, executed_before
+        )
     except SQLAlchemyError as error:
         raise HTTPException(503, "Trade database unavailable") from error
 

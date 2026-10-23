@@ -1,6 +1,7 @@
 # MarketLab
 
-Week 6 adds exact-symbol filtering to the bounded, read-only synthetic trade browsing from week 5.
+Week 7 adds optional execution-time bounds to week 6 exact-symbol filtering on the bounded,
+read-only synthetic trade browsing from week 5.
 The week 4 HTTP imports and exact-ID retrieval build on week 3 transactional PostgreSQL persistence
 and the week 2 contract on Python 3.13.
 The week 1 foundation includes an app factory, health probes, request observability and local
@@ -52,6 +53,16 @@ and is `null` at the end. Each page reads current committed data. See
 normalization or partial matching and applies before pagination. Retain the same symbol across
 pages; omitting it preserves unfiltered browsing. See [week 6 verification](docs/week6-verification.md)
 for actual checks and limitations.
+
+[The week 7 time-filtering contract](docs/week7-time-filtering.md) adds optional inclusive
+`executed_from` and exclusive `executed_before`, separately or as `[from, before)`. For example:
+`GET /trades?symbol=SYN.A&executed_from=2025-01-01T00:00:00Z&executed_before=2025-02-01T00:00:00Z&limit=25`.
+Bounds reuse the strict trade timestamp syntax (seconds and timezone required, at most six
+fractional digits), normalize to UTC and combine with symbol and ID boundaries before pagination.
+Retain all filters across pages. Results stay in ID order, and each page reads current committed
+data without a cross-page snapshot. Invalid bounds or `from >= before` return `422` before database
+access; database failures retain the generic `503`. Omitting time bounds preserves week 6 behavior.
+See [week 7 verification](docs/week7-verification.md) for actual checks and limitations.
 
 ## Windows quick start
 
@@ -160,6 +171,6 @@ docker compose down
 storage contents; do so only when intentionally resetting the environment. Integration tests require
 a disposable database migrated to `0002_trades`. Persistence tests clone the migrated trade
 table into temporary schemas and remove those schemas afterward. Week 4 HTTP integration tests
-and week 5–6 browsing/filtering tests use the same isolation and real PostgreSQL service. They skip when
+and week 5–7 browsing/filtering tests use the same isolation and real PostgreSQL service. They skip when
 `MARKETLAB_DATABASE_URL` is absent; a skip is not an integration pass. Apply migrations to the
 disposable database before running `scripts/check.ps1 -Integration`.

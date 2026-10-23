@@ -156,6 +156,14 @@ async def test_invalid_query_is_422_without_service_access(
         {"limit": "500", "after_id": "A._:-9"},
         {"symbol": "SYN.A"},
         {"symbol": "A" + "9" * 19, "limit": "1", "after_id": "a"},
+        {"executed_from": "2025-01-02T23:59:59.123456-05:30"},
+        {"executed_before": "2025-02-01T00:00:00+00:00"},
+        {
+            "symbol": "SYN.A",
+            "after_id": "A",
+            "executed_from": "2025-01-02T23:59:59.123456-05:30",
+            "executed_before": "2025-02-01T00:00:00Z",
+        },
     ],
 )
 async def test_route_parameters_serialization_and_worker(
@@ -175,12 +183,25 @@ async def test_route_parameters_serialization_and_worker(
         }
     )
 
-    def listing(engine: Engine, limit: int, after_id: str | None, symbol: str | None) -> TradePage:
+    def listing(
+        engine: Engine,
+        limit: int,
+        after_id: str | None,
+        symbol: str | None,
+        executed_from: datetime | None,
+        executed_before: datetime | None,
+    ) -> TradePage:
         assert threading.get_ident() != main_thread
         assert engine is listing_app.state.trade_engine
         assert limit == int(params.get("limit", "100"))
         assert after_id == params.get("after_id")
         assert symbol == params.get("symbol")
+        for name, value in [("executed_from", executed_from), ("executed_before", executed_before)]:
+            if name in params:
+                assert value == datetime.fromisoformat(params[name]).astimezone(UTC)
+                assert value.tzinfo is UTC
+            else:
+                assert value is None
         return TradePage(items=(trade,), next_after_id=trade.trade_id)
 
     monkeypatch.setattr(routes, "list_trades", listing)
@@ -193,7 +214,9 @@ async def test_route_parameters_serialization_and_worker(
     assert response.json()["items"][0]["executed_at"] == "2025-01-03T05:29:59.123456Z"
 
 
-@pytest.mark.parametrize("params", [{}, {"symbol": "UNKNOWN"}])
+@pytest.mark.parametrize(
+    "params", [{}, {"symbol": "UNKNOWN"}, {"executed_from": "2025-01-01T00:00:00Z"}]
+)
 async def test_empty_page_is_200(
     listing_client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch, params: dict[str, str]
 ) -> None:
@@ -205,7 +228,18 @@ async def test_empty_page_is_200(
     assert response.json() == {"items": [], "next_after_id": None}
 
 
-@pytest.mark.parametrize("params", [{}, {"symbol": "SYN.A"}])
+@pytest.mark.parametrize(
+    "params",
+    [
+        {},
+        {"symbol": "SYN.A"},
+        {
+            "symbol": "SYN.A",
+            "executed_from": "2025-01-01T00:00:00Z",
+            "executed_before": "2025-02-01T00:00:00Z",
+        },
+    ],
+)
 async def test_listing_database_error_is_redacted_and_observed(
     listing_client: httpx.AsyncClient, monkeypatch: pytest.MonkeyPatch, params: dict[str, str]
 ) -> None:
@@ -228,7 +262,7 @@ async def test_openapi_describes_listing(listing_client: httpx.AsyncClient) -> N
     operation = document["paths"]["/trades"]["get"]
     assert {"200", "422", "503"} <= set(operation["responses"])
     parameters = {parameter["name"]: parameter for parameter in operation["parameters"]}
-    assert set(parameters) == {"limit", "after_id", "symbol"}
+    assert set(parameters) == {"limit", "after_id", "symbol", "executed_from", "executed_before"}
     assert parameters["limit"]["schema"]["default"] == 100
     assert parameters["limit"]["schema"]["minimum"] == 1
     assert parameters["limit"]["schema"]["maximum"] == 500
@@ -239,9 +273,129 @@ async def test_openapi_describes_listing(listing_client: httpx.AsyncClient) -> N
     assert symbol_schema["anyOf"][0]["maxLength"] == 20
     assert symbol_schema["anyOf"][0]["minLength"] == 1
     assert symbol_schema["anyOf"][0]["pattern"] == r"^[A-Z][A-Z0-9.-]{0,19}$"
+    for name in ["executed_from", "executed_before"]:
+        assert parameters[name]["required"] is False
+        assert parameters[name]["schema"]["anyOf"][0]["format"] == "date-time"
+    for description in [
+        "executed_from is inclusive",
+        "executed_before is exclusive",
+        "seconds and timezone",
+        "six fractional digits",
+        "retain the same symbol and time bounds",
+        "ID, not execution time",
+    ]:
+        assert description in operation["description"]
     page = document["components"]["schemas"]["TradePage"]
     assert set(page["properties"]) == {"items", "next_after_id"}
     assert page["properties"]["items"]["type"] == "array"
+
+
+INVALID_TIMESTAMPS = [
+    "",
+    "2025-01-01",
+    "2025-01-01T00:00Z",
+    "2025-01-01T00:00:00",
+    "2025-01-01 00:00:00Z",
+    "2025-01-01t00:00:00z",
+    "2025-01-01T00:00:00.1234567Z",
+    "2025-01-01T00:00:00.Z",
+    "2025-01-01T00:00:00,1Z",
+    "2025-01-01T00:00:00+0000",
+    "2025-01-01T00:00:00+24:00",
+    "2025-01-01T00:00:00+00:60",
+    "2025-02-29T00:00:00Z",
+    "2025-01-01T24:00:00Z",
+    "2025-01-01T00:00:60Z",
+    "0000-01-01T00:00:00Z",
+    "0001-01-01T00:00:00+00:01",
+    "9999-12-31T23:59:59.999999-00:01",
+    " 2025-01-01T00:00:00Z",
+    "2025-01-01T00:00:00Z ",
+    "2025-01-01T00:00:00Z\n",
+    "２０２５-01-01T00:00:00Z",
+    "1735689600",
+]
+
+
+@pytest.mark.parametrize("name", ["executed_from", "executed_before"])
+@pytest.mark.parametrize("value", INVALID_TIMESTAMPS)
+async def test_invalid_time_bound_never_connects(
+    listing_app: FastAPI, listing_client: httpx.AsyncClient, name: str, value: str
+) -> None:
+    engine = listing_app.state.trade_engine
+    with pytest.raises(ValueError):
+        list_trades(engine, **{name: value})
+    assert engine.mock_calls == []
+    response = await listing_client.get("/trades", params={name: value})
+    assert response.status_code == 422
+    assert engine.mock_calls == []
+
+
+@pytest.mark.parametrize(
+    ("lower", "upper"),
+    [
+        ("2025-01-01T00:00:00Z", "2025-01-01T00:00:00Z"),
+        ("2025-01-01T00:00:00Z", "2024-12-31T19:00:00-05:00"),
+        ("2025-01-02T00:00:00Z", "2025-01-01T00:00:00Z"),
+        ("2025-01-01T00:00:00.000001Z", "2025-01-01T00:00:00Z"),
+    ],
+)
+async def test_invalid_time_range_never_connects(
+    listing_app: FastAPI, listing_client: httpx.AsyncClient, lower: str, upper: str
+) -> None:
+    engine = listing_app.state.trade_engine
+    with pytest.raises(ValueError, match="earlier"):
+        list_trades(engine, executed_from=lower, executed_before=upper)
+    response = await listing_client.get(
+        "/trades", params={"executed_from": lower, "executed_before": upper}
+    )
+    assert response.status_code == 422
+    assert engine.mock_calls == []
+
+
+@pytest.mark.parametrize("name", ["executed_from", "executed_before"])
+@pytest.mark.parametrize("value", [datetime(2025, 1, 1), 1735689600, True])
+def test_service_rejects_non_timestamp_bounds(name: str, value: object) -> None:
+    engine = Mock(spec=Engine)
+    with pytest.raises(ValueError):
+        list_trades(engine, **{name: value})  # type: ignore[arg-type]
+    assert engine.mock_calls == []
+
+
+@pytest.mark.parametrize("limit", [1, 100, 500])
+@pytest.mark.parametrize("has_lower", [False, True])
+@pytest.mark.parametrize("has_upper", [False, True])
+def test_service_combines_time_filters_before_bounded_fetch(
+    limit: int, has_lower: bool, has_upper: bool
+) -> None:
+    engine = Mock(spec=Engine)
+    connection = engine.connect.return_value.__enter__ = Mock()
+    connection.return_value.execute.return_value.mappings.return_value.all.return_value = []
+    engine.connect.return_value.__exit__ = Mock()
+    lower = "2024-12-31T19:00:00.000001-05:00" if has_lower else None
+    upper = datetime(2025, 2, 1, tzinfo=UTC) if has_upper else None
+    assert list_trades(engine, limit, "A-", "SYN.A", lower, upper).items == ()
+    statement = connection.return_value.execute.call_args_list[1].args[0]
+    compiled = statement.compile(dialect=postgresql.dialect())
+    sql = str(compiled)
+    assert 'ORDER BY trades.trade_id COLLATE "C"' in sql
+    assert '(trades.trade_id COLLATE "C") >' in sql
+    assert "trades.symbol =" in sql
+    assert f"LIMIT {limit + 1}" in str(statement.compile(compile_kwargs={"literal_binds": True}))
+    for present, operator, expected in [
+        (has_lower, ">=", datetime(2025, 1, 1, microsecond=1, tzinfo=UTC)),
+        (has_upper, "<", upper),
+    ]:
+        condition = f"trades.executed_at {operator} "
+        assert (condition in sql) is present
+        if present:
+            assert sql.index(condition) < sql.index("LIMIT")
+            assert expected in compiled.params.values()
+            assert all(
+                value.tzinfo is UTC
+                for value in compiled.params.values()
+                if isinstance(value, datetime)
+            )
 
 
 @pytest.mark.integration
@@ -471,3 +625,211 @@ async def test_postgres_filtered_pages_read_commits_during_concurrent_import(
     assert after["next_after_id"] is None
     restart = (await listing_client.get("/trades", params={"symbol": "SYN.A"})).json()
     assert [item["trade_id"] for item in restart["items"]] == ["0", "A", "B", "Z"]
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("limit", [1, 2, 3, 500])
+@pytest.mark.parametrize(
+    "bounds",
+    [
+        {"executed_from": "2025-01-02T00:00:00Z"},
+        {"executed_before": "2025-01-03T00:00:00Z"},
+        {
+            "executed_from": "2025-01-02T00:00:00Z",
+            "executed_before": "2025-01-03T00:00:00Z",
+        },
+        {
+            "executed_from": "2025-01-01T19:00:00-05:00",
+            "executed_before": "2025-01-03T05:30:00+05:30",
+        },
+    ],
+)
+async def test_postgres_time_bounds_combine_before_pagination(
+    trade_engine: Engine,
+    listing_app: FastAPI,
+    listing_client: httpx.AsyncClient,
+    limit: int,
+    bounds: dict[str, str],
+) -> None:
+    listing_app.state.trade_engine = trade_engine
+    template = synthetic_trades(1)[0].model_dump(mode="json")
+    # IDs deliberately disagree with time order and interleave excluded rows.
+    specs = [
+        ("0", "SYN.A", "2025-01-03T00:00:00Z"),
+        ("A", "SYN.A", "2025-01-02T23:59:59.999999Z"),
+        ("A-", "SYN.B", "2025-01-02T12:00:00Z"),
+        ("A.", "SYN.A", "2025-01-01T23:59:59.999999Z"),
+        ("A:", "SYN.A", "2025-01-02T00:00:00Z"),
+        ("A_", "SYN.AA", "2025-01-02T12:00:00Z"),
+        ("Z", "SYN.A", "2025-01-02T12:00:00Z"),
+        ("a", "SYN.A", "2025-01-01T19:00:00-05:00"),
+        ("z", "SYN.A", "2025-01-04T00:00:00Z"),
+    ]
+    records = [
+        {**template, "trade_id": key, "symbol": symbol, "executed_at": timestamp}
+        for key, symbol, timestamp in specs
+    ]
+    assert (await listing_client.post("/trades/import/json", json=records)).status_code == 200
+    lower = datetime.fromisoformat(bounds["executed_from"]) if "executed_from" in bounds else None
+    upper = (
+        datetime.fromisoformat(bounds["executed_before"]) if "executed_before" in bounds else None
+    )
+    canonical = sorted(
+        (Trade.model_validate(record) for record in records), key=lambda t: t.trade_id
+    )
+    for symbol in [None, "SYN.A"]:
+        expected = [
+            trade
+            for trade in canonical
+            if (symbol is None or trade.symbol == symbol)
+            and (lower is None or trade.executed_at >= lower)
+            and (upper is None or trade.executed_at < upper)
+        ]
+        filters = {**bounds, **({"symbol": symbol} if symbol else {})}
+        params: dict[str, str | int] = {**filters, "limit": limit}
+        observed: list[Trade] = []
+        while True:
+            response = await listing_client.get("/trades", params=params)
+            assert response.status_code == 200
+            page = response.json()
+            assert len(page["items"]) == min(limit, len(expected) - len(observed))
+            observed.extend(Trade.model_validate(item) for item in page["items"])
+            if len(observed) == len(expected):
+                assert page["next_after_id"] is None
+                break
+            assert page["next_after_id"] == observed[-1].trade_id
+            params["after_id"] = page["next_after_id"]
+        assert observed == expected
+        for boundary in ["A-", "A.0", "Y", "zz"]:
+            page = (
+                await listing_client.get("/trades", params={**filters, "after_id": boundary})
+            ).json()
+            assert [Trade.model_validate(item) for item in page["items"]] == [
+                trade for trade in expected if trade.trade_id > boundary
+            ]
+            assert page["next_after_id"] is None
+    empty = await listing_client.get(
+        "/trades", params={"executed_from": "2026-01-01T00:00:00Z", "symbol": "SYN.A"}
+    )
+    assert empty.status_code == 200
+    assert empty.json() == {"items": [], "next_after_id": None}
+    # Omitting time bounds retains week 6's exact symbol selection.
+    without_time = (await listing_client.get("/trades", params={"symbol": "SYN.A"})).json()
+    assert [Trade.model_validate(item) for item in without_time["items"]] == [
+        trade for trade in canonical if trade.symbol == "SYN.A"
+    ]
+
+
+@pytest.mark.integration
+async def test_postgres_time_filtered_pages_read_concurrent_commits(
+    trade_engine: Engine, listing_app: FastAPI, listing_client: httpx.AsyncClient
+) -> None:
+    listing_app.state.trade_engine = trade_engine
+    template = {
+        **synthetic_trades(1)[0].model_dump(mode="json"),
+        "symbol": "SYN.A",
+        "executed_at": "2025-01-02T00:00:00Z",
+    }
+    import_trades_json(
+        trade_engine, json.dumps([{**template, "trade_id": key} for key in ["A", "Z"]])
+    )
+    filters = {
+        "symbol": "SYN.A",
+        "executed_from": "2025-01-02T00:00:00Z",
+        "executed_before": "2025-01-03T00:00:00Z",
+    }
+    first = (await listing_client.get("/trades", params={**filters, "limit": 1})).json()
+    assert first["next_after_id"] == "A"
+    params = {**filters, "after_id": first["next_after_id"]}
+    with trade_engine.begin() as writer:
+        records = [
+            {**template, "trade_id": "0"},
+            {**template, "trade_id": "B"},
+            {**template, "trade_id": "C", "symbol": "SYN.B"},
+            {**template, "trade_id": "D", "executed_at": "2025-01-01T23:59:59.999999Z"},
+            {**template, "trade_id": "E", "executed_at": "2025-01-03T00:00:00Z"},
+        ]
+        writer.execute(insert(trades), [Trade.model_validate(row).model_dump() for row in records])
+        during = (await listing_client.get("/trades", params=params)).json()
+        assert [item["trade_id"] for item in during["items"]] == ["Z"]
+        assert during["next_after_id"] is None
+    after = (await listing_client.get("/trades", params=params)).json()
+    assert [item["trade_id"] for item in after["items"]] == ["B", "Z"]
+    assert after["next_after_id"] is None
+    restart = (await listing_client.get("/trades", params=filters)).json()
+    assert [item["trade_id"] for item in restart["items"]] == ["0", "A", "B", "Z"]
+
+
+@pytest.mark.integration
+async def test_postgres_invalid_time_bounds_precede_redacted_database_failure(
+    trade_engine: Engine, listing_app: FastAPI, listing_client: httpx.AsyncClient
+) -> None:
+    listing_app.state.trade_engine = trade_engine
+    with trade_engine.begin() as connection:
+        schema = trade_engine.get_execution_options()["schema_translate_map"][None]
+        connection.execute(text(f'DROP TABLE "{schema}".trades'))
+    for name in ["executed_from", "executed_before"]:
+        for value in INVALID_TIMESTAMPS:
+            response = await listing_client.get("/trades", params={name: value})
+            assert response.status_code == 422
+    for lower, upper in [
+        ("2025-01-01T00:00:00Z", "2024-12-31T19:00:00-05:00"),
+        ("2025-01-02T00:00:00Z", "2025-01-01T00:00:00Z"),
+    ]:
+        response = await listing_client.get(
+            "/trades", params={"executed_from": lower, "executed_before": upper}
+        )
+        assert response.status_code == 422
+    for params in [
+        {"executed_from": "2025-01-01T00:00:00Z"},
+        {"executed_before": "2025-02-01T00:00:00Z"},
+        {
+            "symbol": "SYN.A",
+            "after_id": "A",
+            "executed_from": "2025-01-01T00:00:00Z",
+            "executed_before": "2025-02-01T00:00:00Z",
+        },
+    ]:
+        response = await listing_client.get("/trades", params=params)
+        assert response.status_code == 503
+        assert response.json() == {"detail": "Trade database unavailable"}
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("db_timezone", ["Pacific/Honolulu", "Pacific/Kiritimati"])
+async def test_postgres_time_filter_timestamp_and_decimal_extremes(
+    trade_engine: Engine,
+    listing_app: FastAPI,
+    listing_client: httpx.AsyncClient,
+    db_timezone: str,
+) -> None:
+    listing_app.state.trade_engine = trade_engine
+    template = {
+        **synthetic_trades(1)[0].model_dump(mode="json"),
+        "symbol": "SYN.A",
+        "price": "999999999999.99999999",
+        "quantity": "0.00000001",
+    }
+    records = [
+        {**template, "trade_id": "A", "executed_at": "0001-01-01T00:00:00Z"},
+        {**template, "trade_id": "a", "executed_at": "9999-12-31T23:59:59.999999Z"},
+    ]
+    with trade_engine.begin() as connection:
+        connection.execute(
+            text("SELECT set_config('TimeZone', :zone, false)"), {"zone": db_timezone}
+        )
+    assert (await listing_client.post("/trades/import/json", json=records)).status_code == 200
+    for bounds, selected in [
+        ({"executed_from": "0001-01-01T00:00:00Z"}, records),
+        ({"executed_before": "9999-12-31T23:59:59.999999Z"}, records[:1]),
+        ({"executed_from": "9999-12-31T23:59:59.999999Z"}, records[1:]),
+        ({"executed_before": "0001-01-01T00:00:00Z"}, []),
+    ]:
+        response = await listing_client.get("/trades", params={"symbol": "SYN.A", **bounds})
+        assert response.status_code == 200
+        assert response.json() == {
+            "items": [Trade.model_validate(row).model_dump(mode="json") for row in selected],
+            "next_after_id": None,
+        }
+    with trade_engine.connect() as connection:
+        assert connection.execute(text("SHOW TIME ZONE")).scalar_one() == db_timezone

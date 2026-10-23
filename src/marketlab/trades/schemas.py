@@ -19,6 +19,21 @@ TRADE_ID_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
 SYMBOL_PATTERN = r"^[A-Z][A-Z0-9.-]{0,19}$"
 
 
+def normalize_timestamp(value: Any) -> datetime:
+    """Validate the trade timestamp syntax and normalize a representable instant to UTC."""
+    if isinstance(value, str) and _TIMESTAMP_TEXT.fullmatch(value):
+        try:
+            value = datetime.fromisoformat(value)
+        except ValueError as error:
+            raise ValueError("must be a valid timestamp") from error
+    if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
+        raise ValueError("must be an aware datetime or ISO timestamp with a timezone")
+    try:
+        return value.astimezone(UTC)
+    except (OverflowError, ValueError) as error:
+        raise ValueError("timestamp must be representable in UTC") from error
+
+
 class Trade(BaseModel):
     """One execution with exact positive price/quantity and an aware UTC timestamp."""
 
@@ -56,17 +71,7 @@ class Trade(BaseModel):
     @field_validator("executed_at", mode="before")
     @classmethod
     def aware_utc_timestamp(cls, value: Any) -> datetime:
-        if isinstance(value, str) and _TIMESTAMP_TEXT.fullmatch(value):
-            try:
-                value = datetime.fromisoformat(value)
-            except ValueError as error:
-                raise ValueError("must be a valid timestamp") from error
-        if not isinstance(value, datetime) or value.tzinfo is None or value.utcoffset() is None:
-            raise ValueError("must be an aware datetime or ISO timestamp with a timezone")
-        try:
-            return value.astimezone(UTC)
-        except (OverflowError, ValueError) as error:
-            raise ValueError("timestamp must be representable in UTC") from error
+        return normalize_timestamp(value)
 
 
 class TradePage(BaseModel):
