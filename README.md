@@ -1,5 +1,6 @@
 # MarketLab
 
+Week 8 adds a small local command-line client for bounded, filtered trade browsing.
 Week 7 adds optional execution-time bounds to week 6 exact-symbol filtering on the bounded,
 read-only synthetic trade browsing from week 5.
 The week 4 HTTP imports and exact-ID retrieval build on week 3 transactional PostgreSQL persistence
@@ -63,6 +64,27 @@ Retain all filters across pages. Results stay in ID order, and each page reads c
 data without a cross-page snapshot. Invalid bounds or `from >= before` return `422` before database
 access; database failures retain the generic `503`. Omitting time bounds preserves week 6 behavior.
 See [week 7 verification](docs/week7-verification.md) for actual checks and limitations.
+
+## Local trade browsing CLI
+
+Use the existing project environment to print one JSON page envelope per line:
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.trade_cli --symbol SYN.A --limit 25
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.trade_cli --port 8000 --limit 25 --symbol SYN.A --executed-from '2025-01-01T00:00:00Z' --executed-before '2025-02-01T00:00:00Z' --max-pages 4
+```
+
+The client defaults to `http://127.0.0.1:8000` and one page. Set `--port` to your local API's
+configured `API_PORT`; the CLI does not read `.env`. Explicit `--max-pages N` bounds traversal,
+retaining every filter and changing only `after_id`. It stops at a null cursor or the cap;
+the last printed cursor remains available to resume with `--after-id` and the same filters.
+Decimal strings and UTC timestamps retain their wire values. Requests use finite timeouts.
+Failures return a nonzero exit status and a safe stderr diagnostic. Output can contain earlier
+pages when a later request fails, so treat it as partial unless the process succeeds. Each page
+reads current committed data without a cross-page snapshot.
+
+See [the week 8 CLI contract and examples](docs/week8-cli.md) and
+[actual week 8 verification](docs/week8-verification.md). The HTTP/OpenAPI contracts are unchanged.
 
 ## Windows quick start
 
@@ -171,6 +193,6 @@ docker compose down
 storage contents; do so only when intentionally resetting the environment. Integration tests require
 a disposable database migrated to `0002_trades`. Persistence tests clone the migrated trade
 table into temporary schemas and remove those schemas afterward. Week 4 HTTP integration tests
-and week 5–7 browsing/filtering tests use the same isolation and real PostgreSQL service. They skip when
+and week 5–8 browsing/filtering/CLI tests use the same isolation and real PostgreSQL service. They skip when
 `MARKETLAB_DATABASE_URL` is absent; a skip is not an integration pass. Apply migrations to the
 disposable database before running `scripts/check.ps1 -Integration`.
