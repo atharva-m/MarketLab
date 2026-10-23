@@ -7,7 +7,7 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
 
 from marketlab.trades.parsers import parse_trades_csv, parse_trades_json
-from marketlab.trades.schemas import TRADE_ID_PATTERN, Trade, TradePage
+from marketlab.trades.schemas import SYMBOL_PATTERN, TRADE_ID_PATTERN, Trade, TradePage
 
 metadata = MetaData()
 trades = Table(
@@ -68,16 +68,22 @@ def get_trade(engine: Engine, trade_id: str) -> Trade | None:
     return Trade.model_validate(dict(record)) if record is not None else None
 
 
-def list_trades(engine: Engine, limit: int = 100, after_id: str | None = None) -> TradePage:
-    """Read at most limit + 1 committed rows in case-sensitive PostgreSQL C order."""
+def list_trades(
+    engine: Engine, limit: int = 100, after_id: str | None = None, symbol: str | None = None
+) -> TradePage:
+    """Read at most limit + 1 matching committed rows in PostgreSQL C trade-ID order."""
     if type(limit) is not int or not 1 <= limit <= 500:
         raise ValueError("limit must be an integer between 1 and 500")
     if after_id is not None and re.fullmatch(TRADE_ID_PATTERN, after_id) is None:
         raise ValueError("after_id must match the trade_id contract")
+    if symbol is not None and re.fullmatch(SYMBOL_PATTERN, symbol) is None:
+        raise ValueError("symbol must match the symbol contract")
     ordered_id = trades.c.trade_id.collate("C")
     statement = select(trades).order_by(ordered_id).limit(limit + 1)
     if after_id is not None:
         statement = statement.where(ordered_id > after_id)
+    if symbol is not None:
+        statement = statement.where(trades.c.symbol == symbol)
     with engine.connect() as connection:
         # Match exact retrieval's protection for year 1/9999 and session timezones.
         connection.execute(text("SET LOCAL TIME ZONE 'UTC'"))

@@ -1,7 +1,8 @@
 # MarketLab
 
-Week 5 adds bounded, read-only synthetic trade browsing to the week 4 HTTP imports and exact-ID
-retrieval, building on week 3 transactional PostgreSQL persistence and the week 2 contract on Python 3.13.
+Week 6 adds exact-symbol filtering to the bounded, read-only synthetic trade browsing from week 5.
+The week 4 HTTP imports and exact-ID retrieval build on week 3 transactional PostgreSQL persistence
+and the week 2 contract on Python 3.13.
 The week 1 foundation includes an app factory, health probes, request observability and local
 infrastructure. External ingestion, jobs, analytical queries, caching behavior
 and UI come later.
@@ -45,6 +46,12 @@ It returns `{"items": [...], "next_after_id": "..."}` in ascending, case-sensiti
 order. The default page size is 100, with a range of 1–500; the cursor is an exclusive ID boundary
 and is `null` at the end. Each page reads current committed data. See
 [week 5 verification](docs/week5-verification.md) for checks and limitations.
+
+[The week 6 filtering contract](docs/week6-filtering.md) adds the optional exact `symbol` parameter:
+`GET /trades?symbol=SYN.A&limit=25`. The filter follows the existing symbol syntax without
+normalization or partial matching and applies before pagination. Retain the same symbol across
+pages; omitting it preserves unfiltered browsing. See [week 6 verification](docs/week6-verification.md)
+for actual checks and limitations.
 
 ## Windows quick start
 
@@ -153,6 +160,6 @@ docker compose down
 storage contents; do so only when intentionally resetting the environment. Integration tests require
 a disposable database migrated to `0002_trades`. Persistence tests clone the migrated trade
 table into temporary schemas and remove those schemas afterward. Week 4 HTTP integration tests
-and week 5 browsing tests use the same isolation and real PostgreSQL service. They skip when
+and week 5–6 browsing/filtering tests use the same isolation and real PostgreSQL service. They skip when
 `MARKETLAB_DATABASE_URL` is absent; a skip is not an integration pass. Apply migrations to the
 disposable database before running `scripts/check.ps1 -Integration`.

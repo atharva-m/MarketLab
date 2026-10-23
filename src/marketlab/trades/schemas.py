@@ -16,6 +16,7 @@ _TIMESTAMP_TEXT = re.compile(
 
 TradeDecimal = Annotated[Decimal, Field(gt=0, max_digits=20, decimal_places=8, strict=True)]
 TRADE_ID_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,63}$"
+SYMBOL_PATTERN = r"^[A-Z][A-Z0-9.-]{0,19}$"
 
 
 class Trade(BaseModel):
@@ -24,7 +25,7 @@ class Trade(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, strict=True)
 
     trade_id: str = Field(pattern=TRADE_ID_PATTERN)
-    symbol: str = Field(pattern=r"^[A-Z][A-Z0-9.-]{0,19}$")
+    symbol: str = Field(pattern=SYMBOL_PATTERN)
     executed_at: datetime
     price: TradeDecimal
     quantity: TradeDecimal

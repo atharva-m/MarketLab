@@ -16,7 +16,7 @@ from marketlab.trades.persistence import (
     import_trades_json,
     list_trades,
 )
-from marketlab.trades.schemas import TRADE_ID_PATTERN, Trade, TradePage
+from marketlab.trades.schemas import SYMBOL_PATTERN, TRADE_ID_PATTERN, Trade, TradePage
 
 MAX_IMPORT_BYTES = 1024 * 1024
 router = APIRouter(prefix="/trades", tags=["synthetic trades"])
@@ -107,9 +107,15 @@ async def import_csv(request: Request) -> dict[str, int]:
         "Orders trade_id ascending using PostgreSQL C collation. after_id is an exclusive "
         "boundary and need not exist. Fetches at most limit + 1 records; next_after_id is null "
         "at the end. Each request reads current committed data without a cross-page snapshot. "
+        "Optional symbol matches the existing symbol syntax exactly, without normalization or "
+        "partial matching. Filtering precedes pagination; retain the same symbol across pages. "
+        "Omitting symbol lists all trades. "
         "Prices and quantities are decimal strings; timestamps are UTC."
     ),
-    responses={422: {"description": "Invalid pagination parameters"}, 503: _IMPORT_RESPONSES[503]},
+    responses={
+        422: {"description": "Invalid pagination or symbol parameter; no database access"},
+        503: _IMPORT_RESPONSES[503],
+    },
 )
 def browse_trades(
     request: Request,
@@ -123,9 +129,18 @@ def browse_trades(
             description="Exclusive trade_id boundary; need not exist in storage",
         ),
     ] = None,
+    symbol: Annotated[
+        str | None,
+        Query(
+            pattern=SYMBOL_PATTERN,
+            min_length=1,
+            max_length=20,
+            description="Exact symbol; retain the same value across pages (for example SYN.A)",
+        ),
+    ] = None,
 ) -> TradePage:
     try:
-        return list_trades(request.app.state.trade_engine, limit, after_id)
+        return list_trades(request.app.state.trade_engine, limit, after_id, symbol)
     except SQLAlchemyError as error:
         raise HTTPException(503, "Trade database unavailable") from error
 
