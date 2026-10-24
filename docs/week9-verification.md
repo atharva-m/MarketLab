@@ -72,8 +72,8 @@ an isolated host Uvicorn API and that real PostgreSQL container:
 The host API bound to random IPv4 loopback port 55992, used only the disposable
 week 9 database and ignored artifact storage, and was terminated afterward.
 Host harness/API/CLI processes all used project Python 3.13.7 and locked
-libraries. This was host live TCP verification; no production-container build,
-Compose smoke or hosted CI run was performed for week 9.
+libraries. This was host live TCP verification. The later hosted CI run below separately
+verified the production-image build and deployed API smoke.
 
 The first live TCP harness run used an incorrect expected punctuation ordering
 for the browsing regression. Actual application output was correctly ordered;
@@ -98,10 +98,10 @@ escalation. These initial blockers were resolved; integration was not skipped.
 
 Existing locked Starlette/FastAPI TestClient deprecation warnings about httpx and
 its timeout argument remain. They did not fail tests; dependencies were not
-changed to suppress them. Ollama generation, Redis outage checks and hosted CI
-were not rerun for week 9. Earlier week 8 results remain historical evidence,
-not week 9 passes. No model compatibility, cross-page snapshot or large-dataset
-query-performance claim is made.
+changed to suppress them. Ollama generation was not rerun for week 9. The later
+hosted CI run below verified Redis outage behavior. Earlier week 8 results remain
+historical evidence, not week 9 passes. No model compatibility, cross-page
+snapshot or large-dataset query-performance claim is made.
 
 ## Independent review and cleanup
 
@@ -126,3 +126,32 @@ after cleanup. Their data was not accessed or used for synthetic imports.
 Final `git diff --check` passed. No application/test changes were made after
 review, and no full-suite rerun was needed for this review/cleanup documentation
 update.
+
+## Hosted CI after commit and push
+
+The verified week 9 implementation, tests and documentation were committed as
+`3ffa6e1c3a5459651883507a6bf3ff85f9346da1`
+(`Add verified week 9 exact-ID trade CLI lookup`) and pushed to `origin/main`
+without force. The [GitHub Actions CI run](https://github.com/atharva-m/MarketLab/actions/runs/40050459592)
+completed successfully for that exact commit. Authenticated Actions API run,
+job and step metadata confirmed:
+
+- Both `quality` jobs, on `ubuntu-latest` and `windows-latest`, passed Python 3.13
+  setup, locked dependency synchronization, Ruff lint/format, strict mypy and
+  offline pytest.
+- The Linux `integration` job passed Compose configuration, production API-image
+  build, service startup, real PostgreSQL pytest, deployed API smoke, Redis
+  initially-healthy and optional-outage checks, and cleanup. Its failure-only
+  `Logs` step was skipped as expected; no test-suite step was skipped.
+
+No CI fixes were needed. Hosted pytest totals and per-test logs were not
+retrieved; the earlier 456 offline and 76 integration totals remain local results,
+not claimed hosted counts. Raw run/job/step metadata and the read-only API
+inspection script are retained under ignored `artifacts/week9-ci/`. Existing Git
+credentials were used without printing or saving them.
+
+Initial sandbox restrictions denied the Git index lock and GitHub network access.
+Escalated execution enabled the authorized commit, push and authenticated CI
+inspection. No external blocker remained. This documentation-only follow-up was
+checked with `git diff --check`; application code/tests were unchanged and local
+suites were not rerun.
