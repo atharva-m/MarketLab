@@ -6,7 +6,7 @@ Approved scope implementation, full local regressions, actual historical gates,
 independent core/final evidence review and owned-resource cleanup passed. No
 unresolved local acceptance blocker remains. At implementation closeout no
 commit/push had been performed or authorized. The later October 24 publication
-authorization is recorded below; hosted CI remains pending actual evidence.
+authorization and actual hosted CI outcomes are recorded below.
 
 The prescribed coder is GPT-6.1 Sol, high; independent reviewer GPT-6 Astra,
 medium. An additional prescribed coder owns the new job acceptance tests.
@@ -20,7 +20,7 @@ remain in r1-verification.md; they are not counted as new R2 passes.
 
 The final locked `.\scripts\check.ps1 -Integration` passed:
 
-- Ruff lint and formatting (64 Python files) passed.
+- Ruff lint and formatting (64 files) passed.
 - Strict mypy passed for 19 source files.
 - **557 offline tests passed**, zero skips (9.06 seconds).
 - **124 real PostgreSQL tests passed**, zero skips (32.74 seconds).
@@ -78,7 +78,8 @@ complete suites documented above.
 
 No peak memory measurement has been captured; no peak claim is made. Hosted CI
 was not run during local implementation closeout. Publication/CI verification is
-now authorized and pending; no Ollama/caching/analytics claim is made.
+now complete with actual passing hosted results below; no Ollama/caching/analytics
+claim is made.
 
 
 ## Acceptance coverage
@@ -204,8 +205,9 @@ environments or weights in Git. The initial working-tree provenance and local
 verification above remain historical evidence, not hosted results.
 
 The implementation commit/push and first hosted CI result are now observed below.
-Replacement CI remains pending; local totals are not substituted for hosted
-offline results, and scheduled/running checks are not represented as passed.
+The passing replacement run is recorded below; local totals are not substituted
+for hosted offline results, and scheduled/running checks are not represented as
+passed.
 
 
 ## Initial hosted CI failure and scoped fix
@@ -238,6 +240,42 @@ multiline chaining layout. Repository-wide locked Ruff lint and formatting now
 pass (64 files); no runtime/test/dependency/workflow changes were needed. A
 sandbox uv-cache permission error during the rerun was resolved by the approved
 escalated locked invocation, which passed. The first hosted run remains recorded
-as failed; the replacement commit/run result is pending actual observation.
+as failed; the subsequent passing replacement commit/run is recorded below.
 Ignored artifacts/r2-ci/8bfff40e8b431e2382640fb25e66b2d648520588 contains the
 run/job metadata and actual job logs, including hosted PostgreSQL count/timing.
+
+
+## Passing replacement hosted CI
+
+The reviewed example-format fix and failure record were committed/pushed as
+`d22523aaafc2182fc411c1615ad615e0be24c771`.
+[CI run 40067854743](https://github.com/atharva-m/MarketLab/actions/runs/40067854743)
+completed successfully for this exact SHA. Retrieved run/job metadata and full job
+logs verify:
+
+| Hosted job | Actual result |
+| --- | --- |
+| Ubuntu quality | Ruff lint/format passed (64 files), strict mypy passed (19 source files), **557 offline tests passed** in 8.93 seconds |
+| Windows quality | Ruff lint/format passed (64 files), strict mypy passed (19 source files), **557 offline tests passed** in 12.48 seconds |
+| Linux integration | **124 real PostgreSQL tests passed** in 25.44 seconds, plus locked setup, Compose validation, production API image build/startup, API smoke, initially healthy Redis, actual Redis outage checks and cleanup |
+
+No tests were skipped. The 124/557 deselected cases belong to the other pytest
+marker selection and are not counted as passes. Only integration's
+failure-conditional Logs step was skipped, as expected on success. The initial
+Ubuntu failure/Windows cancellation remains preserved above; it is not relabeled
+as passed. There is no remaining R2 hosted CI blocker.
+
+The fix and this follow-up changed documentation only. No runtime/test,
+dependency/lockfile, deployment or workflow changes were needed. The final local
+locked Ruff lint/format checks were rerun after all documentation edits, including
+Python fences, rather than relying on the earlier check before the example was
+added. Actual hosted evidence is retained under ignored
+artifacts/r2-ci/d22523aaafc2182fc411c1615ad615e0be24c771/.
+
+Hosted CI does not repeat the actual provider month download or 230-million-row
+readback; those are the separate completed local acceptance results above. It
+does not run actual model generation. Peak memory remains unmeasured. Original
+services/data and R1 behavior remain preserved; R3-R9 are unauthorized backlog.
+Market data/artifacts, credentials, environments and model weights remain outside
+Git. Final publication/evidence documentation is reviewed independently before
+its authorized follow-up commit/push.

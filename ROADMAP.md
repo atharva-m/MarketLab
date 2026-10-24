@@ -1,6 +1,6 @@
 # MarketLab recovery roadmap
 
-Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3–R9 remain unauthorized backlog. R2 implementation was committed/pushed; hosted CI follow-up is in progress after a documentation formatting failure. Replacement CI remains pending.
+Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
@@ -137,7 +137,7 @@ At the start of future work, read this file, AGENTS.md and the latest approved m
 Historical R1 closeout: R1 implementation passed 516 offline and 89 real PostgreSQL tests, plus actual official one-day historical publication/readback/idempotent reuse (1,516,556 records) and five CLI subprocess compatibility outcomes. Independent GPT-6 Astra review found no actionable findings and independently passed all 60 new offline and 13 new PostgreSQL cases. Owned disposable resources were verified and removed; original services remain healthy. R1 is complete. See [R1 contract](docs/r1-datasets.md) and [actual verification](docs/r1-verification.md) for evidence, resolved execution blockers and limits. At R1 closeout, R2–R9 remained backlog requiring later authorization. The verified implementation was committed/pushed as `75bb466c2bfa0a1e6ad0096335a54128fe7557ff`; [hosted CI run 40058652835](https://github.com/atharva-m/MarketLab/actions/runs/40058652835) passed Ubuntu/Windows quality and Linux integration (including image build, PostgreSQL, API smoke and Redis outage checks). Hosted pytest counts were not retrieved; the counts above are local. The CI documentation follow-up independently passed read-only review with no actionable findings and is published with this roadmap record. R2 was unauthorized at that closeout; its later approval is recorded above.
 
 
-R2 handoff (October 24, 2026): COMPLETE. Additive durable submissions/jobs/attempts, leased local execution and fenced atomic catalog/job success preserve R1 identity and synchronous behavior. Full locked checks passed 557 offline and 124 real PostgreSQL cases; five live CLI outcomes and retained original R1 artifact verification passed. Actual 62 January BTCUSDT/ETHUSDT partitions published/read back 230,311,900 rows; fresh-key download/recheck reused all 62 exact versions, no failures, all attempts 1. Independent GPT-6 Astra review resolved all actionable findings and independently passed 76 new job tests plus original R1 focused tests; final catalog/source/artifact/job evidence review passed. Owned disposable container was verified and removed, original services unchanged/healthy, artifacts retained. No unresolved blocker. Peak memory was not measured and R2 hosted CI was not run. See [R2 contract](docs/r2-jobs.md) and [actual verification](docs/r2-verification.md). R1 historical evidence remains intact. At implementation closeout R2 remained uncommitted/unpushed under the initial request. The user subsequently authorized publication and hosted CI verification; those actual outcomes are pending below. R3–R9 require later authorization.
+R2 handoff (October 24, 2026): COMPLETE. Additive durable submissions/jobs/attempts, leased local execution and fenced atomic catalog/job success preserve R1 identity and synchronous behavior. Full locked checks passed 557 offline and 124 real PostgreSQL cases; five live CLI outcomes and retained original R1 artifact verification passed. Actual 62 January BTCUSDT/ETHUSDT partitions published/read back 230,311,900 rows; fresh-key download/recheck reused all 62 exact versions, no failures, all attempts 1. Independent GPT-6 Astra review resolved all actionable findings and independently passed 76 new job tests plus original R1 focused tests; final catalog/source/artifact/job evidence review passed. Owned disposable container was verified and removed, original services unchanged/healthy, artifacts retained. No unresolved blocker. Peak memory was not measured; hosted CI was unrun at local closeout and its later actual results are recorded below. See [R2 contract](docs/r2-jobs.md) and [actual verification](docs/r2-verification.md). R1 historical evidence remains intact. At implementation closeout R2 remained uncommitted/unpushed under the initial request. The user subsequently authorized publication and hosted CI verification; those actual outcomes are recorded below. R3–R9 require later authorization.
 
 
 ### R2 publication and first hosted CI result (October 24, 2026)
@@ -157,4 +157,25 @@ after the successful local full check. Subsequent documentation closeout checked
 UTF-8/whitespace but omitted rerunning Ruff for that new code example. The example
 has now been formatted with the locked formatter; repository-wide locked Ruff
 lint and formatting pass (64 files). Runtime, dependencies and workflows are
-unchanged. This first hosted run remains a failure; replacement CI is pending.
+unchanged. This first hosted run remains a failure; the subsequent passing replacement run is recorded below.
+
+
+### R2 hosted CI recovery verified (October 24, 2026)
+
+The reviewed formatting-only example fix and failure record were committed/pushed
+as `d22523aaafc2182fc411c1615ad615e0be24c771`.
+[Replacement CI run 40067854743](https://github.com/atharva-m/MarketLab/actions/runs/40067854743)
+passed for that exact SHA: Ubuntu quality passed 557 offline tests (8.93s), Windows
+quality passed 557 offline tests (12.48s), and Linux integration passed 124 real
+PostgreSQL tests (25.44s). Ruff lint/format (64 files) and strict mypy (19 sources)
+passed on both quality platforms. Integration also passed locked setup, Compose
+validation, API image build/startup, API smoke, healthy Redis/outage checks and
+cleanup. Only the failure-conditional Logs step was skipped, not a test step.
+Exact run/job metadata and logs are retained under ignored artifacts/r2-ci/.
+
+No unresolved R2 publication/CI blocker remains. The earlier failed/cancelled run
+is retained as history. Historical 62-partition download/readback/recheck evidence
+remains local, peak memory remains unmeasured, and no model/analytics claim follows
+from CI. This closeout changes documentation only; no runtime, test, dependency,
+lockfile, deployment or workflow changes were needed for CI recovery. R3-R9 remain
+unauthorized and market artifacts/data remain excluded from Git.
