@@ -1,5 +1,10 @@
 # MarketLab
 
+R1 restores the historical research roadmap with checksum-verified one-day Binance Spot
+BTCUSDT ingestion, immutable Parquet publication and a separate PostgreSQL dataset catalog.
+See [the approved recovery roadmap](ROADMAP.md), [R1 contract](docs/r1-datasets.md) and
+[actual R1 verification](docs/r1-verification.md). Historical week labels below describe
+repository increments, not completion of the original 14-week research schedule.
 Week 9 adds exact-ID lookup to the local read-only command-line client.
 Week 8 adds bounded, filtered trade browsing.
 Week 7 adds optional execution-time bounds to week 6 exact-symbol filtering on the bounded,
@@ -191,7 +196,7 @@ exit code. `--model`, `--url` and `--timeout` override defaults. First load may 
 
 ## Migrations and CI
 
-`alembic upgrade head` applies `0001_baseline` and `0002_trades`, creating Alembic's bookkeeping
+`alembic upgrade head` applies `0001_baseline`, `0002_trades` and R1 `0003_dataset_versions`, creating the historical dataset catalog as well as Alembic's bookkeeping
 table and the five-field `trades` table. Compose waits for PostgreSQL, runs migrations and then
 starts the API. CI syncs
 `uv.lock` with `--locked`, runs lint, formatting, strict source type checks and unit tests on Windows
@@ -206,8 +211,30 @@ docker compose down
 
 `docker compose down` preserves persistent volumes. Removing volumes deletes local database and
 storage contents; do so only when intentionally resetting the environment. Integration tests require
-a disposable database migrated to `0002_trades`. Persistence tests clone the migrated trade
+a disposable database migrated to `0003_dataset_versions`. Persistence tests clone the migrated trade
 table into temporary schemas and remove those schemas afterward. Week 4 HTTP integration tests
 and week 5–8 browsing/filtering/CLI tests use the same isolation and real PostgreSQL service. They skip when
 `MARKETLAB_DATABASE_URL` is absent; a skip is not an integration pass. Apply migrations to the
 disposable database before running `scripts/check.ps1 -Integration`.
+
+## Historical dataset publication (R1)
+
+Use a disposable/migrated PostgreSQL instance for experiments and set
+`MARKETLAB_DATABASE_URL` as described above. `MARKETLAB_STORAGE_PATH` selects the
+shared artifact root (default ignored `data/`). Never commit historical archives
+or generated artifacts. Migrate the selected database, then run:
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked alembic upgrade head
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli ingest --symbol BTCUSDT --date 2025-01-01
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli inspect --version <returned-version-id>
+```
+
+R1 accepts only that symbol/day and downloads the official archive/checksum with
+finite bounds. It publishes complete verified Parquet/manifest files before
+transactionally registering a dataset. Same verified input and transform/lock
+identity reuses the published version; changed source bytes produce another one.
+Inspection verifies registered hashes, schema, row counts and logical content.
+The synthetic `/trades` API and trade CLI are independent and retain their contracts.
+No durable worker, analytical query/cache, research workflow, copilot or memo is
+implemented by R1. See the contract for failure handling and orphan inspection.

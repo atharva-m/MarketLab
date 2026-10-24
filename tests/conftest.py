@@ -40,3 +40,32 @@ def trade_engine() -> Iterator[Engine]:
         with engine.begin() as connection:
             connection.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
         engine.dispose()
+
+
+@pytest.fixture
+def dataset_engine() -> Iterator[Engine]:
+    """Clone the additive catalog without modifying shared dataset registrations."""
+    if "MARKETLAB_DATABASE_URL" not in os.environ:
+        pytest.skip("Set MARKETLAB_DATABASE_URL to a disposable, migrated PostgreSQL instance")
+    settings = Settings()
+    engine = create_engine(
+        settings.sqlalchemy_url,
+        pool_timeout=settings.database_connect_timeout_seconds,
+        connect_args=settings.database_connect_args,
+    )
+    schema = "test_datasets_" + uuid4().hex
+    isolated = engine.execution_options(schema_translate_map={None: schema})
+    try:
+        with engine.begin() as connection:
+            connection.execute(text(f'CREATE SCHEMA "{schema}"'))
+            connection.execute(
+                text(
+                    f'CREATE TABLE "{schema}".dataset_versions '
+                    "(LIKE public.dataset_versions INCLUDING ALL)"
+                )
+            )
+        yield isolated
+    finally:
+        with engine.begin() as connection:
+            connection.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
+        engine.dispose()
