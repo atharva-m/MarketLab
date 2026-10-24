@@ -1,16 +1,20 @@
 # MarketLab recovery roadmap
 
-Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
+Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup; R4–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
 ## Authority and approval boundary
 
+On October 24, 2026 the user approved the detailed R3 scope, ROADMAP.md/AGENTS.md updates, the [R3 contract](docs/r3-analytics.md) before code, prescribed coder/reviewer implementation and full acceptance. Preserve R1/R2. The initial implementation request excluded commit/push; the later R3 publication authorization below supersedes that restriction. R4-R9 remain unauthorized. These R3 approvals are the current execution authority; earlier milestone closeouts remain historical evidence.
+
+Later on October 24, 2026, after completed R3 local verification/review/cleanup, the user explicitly authorized committing/pushing the verified R3 changes, checking hosted CI, fixing actual R3-only CI failures through the prescribed coder/reviewer workflow and documenting/publishing actual outcomes. This supersedes the initial R3 no-commit instruction without expanding feature scope. Archives/artifacts/data, credentials, environments and weights remain excluded from Git; R4-R9 remain unauthorized. Hosted results must be observed for the exact published revision and recorded in [R3 verification](docs/r3-verification.md).
+
 On October 23, 2026 the user approved the detailed R2 proposal, authorized ROADMAP.md/AGENTS.md updates, implementation with the prescribed coder/reviewer workflow, preservation of R1, acceptance tests and honest results/blocker documentation. The initial R2 implementation request explicitly excluded commit/push. This scope approval superseded earlier statements that R2 was unauthorized; R3–R9 remain backlog.
 
 On October 24, 2026, after verified R2 closeout, the user explicitly authorized committing/pushing the verified R2 changes, checking hosted CI, fixing actual CI failures within R2, and documenting/publishing actual results and blockers. This publication authorization supersedes the initial no-commit instruction without expanding R2 feature scope. Archives/artifacts/data, credentials, environments and weights remain excluded from Git. Hosted CI results must be recorded from actual run evidence; see the R2 publication record below.
 
-The user explicitly approved this roadmap and authorized R1 implementation, AGENTS.md updates, the prescribed coder/reviewer workflow, preservation of existing behavior, checks and honest results/blocker documentation. That initial approval covered R1 only; R2–R9 were not authorized then. The later R2 approval above is the current execution authority. The initial implementation task did not request a commit/push. The user subsequently explicitly authorized committing/pushing verified R1 changes, checking hosted CI, documenting actual results/blockers and pushing the reviewed verification update.
+The user explicitly approved this roadmap and authorized R1 implementation, AGENTS.md updates, the prescribed coder/reviewer workflow, preservation of existing behavior, checks and honest results/blocker documentation. That initial approval covered R1 only; R2–R9 were not authorized then. That later R2 approval authorized its completed work; the R3 approval above is now the current execution authority. The initial implementation task did not request a commit/push. The user subsequently explicitly authorized committing/pushing verified R1 changes, checking hosted CI, documenting actual results/blockers and pushing the reviewed verification update.
 
 After explicit approval, record the approval and approved milestone here, then update AGENTS.md to that milestone before implementation. Approval of the roadmap establishes direction; execute only the milestone the user authorizes. If an approval is ambiguous, clarify the execution scope. Keep later milestones as backlog.
 
@@ -98,7 +102,9 @@ The approved detailed contract is [R2 durable jobs](docs/r2-jobs.md). Deliver 62
 
 Use PostgreSQL `FOR UPDATE SKIP LOCKED`, 10-second heartbeats, 60-second leases, fencing tokens and three total attempts for transient failures. Enforce current ownership in the publication transaction; test stale workers, crashes and repeated execution without duplicate published results. Route R1 ingestion through this machinery without changing its source/normalization contracts. Expand to BTCUSDT and ETHUSDT January 2025 with explicit bounded jobs. Obtain pre-period warm-up history when required by later workflows; never silently truncate requested research periods.
 
-### R3: analytics and caching
+### Approved R3: analytics and caching
+
+Detailed approved contract: [R3 analytical reads](docs/r3-analytics.md). Implementation, full local acceptance, independent review and owned-resource cleanup are complete; see [R3 verification](docs/r3-verification.md). At local closeout changes remained uncommitted/unpushed; later R3 publication authorization is recorded above. R4-R9 require later authorization.
 
 Define completed UTC bars, exact aggregation/rounding rules and 1m/5m intervals; missing bars remain missing, with no forward filling. Query published dataset versions via fixed templates and bound parameters. Cache immutable bar responses and completed numerical summaries only. Keys include cache schema, dataset/run identity and canonical parameter hash. Preserve the original TTLs (15 minutes bars, one hour summaries, ±10% jitter), 1 MiB value cap, 100 ms Redis timeouts, no automatic retries and a ten-second bypass after three failures. Coalesce identical reads per process and cap expensive uncached queries at two. Provide `X-Cache: HIT|MISS|BYPASS` and metrics; retain 256 MiB allkeys-lru/no persistence with container headroom. Test actual cached results during outage and eviction, beyond health probes.
 
@@ -179,3 +185,52 @@ remains local, peak memory remains unmeasured, and no model/analytics claim foll
 from CI. This closeout changes documentation only; no runtime, test, dependency,
 lockfile, deployment or workflow changes were needed for CI recovery. R3-R9 remain
 unauthorized and market artifacts/data remain excluded from Git.
+
+
+### R3 local closeout (October 24, 2026)
+
+COMPLETE under the approved [R3 contract](docs/r3-analytics.md). On-demand exact UTC
+1m/5m bars, bounded DuckDB reads, additive GET /v1/bars, resilient Redis cache,
+coalescing and bounded metrics are implemented. Summary-cache policy is fixture-
+tested; research summaries remain R4. Existing R1/R2 source/identity/manifests,
+publication/jobs/leases/fencing and legacy HTTP/CLI contracts remain preserved.
+Dependencies/lockfile and deployment are unchanged; no migration was added.
+
+Full locked checks passed 606 offline and 132 real PostgreSQL cases, zero skips,
+Ruff lint/format (75 files) and strict mypy (24 sources). Independent GPT-6 Astra
+review resolved all five actionable findings, independently passed 49 new offline/
+eight new PostgreSQL and 149 retained R1/R2 cases, and independently audited final
+canonical response/catalog/integrity evidence. Actual live acceptance passed
+primed-response Redis outage/restart, application restart, real LRU eviction,
+bounded oversized-value reads and focused legacy/durable historical compatibility.
+
+All 62 retained January partitions reconciled 230,311,900 input records separately
+at each interval: 89,280 one-minute and 17,856 five-minute bars, zero empty buckets.
+All 124 daily canonical response hashes matched an independent streaming reference;
+all 124 warm reads were HIT. Both symbols' five-day and midnight-crossing reads
+matched reference slices. All 62 source manifest/artifact hashes remained unchanged.
+Cold full verification can exceed the 60-second native DuckDB deadline; the largest
+day's first 1m read plus warm repeat took 118.33 seconds including verification.
+Recorded phase timings are not a complete-run benchmark; peak memory is unmeasured.
+
+Ownership-checked cleanup removed all three owned disposable containers and left
+original API/PostgreSQL/Redis IDs unchanged and healthy. Artifacts and snapshots
+remain ignored. No unresolved R3 acceptance blocker remains. See [actual R3
+verification](docs/r3-verification.md) for exact counts, review scope, resolved
+execution issues, timings and limits. At this local closeout hosted R3 CI was
+unrun and changes remained uncommitted/unpushed under the initial request. Later
+October 24 publication/CI authorization is recorded above and below. R4-R9 remain
+unauthorized; no market data/artifacts, credentials, environments or weights belong
+in Git.
+
+
+### R3 publication authorization (October 24, 2026)
+
+After the verified local closeout above, the user authorized normal commit/push of
+the scoped R3 changes, hosted CI verification, actual R3-only CI fixes and honest
+outcome documentation/publication. Preserve the prescribed coder/reviewer workflow
+for fixes. This changes publication authority only; R4-R9 remain unauthorized and
+market archives/artifacts/data, credentials, environments and weights stay outside
+Git. Publication and hosted results are not yet observed at this documentation
+update. Record exact commits, run links, completed checks and any failures/blockers
+from actual evidence in [R3 verification](docs/r3-verification.md).

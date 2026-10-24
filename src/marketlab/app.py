@@ -11,6 +11,8 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from starlette.concurrency import run_in_threadpool
 
 from marketlab import __version__
+from marketlab.analytics import BarService
+from marketlab.analytics.routes import router as bar_router
 from marketlab.config import Settings
 from marketlab.health import build_checks, readiness
 from marketlab.observability import RequestMetrics, RequestMiddleware, configure_logging
@@ -39,6 +41,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             connect_args=settings.database_connect_args,
         )
         app.state.trade_engine = trade_engine
+        app.state.bar_service = BarService(
+            trade_engine,
+            settings.storage_path,
+            settings.redis_url.get_secret_value(),
+            registry=metrics.registry,
+        )
         async with httpx.AsyncClient(
             base_url=settings.ollama_url, timeout=settings.dependency_timeout_seconds
         ) as client:
@@ -46,6 +54,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             try:
                 yield
             finally:
+                await app.state.bar_service.close()
                 await run_in_threadpool(trade_engine.dispose)
                 await redis.aclose()
                 await engine.dispose()
@@ -55,6 +64,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.metrics = metrics
     app.add_middleware(RequestMiddleware, metrics=metrics)
     app.include_router(trade_router)
+    app.include_router(bar_router)
 
     @app.exception_handler(Exception)
     async def unexpected_error(request: Request, exc: Exception) -> JSONResponse:

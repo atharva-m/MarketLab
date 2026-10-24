@@ -261,3 +261,67 @@ current work on SIGINT/SIGTERM; hard crashes recover after lease expiry. Partial
 success is explicit; only registered datasets are discoverable. No monthly
 completeness claim follows merely from observed timestamps. See the
 [R2 contract](docs/r2-jobs.md) and [actual verification](docs/r2-verification.md).
+
+## R3 deterministic historical bars
+
+R3 adds `GET /v1/bars` over explicitly selected, catalog-registered January 2025
+BTCUSDT/ETHUSDT versions. Existing ingestion, synthetic trades and CLIs retain
+their contracts. No new migration or worker is required for reads.
+
+```powershell
+curl.exe --get "http://127.0.0.1:8000/v1/bars" `
+  --data-urlencode "version=<64-lowercase-hex-version>" `
+  --data-urlencode "symbol=BTCUSDT" `
+  --data-urlencode "interval=1m" `
+  --data-urlencode "start=2025-01-01T00:00:00Z" `
+  --data-urlencode "end=2025-01-02T00:00:00Z"
+```
+
+Repeat `version` for each touched UTC day; select exactly one version per day.
+Requests use aligned UTC boundaries, exclusive end, one symbol and `1m` or `5m`.
+At most 1,440 expected buckets and five daily partitions are allowed. Missing
+buckets remain absent; unavailable daily coverage is an error. OHLC uses execution
+time with numeric trade ID ties; volumes sum exact normalized source decimals.
+VWAP divides source quote/base volume with half-even rounding to 18 fractional
+digits. JSON decimals are strings; results include pinned versions and coverage.
+Sums exceeding decimal(38,18) fail explicitly; source quote/base ratios support
+38 integer VWAP digits. No input or historical artifact is modified by a read.
+
+`X-Cache` reports `MISS` after calculation/cache storage, `HIT` for a validated
+entry, or `BYPASS` when caching is unavailable/oversized. Redis is optional for
+results. Bars expire after 15 minutes with +/-10% jitter; whole entries are capped
+at 1 MiB. Redis commands have 100 ms deadlines and no retries; three failures
+trigger ten seconds of bypass. Identical reads coalesce per process. The existing
+256 MiB allkeys-lru/no-persistence Redis configuration is retained.
+
+Two expensive analytical reads, including cold integrity verification, may run per
+process; admission waits at most one second. Each DuckDB query uses one thread,
+a 512 MiB memory setting and at most 2 GiB private spill. Its 60-second deadline
+interrupts native execution. First-read full artifact verification can take longer;
+its results are reused while catalog/file identities remain unchanged. Cancellation
+drains native work before releasing capacity. Memory settings are not peak RSS
+measurements. Health, `/metrics` and ingestion remain available independently of
+analytical capacity; cache metrics have bounded labels.
+
+The asynchronous library interface is `marketlab.analytics.BarsRequest.create`
+and `BarService(engine, storage_root, redis_url=None)`, followed by
+`await service.read(request)` and `await service.close()`. Without `redis_url`,
+reads compute with `BYPASS`. Completed-summary cache policy is fixture-tested;
+research calculations and summary endpoints remain R4 work.
+
+See [R3 contract](docs/r3-analytics.md) and [R3 verification](docs/r3-verification.md)
+for exact errors, limits, completed local acceptance evidence and subsequent
+publication/hosted CI outcomes. No R3 hosted CI result is claimed until observed.
+
+Library callers should reuse one BarService per application process/event loop and close it at shutdown. Limits/coalescing belong to that service; independent service instances do not share capacity. A TCP disconnect does not guarantee immediate endpoint-task cancellation; continuing work retains the documented bounds.
+
+
+R3 local acceptance is complete: 606 offline/132 real PostgreSQL tests passed, and
+all 62 retained January partitions reconciled 230,311,900 records per interval
+into 89,280 1m/17,856 5m bars. Independent review, actual Redis outage/eviction,
+cross-day comparisons and owned-resource cleanup passed. Peak memory was not
+measured. At local closeout R3 remained uncommitted/unpushed and hosted CI was
+unrun. The user subsequently authorized verified R3 commit/push, hosted CI and
+actual R3-only fixes/outcome documentation; see the verification publication record.
+R4-R9 require separate authorization. Market data/artifacts, credentials,
+environments and weights remain excluded from Git.
