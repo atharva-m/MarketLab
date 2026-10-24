@@ -187,8 +187,9 @@ pre-cleanup.json and cleanup.json.
 Historical R1/R2 artifacts and all R3 reference/results/catalog/job snapshots/logs
 remain under ignored artifacts/. The disposable catalog was removed with its
 owned tmpfs PostgreSQL; this does not claim a production catalog restoration.
-The tested working tree is based on HEAD bbcc0569177e302982b4693004a07e530cafa4c1
-plus uncommitted R3 changes, not an R3 commit. Final locked Ruff lint/format,
+The local acceptance working tree was based on HEAD
+bbcc0569177e302982b4693004a07e530cafa4c1 plus then-uncommitted R3 changes,
+not an R3 commit. Final locked Ruff lint/format,
 strict UTF-8 and git diff whitespace checks passed after documentation closeout.
 No runtime changes followed the successful complete regression run. At this local
 implementation closeout hosted CI had not run and no commit/push had occurred
@@ -206,7 +207,45 @@ publishing actual results and blockers. This supersedes the initial no-commit/pu
 instruction without authorizing R4-R9 or inclusion of archives/artifacts/data,
 credentials, environments or weights in Git.
 
-The local closeout above remains historical evidence. No R3 commit/push or hosted
-CI result is yet observed at this documentation update. Record exact published
-revisions and actual hosted run/job outcomes after observation; local totals do
-not substitute for hosted tests. Scheduled/running checks are not passes.
+The local closeout above remains historical evidence. At the publication-authority
+documentation update no R3 commit/push or hosted result had yet been observed.
+Actual later publication and hosted evidence are recorded below; local totals do
+not substitute for hosted tests.
+
+
+## Published R3 and passing hosted CI
+
+The verified R3 changes were committed/pushed normally to origin/main as
+`54f15d3c4312248f1ec8beda6bca805d4e37bb38`, exactly 15 scoped source, test, acceptance-script and
+documentation files. No market archives/artifacts/data, credentials, environments
+or weights were included. Dependencies/lockfile, deployment, workflows and retained
+R1/R2 ingestion/trade modules were unchanged.
+
+[hosted CI run 40072552311](https://github.com/atharva-m/MarketLab/actions/runs/40072552311)
+completed successfully for that exact SHA. Retrieved run/job metadata and full
+job logs confirm:
+
+| Hosted job | Actual result |
+| --- | --- |
+| Ubuntu quality | Ruff lint/format passed (75 files), strict mypy passed (24 sources), 606 offline tests passed in 6.80 seconds |
+| Windows quality | Ruff lint/format passed (75 files), strict mypy passed (24 sources), 606 offline tests passed in 14.44 seconds |
+| Linux integration | 132 real PostgreSQL tests passed in 26.78 seconds, plus locked setup, Compose validation, API image build/startup, API smoke, healthy Redis/optional-outage smoke and cleanup |
+
+No tests were skipped. The 132/606 deselections are the complementary marker
+selection, not additional passes. Only integration's failure-conditional Logs
+step was skipped, as expected on success. No R3 CI failure or fix was required.
+Exact metadata and logs are retained under ignored
+artifacts/r3-ci/54f15d3c4312248f1ec8beda6bca805d4e37bb38/.
+
+Hosted CI does not repeat the actual 62-partition/230,311,900-row retained-data
+reconciliation or the real R3 primed-bar-response outage/eviction harness. Its
+Redis outage step verifies optional-dependency health/API smoke. The stronger bar
+response outage/eviction, month, cross-day and unchanged-artifact evidence remain
+the separate completed local gates above. No actual model generation or measured
+peak memory claim follows from CI.
+
+No unresolved R3 publication/CI blocker remains. This outcome update changes
+only documentation; no runtime, test, dependency, deployment or workflow fix was
+needed. Final locked lint/format, strict UTF-8 and whitespace checks were repeated
+after these documentation edits. R4-R9 remain unauthorized; market data/artifacts,
+credentials, environments and weights stay outside Git.

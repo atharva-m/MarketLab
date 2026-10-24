@@ -128,3 +128,12 @@ records results, resolved findings and operational limits. At local implementati
 closeout no commit/push had been performed or authorized and hosted R3 CI was
 unrun. The later October 24 publication authorization above supersedes that initial
 restriction; subsequent actual outcomes belong in verification. R4-R9 remain backlog.
+
+
+The verified implementation was subsequently committed/pushed as
+`54f15d3c4312248f1ec8beda6bca805d4e37bb38` and
+[hosted CI run 40072552311](https://github.com/atharva-m/MarketLab/actions/runs/40072552311)
+passed on Ubuntu/Windows quality and Linux integration. No CI fix or feature
+scope change was needed. Hosted checks do not replace the separate completed
+local full-month/bar-cache acceptance; see the verification record for exact
+coverage and limits. R4-R9 remain unauthorized.

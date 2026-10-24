@@ -26,7 +26,11 @@ committing/pushing the verified R3 changes, checking hosted CI, fixing actual
 R3-only CI failures through the prescribed coder/reviewer workflow and documenting/
 publishing actual outcomes. This supersedes the initial publication restriction
 without authorizing R4-R9 or inclusion of artifacts/data, credentials, environments
-or weights. Hosted R3 CI is not yet observed; do not claim it passed. See the
-publication record in docs/r3-verification.md for subsequent actual outcomes.
+or weights. Verified R3 was committed/pushed as 54f15d3c4312248f1ec8beda6bca805d4e37bb38;
+[hosted CI run 40072552311](https://github.com/atharva-m/MarketLab/actions/runs/40072552311)
+passed for that exact SHA: 606 offline tests on Ubuntu and Windows, 132 real
+PostgreSQL tests on Linux, quality/build/API/optional-Redis-outage/cleanup checks.
+No R3 CI fix was needed. Local month/bar-cache evidence is separate from hosted
+smoke coverage; see docs/r3-verification.md. No R4-R9 authorization follows.
 
 User approved October 24, 2026 the detailed R3 scope in [ROADMAP.md](ROADMAP.md) and [R3 contract](docs/r3-analytics.md), documentation updates before code, prescribed coder/reviewer implementation, full acceptance and honest results/blockers. The initial no-commit/push restriction is superseded only by the later R3 publication authorization above. Read and preserve full R1/R2 contracts. Implement on-demand deterministic UTC 1m/5m bars over explicit registered January BTCUSDT/ETHUSDT versions; exact decimal arithmetic, numeric tie order, no filled missing bars. Add only GET /v1/bars/OpenAPI plus scoped modules/settings; no migrations, persistent bars or job changes. Use bounded fixed-template DuckDB, two expensive reads/process, actual interruption/cleanup, strict catalog verification. Implement roadmap Redis TTL/jitter/1 MiB/100 ms/no-retry/three-failure ten-second bypass, coalescing, metrics and real outage/eviction verification. Summary-cache fixture support only; research summaries remain R4. Full 62-partition independent streaming reconciliation, retained suites and live compatibility are required; isolate resources and preserve original services/data. No dependencies/lock changes, artifact rewrites, warm-up, scheduling, GC, UI/models/research or multi-host claims. R4-R9 remain unauthorized. Never include market data/artifacts, credentials, environments or weights in Git.

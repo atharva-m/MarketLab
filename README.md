@@ -311,7 +311,9 @@ research calculations and summary endpoints remain R4 work.
 
 See [R3 contract](docs/r3-analytics.md) and [R3 verification](docs/r3-verification.md)
 for exact errors, limits, completed local acceptance evidence and subsequent
-publication/hosted CI outcomes. No R3 hosted CI result is claimed until observed.
+publication/hosted CI outcomes. Verified implementation commit `54f15d3` passed
+[hosted CI run 40072552311](https://github.com/atharva-m/MarketLab/actions/runs/40072552311)
+with 606 offline tests on each quality platform and 132 real PostgreSQL tests on Linux.
 
 Library callers should reuse one BarService per application process/event loop and close it at shutdown. Limits/coalescing belong to that service; independent service instances do not share capacity. A TCP disconnect does not guarantee immediate endpoint-task cancellation; continuing work retains the documented bounds.
 
@@ -323,5 +325,8 @@ cross-day comparisons and owned-resource cleanup passed. Peak memory was not
 measured. At local closeout R3 remained uncommitted/unpushed and hosted CI was
 unrun. The user subsequently authorized verified R3 commit/push, hosted CI and
 actual R3-only fixes/outcome documentation; see the verification publication record.
-R4-R9 require separate authorization. Market data/artifacts, credentials,
-environments and weights remain excluded from Git.
+The verified implementation was subsequently committed/pushed and its hosted CI
+passed as linked above; no CI fix was needed. Hosted smoke does not repeat the
+local retained-month or real cached-bar outage/eviction acceptance. R4-R9 require
+separate authorization. Market data/artifacts, credentials, environments and
+weights remain excluded from Git.

@@ -1,6 +1,6 @@
 # MarketLab recovery roadmap
 
-Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup; R4–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
+Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3; R4–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
@@ -231,6 +231,27 @@ the scoped R3 changes, hosted CI verification, actual R3-only CI fixes and hones
 outcome documentation/publication. Preserve the prescribed coder/reviewer workflow
 for fixes. This changes publication authority only; R4-R9 remain unauthorized and
 market archives/artifacts/data, credentials, environments and weights stay outside
-Git. Publication and hosted results are not yet observed at this documentation
-update. Record exact commits, run links, completed checks and any failures/blockers
-from actual evidence in [R3 verification](docs/r3-verification.md).
+Git. At that authorization update publication and hosted results were not yet
+observed. Actual later results are recorded below and in
+[R3 verification](docs/r3-verification.md).
+
+
+### R3 publication and hosted CI verified (October 24, 2026)
+
+Verified R3 was committed/pushed normally to origin/main as
+`54f15d3c4312248f1ec8beda6bca805d4e37bb38` with exactly 15 scoped source/test/acceptance-script/
+documentation files; no market data/artifacts, credentials, environments or weights.
+[hosted CI run 40072552311](https://github.com/atharva-m/MarketLab/actions/runs/40072552311)
+passed for this exact SHA: Ubuntu quality passed 606 offline tests (6.80 seconds),
+Windows quality passed 606 offline tests (14.44 seconds), and Linux integration
+passed 132 real PostgreSQL tests (26.78 seconds). Ruff lint/format (75 files) and
+strict mypy (24 sources) passed on both quality platforms. Integration passed
+Compose validation, API image build/startup, API smoke, healthy Redis/optional-
+outage smoke and cleanup. No tests were skipped; only failure-conditional Logs.
+
+No R3 CI failure/fix or unresolved publication blocker occurred. Hosted tests do
+not repeat the local 230-million-row retained-month reconciliation or actual
+R3 cached-bar outage/eviction harness; those remain distinct completed evidence.
+Peak memory is unmeasured. This outcome follow-up is documentation only; no
+runtime, dependency/lock, deployment or workflow change was needed. Exact hosted
+metadata/logs remain ignored under artifacts/r3-ci/. R4-R9 remain unauthorized.
