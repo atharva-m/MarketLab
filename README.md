@@ -1,6 +1,7 @@
 # MarketLab
 
-Week 8 adds a small local command-line client for bounded, filtered trade browsing.
+Week 9 adds exact-ID lookup to the local read-only command-line client.
+Week 8 adds bounded, filtered trade browsing.
 Week 7 adds optional execution-time bounds to week 6 exact-symbol filtering on the bounded,
 read-only synthetic trade browsing from week 5.
 The week 4 HTTP imports and exact-ID retrieval build on week 3 transactional PostgreSQL persistence
@@ -67,7 +68,7 @@ See [week 7 verification](docs/week7-verification.md) for actual checks and limi
 
 ## Local trade browsing CLI
 
-Use the existing project environment to print one JSON page envelope per line:
+Use the existing project environment to print one JSON page envelope per line when browsing:
 
 ```powershell
 .\.venv\Scripts\uv.exe run --locked python -m marketlab.trade_cli --symbol SYN.A --limit 25
@@ -83,8 +84,22 @@ Failures return a nonzero exit status and a safe stderr diagnostic. Output can c
 pages when a later request fails, so treat it as partial unless the process succeeds. Each page
 reads current committed data without a cross-page snapshot.
 
-See [the week 8 CLI contract and examples](docs/week8-cli.md) and
-[actual week 8 verification](docs/week8-verification.md). The HTTP/OpenAPI contracts are unchanged.
+For one exact, case-sensitive ID, use `--trade-id`:
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.trade_cli --trade-id SYN-001
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.trade_cli --port 8010 --trade-id SYN-001
+```
+
+Lookup makes one request to the existing exact-ID endpoint and prints one five-field JSON
+object, preserving decimal and UTC timestamp strings. It accepts `--port` but rejects every
+explicit browsing option, including `--limit 100` and `--max-pages 1`. Invalid IDs fail before
+HTTP access. Missing IDs and HTTP, connection, timeout or malformed-response failures return
+nonzero with a safe stderr diagnostic and no stdout.
+
+See [the week 8 browsing contract](docs/week8-cli.md),
+[the week 9 lookup contract and examples](docs/week9-cli.md), and
+[actual week 9 verification](docs/week9-verification.md). The HTTP/OpenAPI contracts are unchanged.
 
 ## Windows quick start
 

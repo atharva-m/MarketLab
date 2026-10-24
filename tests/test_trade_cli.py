@@ -3,6 +3,7 @@ import json
 import subprocess
 import sys
 from collections.abc import Callable
+from contextlib import nullcontext
 from pathlib import Path
 
 import httpx
@@ -330,3 +331,185 @@ def test_postgres_cli_combined_filter_traversal(
             assert chunk["items"][0]["price"] == "999999999999.99999999"
             assert chunk["items"][0]["quantity"] == "0.00000001"
             assert chunk["items"][0]["executed_at"].endswith("Z")
+
+
+@pytest.mark.parametrize(
+    "option",
+    [
+        ["--limit", "100"],
+        ["--max-pages", "1"],
+        ["--after-id", "A"],
+        ["--symbol", "SYN.A"],
+        ["--executed-from", "2025-01-01T00:00:00Z"],
+        ["--executed-before", "2025-01-03T00:00:00Z"],
+        ["--limit=100"],
+        ["--max-pages=1"],
+    ],
+)
+def test_lookup_rejects_explicit_browsing_options(
+    option: list[str], capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    test_invalid_arguments_are_redacted_before_client_creation(
+        ["--trade-id", "A", *option], capsys, monkeypatch
+    )
+
+
+@pytest.mark.parametrize("trade_id", ["", "bad id secret", "A/secret", "_A", "A\n", "A" * 65])
+def test_lookup_invalid_ids_fail_before_client_creation(
+    trade_id: str, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    test_invalid_arguments_are_redacted_before_client_creation(
+        ["--trade-id", trade_id], capsys, monkeypatch
+    )
+
+
+@pytest.mark.parametrize("trade_id", ["A", "a", "A._:-9", "A" * 64])
+@pytest.mark.parametrize("timestamp", ["2025-01-02T00:00:00.123456Z", "2025-01-02T00:00:00+00:00"])
+def test_lookup_main_prints_one_exact_wire_object_and_requests_once(
+    trade_id: str,
+    timestamp: str,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    requests: list[httpx.Request] = []
+    payload = record(trade_id, executed_at=timestamp, price="1.23000000")
+    real_client = httpx.Client
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        assert request.method == "GET"
+        assert request.url.path == f"/trades/{trade_id}"
+        assert not request.url.query
+        assert request.extensions["timeout"] == dict.fromkeys(
+            ["connect", "read", "write", "pool"], 10.0
+        )
+        return httpx.Response(200, json=payload)
+
+    def factory(**kwargs: object) -> httpx.Client:
+        assert kwargs == {
+            "base_url": "http://127.0.0.1:8123",
+            "timeout": 10.0,
+            "follow_redirects": False,
+            "trust_env": False,
+        }
+        return real_client(transport=httpx.MockTransport(handler), **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(trade_cli.httpx, "Client", factory)
+    assert trade_cli.main(["--trade-id", trade_id, "--port", "8123"]) == 0
+    captured = capsys.readouterr()
+    assert captured.out == json.dumps(payload, separators=(",", ":")) + "\n"
+    assert captured.err == ""
+    assert len(requests) == 1
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        [],
+        None,
+        {key: value for key, value in record().items() if key != "quantity"},
+        {**record(), "secret": "SQL password"},
+        record("a"),
+        record("B"),
+        record(trade_id="_bad"),
+        record(symbol="syn.a"),
+        record(price="1.000000000"),
+        record(quantity="0"),
+        {**record(), "price": 1.5},
+        {**record(), "quantity": 1},
+        {**record(), "executed_at": 1735776000},
+        record(executed_at="2025-01-01T19:00:00-05:00"),
+        record(executed_at="2025-01-02T00:00:00"),
+        record(executed_at="2025-01-02T00:00:00.1234567Z"),
+        page(["A"]),
+    ],
+)
+def test_lookup_malformed_response_has_no_output(
+    payload: object, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    requests: list[httpx.Request] = []
+    real_client = httpx.Client
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(
+            200, content=json.dumps(payload), headers={"Content-Type": "application/json"}
+        )
+
+    monkeypatch.setattr(
+        trade_cli.httpx,
+        "Client",
+        lambda **kwargs: real_client(transport=httpx.MockTransport(handler), **kwargs),
+    )
+    assert trade_cli.main(["--trade-id", "A"]) == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err == "trade-cli: malformed or inconsistent trade response\n"
+    assert len(requests) == 1
+
+
+@pytest.mark.parametrize(
+    "failure", ["404", "503", "redirect", "connection", "timeout", "json", "media"]
+)
+def test_lookup_request_failures_are_safe_and_do_not_print(
+    failure: str, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    requests: list[httpx.Request] = []
+    real_client = httpx.Client
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if failure == "connection":
+            raise httpx.ConnectError("password=secret", request=request)
+        if failure == "timeout":
+            raise httpx.ReadTimeout("password=secret", request=request)
+        if failure in {"404", "503", "redirect"}:
+            return httpx.Response(
+                307 if failure == "redirect" else int(failure),
+                text="secret SQL",
+                headers={"Location": "https://example.com/secret"},
+            )
+        return httpx.Response(
+            200,
+            content=b"secret SQL",
+            headers={"Content-Type": "application/json" if failure == "json" else "text/plain"},
+        )
+
+    monkeypatch.setattr(
+        trade_cli.httpx,
+        "Client",
+        lambda **kwargs: real_client(transport=httpx.MockTransport(handler), **kwargs),
+    )
+    assert trade_cli.main(["--trade-id", "A"]) == 1
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert captured.err.startswith("trade-cli: ")
+    assert "secret" not in captured.err
+    assert "Traceback" not in captured.err
+    assert len(requests) == 1
+
+
+@pytest.mark.integration
+@pytest.mark.parametrize("trade_id", ["A._:-9", "a._:-9", "MISSING"])
+def test_postgres_cli_exact_id_lookup(
+    trade_engine: Engine,
+    tmp_path: Path,
+    trade_id: str,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    app = create_app(Settings(storage_path=tmp_path, _env_file=None))
+    with TestClient(app) as client:
+        app.state.trade_engine = trade_engine
+        expected = record("A._:-9")
+        assert client.post("/trades/import/json", json=[expected]).json() == {"imported": 1}
+        monkeypatch.setattr(trade_cli.httpx, "Client", lambda **kwargs: nullcontext(client))
+        assert trade_cli.main(["--trade-id", trade_id]) == (0 if trade_id == "A._:-9" else 1)
+        captured = capsys.readouterr()
+        if trade_id == "A._:-9":
+            assert captured.out == json.dumps(expected, separators=(",", ":")) + "\n"
+            assert captured.err == ""
+        else:
+            assert captured.out == ""
+            assert captured.err == "trade-cli: local API returned HTTP 404\n"
