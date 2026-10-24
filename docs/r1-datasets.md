@@ -123,3 +123,13 @@ private artifact root. Existing legacy tables/records are not historical storage
 Readback is intentionally complete and may be CPU-intensive for large inputs;
 limits and batching do not imply a large-dataset performance guarantee. Measured
 results and external blockers are in [R1 verification](r1-verification.md).
+
+
+## R2 compatibility note
+
+This document records the approved R1 contract. The later approved R2 extends the
+allowlist to BTCUSDT/ETHUSDT daily archives throughout January 2025 and routes
+synchronous ingestion through durable fenced jobs; see [R2 contract](r2-jobs.md).
+R1 schema, transform/version identity, normalization, source limits and old immutable
+manifests remain valid. Existing command success output and inspection semantics
+are preserved. Job state is stored separately, never added to old manifests.

@@ -1,6 +1,6 @@
 # MarketLab
 
-R1 restores the historical research roadmap with checksum-verified one-day Binance Spot
+R1 restored the historical research roadmap with checksum-verified one-day Binance Spot
 BTCUSDT ingestion, immutable Parquet publication and a separate PostgreSQL dataset catalog.
 See [the approved recovery roadmap](ROADMAP.md), [R1 contract](docs/r1-datasets.md) and
 [actual R1 verification](docs/r1-verification.md). Historical week labels below describe
@@ -196,7 +196,7 @@ exit code. `--model`, `--url` and `--timeout` override defaults. First load may 
 
 ## Migrations and CI
 
-`alembic upgrade head` applies `0001_baseline`, `0002_trades` and R1 `0003_dataset_versions`, creating the historical dataset catalog as well as Alembic's bookkeeping
+`alembic upgrade head` applies `0001_baseline`, `0002_trades`, R1 `0003_dataset_versions` and R2 `0004_ingestion_jobs`, creating the historical catalog and durable ingestion job tables as well as Alembic's bookkeeping
 table and the five-field `trades` table. Compose waits for PostgreSQL, runs migrations and then
 starts the API. CI syncs
 `uv.lock` with `--locked`, runs lint, formatting, strict source type checks and unit tests on Windows
@@ -211,7 +211,7 @@ docker compose down
 
 `docker compose down` preserves persistent volumes. Removing volumes deletes local database and
 storage contents; do so only when intentionally resetting the environment. Integration tests require
-a disposable database migrated to `0003_dataset_versions`. Persistence tests clone the migrated trade
+a disposable database migrated to `0004_ingestion_jobs`. Persistence tests clone the migrated trade
 table into temporary schemas and remove those schemas afterward. Week 4 HTTP integration tests
 and week 5–8 browsing/filtering/CLI tests use the same isolation and real PostgreSQL service. They skip when
 `MARKETLAB_DATABASE_URL` is absent; a skip is not an integration pass. Apply migrations to the
@@ -230,7 +230,9 @@ or generated artifacts. Migrate the selected database, then run:
 .\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli inspect --version <returned-version-id>
 ```
 
-R1 accepts only that symbol/day and downloads the official archive/checksum with
+The original R1 scope accepted only that symbol/day. Current R2 extends this to
+BTCUSDT/ETHUSDT January 2025 through durable jobs (see below). Ingestion downloads
+the official archive/checksum with
 finite bounds. It publishes complete verified Parquet/manifest files before
 transactionally registering a dataset. Same verified input and transform/lock
 identity reuses the published version; changed source bytes produce another one.
@@ -238,3 +240,24 @@ Inspection verifies registered hashes, schema, row counts and logical content.
 The synthetic `/trades` API and trade CLI are independent and retain their contracts.
 No durable worker, analytical query/cache, research workflow, copilot or memo is
 implemented by R1. See the contract for failure handling and orphan inspection.
+
+
+## R2 durable historical ingestion
+
+R2 adds local PostgreSQL jobs, attempts, leases and fenced immutable publication
+for BTCUSDT/ETHUSDT January 2025. Apply `alembic upgrade head` to the intended
+local database; existing historical ingest/inspect commands remain synchronous.
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli submit --symbols BTCUSDT ETHUSDT --from-date 2025-01-01 --before-date 2025-02-01 --key january-2025
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli worker --max-jobs 62 --wait-seconds 60
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli jobs --submission <submission-id>
+```
+
+A worker invocation is bounded; restart it to resume eligible queued/retry work.
+The same submission key/request returns the original jobs; a new key rechecks
+sources while identical bytes reuse immutable dataset versions. Workers drain
+current work on SIGINT/SIGTERM; hard crashes recover after lease expiry. Partial
+success is explicit; only registered datasets are discoverable. No monthly
+completeness claim follows merely from observed timestamps. See the
+[R2 contract](docs/r2-jobs.md) and [actual verification](docs/r2-verification.md).

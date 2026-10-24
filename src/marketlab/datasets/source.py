@@ -1,9 +1,11 @@
 """Bounded official daily archive acquisition, independent of synthetic trades."""
 
 import hashlib
+import math
 import re
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 import httpx
@@ -15,6 +17,14 @@ SYMBOL = "BTCUSDT"
 
 class DatasetError(Exception):
     """Safe public diagnostic for ingestion/publication failures."""
+
+
+class TransientSourceError(DatasetError):
+    """Bounded retryable source outage without private request information."""
+
+    def __init__(self, message: str, retry_after: int = 0) -> None:
+        super().__init__(message)
+        self.retry_after = retry_after
 
 
 @dataclass(frozen=True)
@@ -32,8 +42,27 @@ class Limits:
 DEFAULT_LIMITS = Limits()
 
 
+def retry_after_seconds(value: str) -> int:
+    """Accept bounded delta-seconds or HTTP-date guidance without extra requests."""
+    if len(value) > 128:
+        return 0
+    if value.isascii() and value.isdigit():
+        return min(int(value), 3600)
+    try:
+        instant = parsedate_to_datetime(value)
+        if instant.tzinfo is None:
+            return 0
+        return min(3600, max(0, math.ceil((instant - datetime.now(UTC)).total_seconds())))
+    except (TypeError, ValueError, OverflowError):
+        return 0
+
+
 def validate_scope(symbol: str, trade_date: date) -> None:
-    if symbol != SYMBOL or trade_date != DAY or type(trade_date) is not date:
+    if (
+        symbol not in {"BTCUSDT", "ETHUSDT"}
+        or type(trade_date) is not date
+        or not DAY <= trade_date < date(2025, 2, 1)
+    ):
         raise DatasetError("unsupported historical symbol or date")
 
 
@@ -89,6 +118,11 @@ def download_archive(
                 "GET", remote, timeout=httpx.Timeout(30.0), follow_redirects=False
             ) as response:
                 if response.status_code != 200:
+                    if response.status_code in {408, 429} or 500 <= response.status_code <= 599:
+                        delay = retry_after_seconds(response.headers.get("retry-after", "0"))
+                        raise TransientSourceError(
+                            f"historical source returned HTTP {response.status_code}", delay
+                        )
                     raise DatasetError(f"historical source returned HTTP {response.status_code}")
                 # Do not transparently decode HTTP compression around ZIP/checksum content.
                 if response.headers.get("content-encoding", "identity") != "identity":
@@ -105,7 +139,7 @@ def download_archive(
                     raise DatasetError("incomplete source download")
         digest = verify_checksum(archive, checksum, name)
     except httpx.HTTPError as error:
-        raise DatasetError("historical source request failed") from error
+        raise TransientSourceError("historical source request failed") from error
     return (
         archive,
         checksum,

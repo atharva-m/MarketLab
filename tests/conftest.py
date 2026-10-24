@@ -64,6 +64,10 @@ def dataset_engine() -> Iterator[Engine]:
                     "(LIKE public.dataset_versions INCLUDING ALL)"
                 )
             )
+            for name in ("ingestion_submissions", "ingestion_jobs", "ingestion_attempts"):
+                connection.execute(
+                    text(f'CREATE TABLE "{schema}".{name} (LIKE public.{name} INCLUDING ALL)')
+                )
         yield isolated
     finally:
         with engine.begin() as connection:

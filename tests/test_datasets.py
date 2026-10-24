@@ -257,8 +257,8 @@ def test_ingestion_help_module_is_available_without_services() -> None:
 @pytest.mark.parametrize(
     "argv",
     [
-        ["ingest", "--symbol", "ETHUSDT", "--date", "2025-01-01"],
-        ["ingest", "--symbol", "BTCUSDT", "--date", "2025-01-02"],
+        ["ingest", "--symbol", "XRPUSDT", "--date", "2025-01-01"],
+        ["ingest", "--symbol", "BTCUSDT", "--date", "2025-02-01"],
         ["ingest", "--symbol", "BTCUSDT", "--date", "invalid"],
         ["inspect", "--version", "../../secret"],
     ],
