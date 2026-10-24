@@ -140,12 +140,23 @@ import sqlalchemy as sa
 from marketlab.datasets.jobs import jobs, inspect_submission
 
 with engine.connect() as connection:
-    recent = connection.execute(
-        sa.select(jobs.c.job_id, jobs.c.submission_id, jobs.c.source_mode,
-                  jobs.c.symbol, jobs.c.trade_date, jobs.c.state)
-        .where(jobs.c.source_mode.in_(["inline", "fixture"]))
-        .order_by(jobs.c.created_at.desc()).limit(20)
-    ).mappings().all()
+    recent = (
+        connection.execute(
+            sa.select(
+                jobs.c.job_id,
+                jobs.c.submission_id,
+                jobs.c.source_mode,
+                jobs.c.symbol,
+                jobs.c.trade_date,
+                jobs.c.state,
+            )
+            .where(jobs.c.source_mode.in_(["inline", "fixture"]))
+            .order_by(jobs.c.created_at.desc())
+            .limit(20)
+        )
+        .mappings()
+        .all()
+    )
 # inspect_submission(engine, recent[0]["submission_id"]) includes attempts/errors.
 # ingest_day(..., resume_job_id=recent[0]["job_id"]) resumes mode inline.
 # ingest_archive(..., resume_job_id=...) requires the same verified fixture SHA.

@@ -1,6 +1,6 @@
 # MarketLab recovery roadmap
 
-Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3–R9 remain unauthorized backlog. R2 publication and hosted CI verification are now authorized; actual publication/CI outcomes remain pending.
+Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3–R9 remain unauthorized backlog. R2 implementation was committed/pushed; hosted CI follow-up is in progress after a documentation formatting failure. Replacement CI remains pending.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
@@ -8,7 +8,7 @@ Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
 On October 23, 2026 the user approved the detailed R2 proposal, authorized ROADMAP.md/AGENTS.md updates, implementation with the prescribed coder/reviewer workflow, preservation of R1, acceptance tests and honest results/blocker documentation. The initial R2 implementation request explicitly excluded commit/push. This scope approval superseded earlier statements that R2 was unauthorized; R3–R9 remain backlog.
 
-On October 24, 2026, after verified R2 closeout, the user explicitly authorized committing/pushing the verified R2 changes, checking hosted CI, fixing actual CI failures within R2, and documenting/publishing actual results and blockers. This publication authorization supersedes the initial no-commit instruction without expanding R2 feature scope. Archives/artifacts/data, credentials, environments and weights remain excluded from Git. Hosted CI is pending until actual run evidence is captured.
+On October 24, 2026, after verified R2 closeout, the user explicitly authorized committing/pushing the verified R2 changes, checking hosted CI, fixing actual CI failures within R2, and documenting/publishing actual results and blockers. This publication authorization supersedes the initial no-commit instruction without expanding R2 feature scope. Archives/artifacts/data, credentials, environments and weights remain excluded from Git. Hosted CI results must be recorded from actual run evidence; see the R2 publication record below.
 
 The user explicitly approved this roadmap and authorized R1 implementation, AGENTS.md updates, the prescribed coder/reviewer workflow, preservation of existing behavior, checks and honest results/blocker documentation. That initial approval covered R1 only; R2–R9 were not authorized then. The later R2 approval above is the current execution authority. The initial implementation task did not request a commit/push. The user subsequently explicitly authorized committing/pushing verified R1 changes, checking hosted CI, documenting actual results/blockers and pushing the reviewed verification update.
 
@@ -138,3 +138,23 @@ Historical R1 closeout: R1 implementation passed 516 offline and 89 real Postgre
 
 
 R2 handoff (October 24, 2026): COMPLETE. Additive durable submissions/jobs/attempts, leased local execution and fenced atomic catalog/job success preserve R1 identity and synchronous behavior. Full locked checks passed 557 offline and 124 real PostgreSQL cases; five live CLI outcomes and retained original R1 artifact verification passed. Actual 62 January BTCUSDT/ETHUSDT partitions published/read back 230,311,900 rows; fresh-key download/recheck reused all 62 exact versions, no failures, all attempts 1. Independent GPT-6 Astra review resolved all actionable findings and independently passed 76 new job tests plus original R1 focused tests; final catalog/source/artifact/job evidence review passed. Owned disposable container was verified and removed, original services unchanged/healthy, artifacts retained. No unresolved blocker. Peak memory was not measured and R2 hosted CI was not run. See [R2 contract](docs/r2-jobs.md) and [actual verification](docs/r2-verification.md). R1 historical evidence remains intact. At implementation closeout R2 remained uncommitted/unpushed under the initial request. The user subsequently authorized publication and hosted CI verification; those actual outcomes are pending below. R3–R9 require later authorization.
+
+
+### R2 publication and first hosted CI result (October 24, 2026)
+
+Verified R2 was committed/pushed normally to origin/main as
+`8bfff40e8b431e2382640fb25e66b2d648520588`, with exactly the 16 scoped source,
+test/migration and documentation files; no market artifacts/data, dependencies or
+deployment configuration were included. [Initial hosted CI run 40067420625](https://github.com/atharva-m/MarketLab/actions/runs/40067420625)
+failed: Ubuntu quality failed Ruff formatting; Windows quality concluded cancelled
+with the same formatting step failure recorded, and neither quality job reached
+mypy/offline pytest. Linux integration passed all 124 PostgreSQL cases (25.92s),
+API image build/startup, API smoke, healthy Redis and actual Redis outage checks,
+and cleanup. The 557 hosted deselections are not offline passes.
+
+The failure was an unformatted Python fenced example in docs/r2-jobs.md added
+after the successful local full check. Subsequent documentation closeout checked
+UTF-8/whitespace but omitted rerunning Ruff for that new code example. The example
+has now been formatted with the locked formatter; repository-wide locked Ruff
+lint and formatting pass (64 files). Runtime, dependencies and workflows are
+unchanged. This first hosted run remains a failure; replacement CI is pending.

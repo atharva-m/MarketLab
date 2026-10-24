@@ -203,6 +203,41 @@ does not authorize R3-R9 or inclusion of archives/artifacts/data, credentials,
 environments or weights in Git. The initial working-tree provenance and local
 verification above remain historical evidence, not hosted results.
 
-Publication commit/push and hosted CI outcomes are pending. Record the exact
-implementation commit/run/job results after they are observed; do not infer hosted
-pytest totals from local counts or represent scheduled/running checks as passed.
+The implementation commit/push and first hosted CI result are now observed below.
+Replacement CI remains pending; local totals are not substituted for hosted
+offline results, and scheduled/running checks are not represented as passed.
+
+
+## Initial hosted CI failure and scoped fix
+
+The verified implementation was committed as
+`8bfff40e8b431e2382640fb25e66b2d648520588` and pushed normally to `origin/main`.
+Exactly the 16 scoped files were included; archives/artifacts/data, credentials,
+dependencies/lockfile and deployment configuration were excluded.
+
+[CI run 40067420625](https://github.com/atharva-m/MarketLab/actions/runs/40067420625)
+was checked against that exact SHA. Actual outcomes:
+
+- Ubuntu quality failed `ruff format --check .` on the Python fenced example at
+  docs/r2-jobs.md:143. Ruff lint passed; mypy/offline pytest were skipped.
+- Windows quality concluded **cancelled**, with its Ruff formatting step recorded
+  failed on the same example. Mypy/offline pytest were skipped; this is not a pass.
+- Linux integration **passed 124 PostgreSQL tests**, zero skips (25.92 seconds),
+  plus locked setup, Compose validation, production API image build/startup, API
+  smoke, healthy Redis/outage checks and cleanup. Its 557 deselected cases are
+  not hosted offline passes.
+
+The read-only inline-job discovery example was added after the successful local
+full check. Later document closeout validated UTF-8 and Git whitespace, but did
+not rerun Ruff for that new Python code fence. The locked formatter checks these
+examples, so the earlier passing formatting result did not cover the late sample.
+This was a missed final formatting check, not an application or dependency error.
+
+The only fix reformats that documented Python example into Ruff's requested
+multiline chaining layout. Repository-wide locked Ruff lint and formatting now
+pass (64 files); no runtime/test/dependency/workflow changes were needed. A
+sandbox uv-cache permission error during the rerun was resolved by the approved
+escalated locked invocation, which passed. The first hosted run remains recorded
+as failed; the replacement commit/run result is pending actual observation.
+Ignored artifacts/r2-ci/8bfff40e8b431e2382640fb25e66b2d648520588 contains the
+run/job metadata and actual job logs, including hosted PostgreSQL count/timing.
