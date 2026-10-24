@@ -143,8 +143,9 @@ inspection fixed those; the final full suite includes a normal long-path case.
 Earlier failing runs are not claimed as passes.
 
 Existing Starlette/FastAPI TestClient deprecation warnings remain non-failing.
-No hosted CI, production-container build, Redis outage test or Ollama generation
-was run for R1. Existing model/CI results remain historical. There is no worker
+The local implementation run did not include hosted CI, a production-container
+build, Redis outage checks or Ollama generation. Subsequent hosted CI evidence
+is recorded below; previous model results remain historical. There is no worker
 lease/fencing, cache, analytical workflow or model integration claim. Source
 availability did not block the real acceptance run. Memory peaks and hardware
 benchmarks were not measured.
@@ -176,3 +177,40 @@ Their data was not accessed or used for historical/synthetic tests. No artifacts
 or market data are tracked/staged. Final `git diff --check` passed. Changes after
 review are documentation/status only, so no unnecessary full-suite rerun was made.
 At implementation closeout R1 was complete and no commit/push had been requested or performed. The user subsequently authorized publication and hosted CI verification; actual outcomes will be recorded below. R2 remains unauthorized.
+
+
+## Hosted CI after authorized commit and push
+
+The user subsequently authorized committing/pushing the verified R1 work and
+publishing this CI record. AGENTS.md and ROADMAP.md were updated to reflect that
+authorization without changing the R1 feature scope. The 15 reviewed R1 source,
+test, migration and documentation files were committed as
+`75bb466c2bfa0a1e6ad0096335a54128fe7557ff`
+(`Add verified R1 immutable historical dataset ingestion`) and pushed to
+`origin/main` without force. No archive, data, artifact or credential was staged.
+A staged whitespace check caught one trailing blank line in the new contract;
+it was removed before commit. Application/test behavior was unchanged.
+
+The [GitHub Actions CI run](https://github.com/atharva-m/MarketLab/actions/runs/40058652835)
+completed successfully for that exact implementation commit. Authenticated run,
+job and step metadata verified all three jobs:
+
+- Ubuntu and Windows quality jobs passed Python 3.13 setup, locked dependency
+  sync, Ruff lint/format, strict mypy and offline pytest.
+- Linux integration passed locked setup, Compose configuration, production API
+  image build, service startup, real PostgreSQL pytest, deployed API smoke,
+  Redis initially-healthy and optional-outage checks, and cleanup.
+- Only the failure-conditional Logs step was skipped, as expected for success;
+  no test-suite step was skipped.
+
+No CI fix was needed and no unresolved publication/CI blocker was observed.
+Hosted pytest totals and full job logs were not retrieved; the earlier 516/89
+counts remain local results, not claimed hosted counts. Hosted CI does not run
+the real provider download or actual-model generation; the historical acceptance
+run above remains local evidence and no additional model-compatibility claim is
+made. Raw run/job/step metadata is retained under ignored artifacts/r1-ci/.
+This follow-up changes documentation only; local application suites were not
+rerun. Independent read-only review found no actionable findings and confirmed the
+exact SHA/run, three successful jobs, listed steps, expected skip and evidence
+limits. The reviewer did not rerun application/model checks. This reviewed record
+is included in the requested follow-up documentation commit/push.
