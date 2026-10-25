@@ -2,8 +2,9 @@
 
 Approved October 24, 2026, before implementation. The user authorized this contract,
 ROADMAP.md/AGENTS.md updates, the prescribed coder/reviewer workflow, full acceptance
-and honest outcome documentation. No commit or push is authorized. R5–R9 remain
-backlog. Preserve the complete R1, R2 and R3 contracts and historical evidence.
+and honest outcome documentation. The initial request excluded commit/push; the
+October 25 publication authorization below supersedes that restriction. R5–R9
+remain backlog. Preserve the complete R1, R2 and R3 contracts and historical evidence.
 
 ## Input and bounds
 
@@ -115,7 +116,9 @@ Production acceptance uses clean source or records dirty source fingerprint
 honestly; do not claim dirty execution is a clean production revision.
 
 Use clock_timestamp(), SKIP LOCKED, 60-second leases, 10-second heartbeat on a
-separate connection and monotonically increasing token. Three attempts including
+separate connection and monotonically increasing token. Queued runs are due from
+submission without a later wall-clock comparison; retry eligibility and lease
+expiry use clock_timestamp() ([clock fix](r4-clock.md)). Three attempts including
 crashes; expired third attempt terminally fails without fourth execution. All
 mutations require current owner/token/unexpired running lease; no resurrection.
 Narrow PostgreSQL/network/capacity/timeout transient failures retry after 10 then
@@ -218,7 +221,7 @@ dependency/lock/deployment changes, pre-period download, strategy, copilot/memo,
 UI/auth, scheduling, GC or multi-host claim. Update README/roadmap and actual
 r4-verification.md; rerun formatting after final docs. Implementation uses coder
 gpt-6.1-sol high, independent read-only reviewer gpt-6-astra medium, then coder
-fixes and relevant rechecks. No commit or push.
+fixes and relevant rechecks. Publication follows the later authorization below.
 
 ## Local closeout
 
@@ -229,4 +232,15 @@ partitions reconciled with an independent stream; ten durable workflow runs and
 fresh-key repeats matched all numerical payload hashes. Existing sources/services
 were preserved. Initial failed checks, recurring DB-clock regression (not fixed),
 pre/post replay-response metadata-fix source fingerprints, unmeasured peak memory
-and unrun hosted CI remain explicit. No commit/push and no R5-R9 authorization.
+and unrun hosted CI remain explicit for that local closeout. Publication was then
+excluded; no R5-R9 authorization follows.
+
+## Publication authorization (October 25, 2026)
+
+The user subsequently authorized committing/pushing verified R4 and the application
+clock fix, then checking hosted CI. This changes publication authority only; the
+numerical contract, preservation requirements and excluded scope remain intact.
+Fresh verification passed 655 offline/158 real PostgreSQL tests and live
+claim/retry/heartbeat/lease/fencing acceptance. The application works as intended
+with the known Docker clock discrepancy; no system clock fix is claimed. Hosted
+CI is pending; see [actual verification](r4-verification.md).

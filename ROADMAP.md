@@ -1,12 +1,12 @@
 # MarketLab recovery roadmap
 
-Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; recurring DB-clock environment limitation is explicitly retained in verification. R4 remains uncommitted/unpushed; R5–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
+Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. R4 and clock-fix publication is authorized October 25; hosted CI is pending. R5–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
 ## Authority and approval boundary
 
-Current authority (October 24, 2026): the user approved the detailed R4 scope, ROADMAP.md/AGENTS.md updates, the [R4 contract](docs/r4-research.md) before code, implementation through the prescribed coder/reviewer workflow, full acceptance and actual outcome documentation. Preserve R1-R3. Do not commit or push. R5-R9 remain unauthorized. The older approval records below retain their historical scope.
+Current authority (October 25, 2026): the user authorized committing/pushing the verified R4 changes and application clock fix, then checking hosted CI. This supersedes the earlier publication restriction without expanding R4 scope. The October 24 approval covered the detailed R4 scope, ROADMAP.md/AGENTS.md updates, the [R4 contract](docs/r4-research.md) before code, prescribed coder/reviewer implementation, full acceptance and actual outcome documentation. Preserve R1-R3 and historical evidence. R5-R9 remain unauthorized. Record actual hosted results for the exact published revision in [R4 verification](docs/r4-verification.md).
 
 On October 24, 2026 the user approved the detailed R3 scope, ROADMAP.md/AGENTS.md updates, the [R3 contract](docs/r3-analytics.md) before code, prescribed coder/reviewer implementation and full acceptance. Preserve R1/R2. The initial implementation request excluded commit/push; the later R3 publication authorization below supersedes that restriction. R4-R9 remain unauthorized. These R3 approvals are historical execution authority; the R4 approval below now governs current work. Earlier milestone closeouts remain historical evidence.
 
@@ -22,12 +22,13 @@ After explicit approval, record the approval and approved milestone here, then u
 
 Use this root document as the durable roadmap reference for future sessions. Preserve the historical week 1–9 documents and commits; those labels describe completed repository increments, not completion of the original 14-week schedule. Use R1–R9 below for recovery milestones. Do not relabel unrelated work as progress on the original plan.
 
-## Current R4 execution authority (October 24, 2026)
+## R4 scope authority (October 24, 2026)
 
 The user approved the detailed deterministic R4 proposal, ROADMAP.md/AGENTS.md
 updates, the [R4 contract](docs/r4-research.md) before code, prescribed coder/reviewer
-implementation, full acceptance and honest actual outcome documentation. No commit
-or push is authorized. R5-R9 remain unauthorized. This later approval supersedes
+implementation, full acceptance and honest actual outcome documentation. The initial
+request excluded commit/push; October 25 publication authority supersedes that
+restriction. R5-R9 remain unauthorized. This later approval supersedes
 historical R4 exclusions only for the approved contract; preserve R1-R3.
 
 Deliver strict typed ResearchSpec, five-minute profile/cross-asset/clusters with
@@ -137,7 +138,7 @@ Detailed approved contract: [R4 deterministic research](docs/r4-research.md).
 Implementation, full local acceptance, independent source review and owned cleanup
 passed; [actual verification](docs/r4-verification.md) retains initial failures,
 recurring DB-clock limitation and pre/post metadata-fix execution provenance.
-No commit/push is authorized; R5-R9 remain backlog.
+Publication now follows the October 25 authorization above; R5-R9 remain backlog.
 
 Implement a versioned strict ResearchSpec with dataset version, allowlisted workflow/symbols/metrics, explicit timestamps, interval and typed parameters/predicates. No expression strings, arbitrary SQL/code/paths. Validate shape, units/meaning, coverage and warm-up. Manual submissions use one idempotent application service and pin dataset versions, parameters, code revision and lock hash.
 
@@ -331,3 +332,40 @@ claimed. Owned resources were cleaned. No manual rate reset or R1-R4 eligibility
 fencing change was applied. Historical R4 results and this incident remain intact;
 R5-R9 remain unauthorized. Any later Docker/vendor maintenance needs a separate
 reviewed operational plan.
+
+### Authorized clock claim fix: application-layer workaround, issue persists (October 25, 2026)
+
+**The backward-clock issue persists.** It was worked around at the application layer
+(job claim logic) rather than fixed at the system level. Docker Desktop, WSL, the host
+clock and time-sync configuration were not changed. The user approved fixing the job
+code instead of the environment, with no commit/push.
+The steps come from Docker Desktop /initd, which steps the shared WSL2 clock about
+1-2ms backwards every ~30s (upstream docker/desktop-feedback#761, no setting to
+disable it). Queued R2/R4 work is claimable from submission without a later
+wall-clock comparison. ingest_day rechecks database time at most three times per
+attempt before reporting a due retry as ineligible.
+
+Retry backoff/lease expiry still use clock_timestamp(). Leases, heartbeats, the
+three-attempt budget, fencing, publication, schema and dependencies are unchanged.
+655 offline/158 real PostgreSQL cases, deterministic backward-step regressions and
+real clock/lease acceptance passed on an owned disposable database. Original services
+were untouched. Details: [clock fix](docs/r4-clock.md#root-cause-and-application-fix-october-25-2026).
+R5-R9 remain unauthorized.
+
+### R4 and clock-fix publication authorized (October 25, 2026)
+
+The user explicitly authorized committing/pushing verified R4 and the application
+clock fix, then checking hosted CI. Earlier no-commit/push instructions remain
+historical; this approval does not authorize R5-R9 or market artifacts/data,
+credentials, environments or weights in Git.
+
+Fresh locked checks passed 655 offline/158 real PostgreSQL cases. Live acceptance
+passed in 249.827s with 1,000 immediate claims per kind, concurrency/replay checks,
+real 10s/30s retry gates, heartbeats, three real 60s lease-expiry cycles, stale-owner
+rejection and no fourth attempt. Independent read-only review found no blocking
+issue. The application works as intended with the known Docker clock discrepancy:
+409,100,000 server clock samples over 90.021s still captured three backward steps,
+largest 2.788ms. The owned test database was removed; original service IDs, start
+times and health were unchanged. Evidence remains ignored under
+artifacts/r4-clock/verify-20261025-2250dfb0-*. Hosted CI is pending; actual results
+belong in [R4 verification](docs/r4-verification.md).

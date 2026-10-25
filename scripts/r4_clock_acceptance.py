@@ -1,4 +1,4 @@
-"""Real-clock acceptance on isolated tables in owned PostgreSQL 55435 only."""
+"""Real-clock acceptance on isolated tables in an owned loopback PostgreSQL only."""
 
 import argparse
 import json
@@ -365,18 +365,34 @@ def leases(apis):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--after-fix", action="store_true", required=True)
-    p.parse_args()
+    p.add_argument("--port", type=int, default=55435)
+    p.add_argument("--name", default="marketlab-clock-pg-20261024")
+    p.add_argument("--owner", default="clock-20261024")
+    p.add_argument("--resource-record", default="resource-ownership.json")
+    p.add_argument("--evidence-prefix", default="")
+    args = p.parse_args()
+    if Path(args.resource_record).name != args.resource_record:
+        p.error("The resource record must be a file name under artifacts/r4-clock")
+    if not all(char in "abcdefghijklmnopqrstuvwxyz0123456789-" for char in args.evidence_prefix):
+        p.error("The evidence prefix may contain only lowercase letters, digits and hyphens")
+    if (BASE / (args.evidence_prefix + "acceptance-complete.json")).exists():
+        p.error("Retained acceptance evidence exists; choose a new --evidence-prefix")
     settings = Settings()
     url = settings.sqlalchemy_url
-    assert url.host == "127.0.0.1" and url.port == 55435
+    assert url.host == "127.0.0.1" and url.port == args.port
     assert url.database == "marketlab" and url.username == "marketlab"
-    recorded = json.loads((BASE / "resource-ownership.json").read_text(encoding="utf-8-sig"))[0]
-    assert recorded["Name"] == "/marketlab-clock-pg-20261024"
-    assert recorded["Config"]["Labels"]["marketlab.clock.owner"] == "clock-20261024"
+    recorded = json.loads((BASE / args.resource_record).read_text(encoding="utf-8-sig"))[0]
+    assert recorded["Name"] == "/" + args.name
+    assert recorded["Config"]["Labels"]["marketlab.clock.owner"] == args.owner
+    binding = recorded["HostConfig"]["PortBindings"]["5432/tcp"][0]
+    assert binding["HostIp"] == "127.0.0.1" and binding["HostPort"] == str(args.port)
     engine = sa.create_engine(url, connect_args=settings.database_connect_args, pool_size=12)
     schema = "r4_clock_" + uuid4().hex
     isolated = engine.execution_options(schema_translate_map={None: schema})
+    prefix = args.evidence_prefix
     result = {
+        "arguments": vars(args),
+        "resource_id": recorded["Id"],
         "schema": schema,
         "clock_lease_eligibility_edits": 0,
         "scope": "durable functions; source/analytics/publication covered by retained suite",
@@ -401,13 +417,13 @@ def main():
                 )
         apis = [API(kind, isolated, schema + "." + kind) for kind in ("R2", "R4")]
         result["stress"] = {api.kind: stress(api, 1000) for api in apis}
-        save("acceptance-progress.json", result)
+        save(prefix + "acceptance-progress.json", result)
         assert all(
             v["immediate_claims"] == 1000 and not v["ineligible"] for v in result["stress"].values()
         )
         result["concurrency"] = {api.kind: concurrency(api) for api in apis}
         result["retry_eligibility"] = retries(apis)
-        save("acceptance-progress.json", result)
+        save(prefix + "acceptance-progress.json", result)
         result["leases"] = leases(apis)
         with engine.connect() as c:
             result["public_counts_after"] = {
@@ -424,7 +440,7 @@ def main():
         result["error"] = (
             str(error) if isinstance(error, AssertionError) else "bounded acceptance failure"
         )
-        save("acceptance-failed.json", result)
+        save(prefix + "acceptance-failed.json", result)
         raise
     finally:
         if created:
@@ -433,7 +449,7 @@ def main():
                 c.execute(sa.text(f'DROP SCHEMA "{schema}" CASCADE'))
             result["owned_schema_removed"] = True
         engine.dispose()
-    save("acceptance-complete.json", result)
+    save(prefix + "acceptance-complete.json", result)
     print(json.dumps(result, indent=2, default=str))
 
 

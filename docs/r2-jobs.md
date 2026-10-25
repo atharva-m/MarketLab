@@ -32,12 +32,15 @@ outcome running/succeeded/transient/permanent/expired, safe error. FK to job.
 ## Claims, state and retry
 
 States queued/running/retry_wait/succeeded/failed. Database clock_timestamp() is
-the time authority. Claims lock one eligible queued/retry_wait or expired running
-job using FOR UPDATE SKIP LOCKED. An expired running attempt becomes expired;
-if already attempt 3, fail without a fourth execution. Otherwise increment both
-attempt_count and fencing_token, assign fresh worker identity and 60-second lease,
-and record running attempt. Heartbeat every 10 seconds on a separate connection;
-renew only current unexpired running owner/token. Late heartbeat cannot revive.
+the time authority for retry eligibility and lease expiry. Claims lock one queued,
+due retry_wait or expired running job using FOR UPDATE SKIP LOCKED. Queued jobs are
+due from submission and are not re-compared with later wall time, because database
+time can step backwards ([clock fix](r4-clock.md)). An expired running attempt
+becomes expired; if already attempt 3, fail without a fourth execution. Otherwise
+increment both attempt_count and fencing_token, assign fresh worker identity and
+60-second lease, and record running attempt. Heartbeat every 10 seconds on a
+separate connection; renew only current unexpired running owner/token. Late
+heartbeat cannot revive.
 
 Worker processes execute one job at a time; multiple local processes can cooperate.
 When Python receives SIGINT/SIGTERM, CLI handlers set a stop flag: finish current
@@ -92,7 +95,9 @@ Existing ingest/inspect commands and ingest_day/ingest_archive library signature
 remain callable and successful output shape is preserved. Synchronous ingestion
 submits a private single-day durable request and executes it inline through the
 same worker/fenced publisher, requiring no separate worker. ingest_day waits for
-its persisted retry eligibility and executes at most three attempts. Both
+its persisted retry eligibility, re-reading database time at most three times per
+attempt when it has not reached eligibility after the host wait, and executes at
+most three attempts. Both
 ingest_day and ingest_archive accept optional resume_job_id: inline network resume
 requires matching mode/symbol/date, fixture resume additionally requires identical
 verified archive SHA-256; succeeded resume verifies catalog artifacts. An unexpired

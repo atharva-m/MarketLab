@@ -166,9 +166,12 @@ def claim(engine: Engine, run_id: str | None = None) -> Claim | None:
     with engine.begin() as connection:
         bounded(connection)
         now = sa.func.clock_timestamp()
+        # Queued work is due from submission; re-reading wall time would miss it
+        # whenever database time steps backwards after submit.
         query = sa.select(runs).where(
             sa.or_(
-                sa.and_(runs.c.state.in_(["queued", "retry_wait"]), runs.c.eligible_at <= now),
+                runs.c.state == "queued",
+                sa.and_(runs.c.state == "retry_wait", runs.c.eligible_at <= now),
                 sa.and_(runs.c.state == "running", runs.c.lease_until <= now),
             )
         )

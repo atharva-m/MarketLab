@@ -381,7 +381,8 @@ workflow runs/repeats with matching hashes (31 BTC/33 ETH clusters). Retained R1
 behavior and original services/data were preserved. Isolated diagnostics captured
 a recurring backwards DB-clock issue that can temporarily make immediate claims
 ineligible; the final passing suite does not resolve that environment limitation.
-Peak memory is unmeasured and hosted R4 CI is unrun. Nothing is committed/pushed;
+Peak memory is unmeasured. At local closeout hosted R4 CI was unrun and publication
+was excluded; the later publication authorization below supersedes that restriction.
 R5-R9 remain unauthorized backlog.
 
 The user subsequently authorized a scoped clock follow-up; see
@@ -393,6 +394,26 @@ not fully fixed. The coarse 50ms helper cannot prove that shorter steps ceased.
 An exploratory initd help command unexpectedly restarted original containers;
 stale host forwarding required standard recovery restarts. The same original IDs,
 images and volumes are healthy again. Uptime was interrupted; Redis cache continuity
-was not verified and is not claimed. Owned resources were cleaned. Application eligibility/fencing remains
-unchanged; nothing was committed/pushed. A safe supported live control for the
+was not verified and is not claimed. Owned resources were cleaned. Application eligibility/fencing remained
+unchanged in that follow-up; nothing was committed/pushed. A safe supported live control for the
 remaining Docker clock writer was not identified.
+
+A later claim fix (October 25, 2026) works around the symptom at the application
+layer rather than at the system level. **The backward-clock issue persists.** Docker Desktop's
+/initd steps the shared WSL2 clock about 1-2ms backwards every ~30s (upstream
+[docker/desktop-feedback#761](https://github.com/docker/desktop-feedback/issues/761)).
+Queued R2/R4 work is now claimable from submission without a later wall-clock
+comparison, and synchronous retries recheck database time a bounded number of times.
+Leases, attempts, fencing and publication are unchanged. 655 offline/158 real
+PostgreSQL cases and real clock acceptance passed. No system-level change was made:
+Docker Desktop, WSL, the host clock and time-sync configuration are unchanged, and the
+clock still steps backwards. See the
+[clock fix](docs/r4-clock.md#root-cause-and-application-fix-october-25-2026).
+
+Fresh verification on October 25 passed 655 offline/158 real PostgreSQL tests and
+live claim/retry/heartbeat/lease/fencing acceptance in 249.827s. Independent review
+found no blocking issue. The application works as intended with the known Docker
+clock discrepancy. The owned test database was removed; original service IDs,
+start times and health were preserved. The user then authorized committing/pushing
+R4 and the application clock fix and checking hosted CI. Hosted verification is
+pending; see [R4 verification](docs/r4-verification.md).

@@ -511,6 +511,7 @@ def ingest_day(
         job_id = str(inspect_submission(engine, identity)["jobs"][0]["job_id"])
     else:
         job_id = resume_job_id
+    rechecks = 0
     while True:
         with engine.connect() as connection:
             row = (
@@ -543,7 +544,13 @@ def ingest_day(
             time.sleep(min(float(delay), 3600))
         current = claim(engine, job_id=job_id)
         if current is None:
+            # Database time can trail the host sleep or step backwards; re-read the
+            # persisted retry eligibility a bounded number of times before failing.
+            if row["state"] == "retry_wait" and rechecks < 3:
+                rechecks += 1
+                continue
             raise DatasetError("inline ingestion job is not eligible")
+        rechecks = 0
         try:
             return execute(
                 engine,

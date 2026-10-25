@@ -96,6 +96,27 @@ async def test_idempotency_conflict_and_concurrent_claim(research_engine, tmp_pa
 
 
 @pytest.mark.asyncio
+async def test_queued_claim_survives_backward_database_time_but_retry_backoff_holds(
+    research_engine, tmp_path
+):
+    service, spec = published(research_engine, tmp_path)
+    run, _ = await service.submit(spec, "one")
+    # A future submission timestamp is what a backward database clock step looks like.
+    with research_engine.begin() as connection:
+        connection.execute(
+            store.runs.update()
+            .where(store.runs.c.run_id == run)
+            .values(eligible_at=sa.func.clock_timestamp() + timedelta(hours=1))
+        )
+    current = store.claim(research_engine, run)
+    assert current is not None and current.attempt == current.token == 1
+    store.fail(research_engine, current, transient=True)
+    assert service.inspect(run)["state"] == "retry_wait"
+    assert store.claim(research_engine, run) is None
+    await service.bars.close()
+
+
+@pytest.mark.asyncio
 async def test_three_expired_attempts_no_fourth_and_stale_fencing(research_engine, tmp_path):
     service, spec = published(research_engine, tmp_path)
     run, _ = await service.submit(spec, "one")

@@ -40,8 +40,9 @@ User approved October 24, 2026 the detailed R3 scope in [ROADMAP.md](ROADMAP.md)
 
 User approved October 24, 2026 the detailed R4 proposal and authorized ROADMAP.md/
 AGENTS.md updates, the full [R4 contract](docs/r4-research.md) before code, prescribed
-coder/reviewer implementation, full acceptance and honest actual outcomes. No
-commit or push. This approval supersedes earlier R4 exclusions only within this
+coder/reviewer implementation, full acceptance and honest actual outcomes. The
+initial request excluded commit/push; the October 25 publication authority below
+supersedes that restriction. This approval supersedes earlier R4 exclusions only within this
 contract; R5-R9 remain unauthorized. Preserve full R1/R2/R3 contracts and evidence.
 
 Implement strict research-spec-v1, five-minute-only market_profile, cross_asset and
@@ -74,15 +75,17 @@ future eligibility/no immediate claim. Final full suites passed, but the clock
 issue is not fixed. No host clock, retained runtime or test eligibility semantics
 was altered. The actual month used the pre-replay-status-fix dirty source hash;
 final metadata-only fix/readback/full-suite evidence is distinguished in verification.
-Peak memory is unmeasured; hosted R4 CI is unrun. Keep this implementation intact,
-do not commit/push, and do not infer R5-R9 authorization.
+Peak memory is unmeasured. At local closeout hosted R4 CI was unrun and commit/push
+was excluded; the later publication authority below governs current work. Keep
+this implementation intact and do not infer R5-R9 authorization.
 
 ## Authorized post-R4 clock follow-up: partial mitigation, unresolved
 
 The user authorized investigating/fixing the clock environment with prescribed
 coder/reviewer work, preservation and actual verification, no commit/push. See
-[clock follow-up and incident](docs/r4-clock.md). R1-R4 application eligibility,
-leases/heartbeats, attempts, fencing and publication remain unchanged. Ubuntu
+[clock follow-up and incident](docs/r4-clock.md). In that follow-up R1-R4 application
+eligibility, leases/heartbeats, attempts, fencing and publication stayed unchanged
+(claims only were changed later; see the claim fix below). Ubuntu
 timesyncd was stopped/disabled while built-in PHC synchronization converged.
 Large steps diminished and actual job/lease checks passed, but dense sampling
 still found Docker initd backwards steps: the clock is NOT fully fixed. No safe
@@ -97,3 +100,44 @@ uptime/cache continuity are not claimed. Owned probe/trace resources were cleane
 Never run initd help/VM-init experiments. Preserve all historical failures and
 report this incident honestly. Later Docker/vendor maintenance needs a separate
 reviewed plan. R5-R9 remain unauthorized; no commit/push.
+
+## Authorized clock claim fix: application-layer workaround, issue persists
+
+On October 25, 2026 the user approved fixing the job code rather than the environment,
+with no commit/push. Claude implemented it and an independent read-only Claude subagent
+reviewed it; this overrides the coder/reviewer models for this fix only, because they
+were unavailable in that session. Root cause: Docker Desktop /initd steps the shared
+WSL2 clock about 1-2ms backwards every ~30s (upstream docker/desktop-feedback#761).
+There is no setting to disable it, and newer releases are reported to step further,
+so do not upgrade expecting a fix.
+
+The approval lifts the earlier eligibility freeze for claims only. Queued R2/R4 work
+is claimable from submission without a later wall-clock comparison. ingest_day
+rechecks database time at most three times per attempt before reporting a due retry
+as ineligible. Retry backoff and lease expiry still use clock_timestamp().
+Leases/heartbeats, the three-attempt budget, fencing, publication, schema and
+dependencies are unchanged.
+
+Locked checks passed 655 offline/158 real PostgreSQL cases, and real clock acceptance
+passed. The backward-clock issue persists. It was worked around at the application
+layer rather than fixed at the system level: Docker Desktop, WSL, the host clock and
+time-sync configuration are unchanged. Do not describe the clock as fixed. See
+[clock fix](docs/r4-clock.md). R5-R9 remain unauthorized.
+
+## Authorized R4 and clock-fix publication (October 25, 2026)
+
+The user explicitly authorized committing/pushing the verified R4 changes and
+application clock fix, then checking hosted CI. This supersedes the earlier
+no-commit/push restrictions for this scope only. Preserve all historical failures,
+the clock-follow-up incident and the distinction between month acceptance and
+later source changes. Do not include artifacts/data, credentials, environments or
+weights; R5-R9 remain unauthorized.
+
+Fresh locked verification passed 655 offline/158 real PostgreSQL tests and live
+acceptance in 249.827s: 1,000 immediate claims per job kind, real retry gates,
+heartbeats, three lease-expiry cycles, stale-worker rejection and the attempt cap.
+Independent read-only review found no blocking issue. The application works as
+intended with the known Docker clock discrepancy; a 90-second server sample still
+captured three backward steps, largest 2.788ms. Owned resources were removed and
+original service IDs/start times/health were unchanged. Hosted CI is pending and
+must be recorded for the exact published revision in [R4 verification](docs/r4-verification.md).

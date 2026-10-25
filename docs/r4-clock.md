@@ -1,4 +1,13 @@
-# Post-R4 clock follow-up: partial mitigation
+# Post-R4 clock follow-up: partial mitigation, then application claim fix
+
+**Update October 25, 2026:** the remaining writer was attributed to Docker Desktop's
+/initd, and the user authorized an application-level claim fix. See
+[root cause and application fix](#root-cause-and-application-fix-october-25-2026).
+**The backward-clock issue persists.** It was worked around at the application layer
+(job claim logic) rather than fixed at the system level (Docker, WSL, host clock or
+time-sync configuration). Everything
+from here until that section is the October 24 record, and describes the code as it
+was then.
 
 Approved October 24, 2026 after R4 local closeout. The user authorized investigating
 and fixing the measured clock limitation through the prescribed coder/reviewer
@@ -204,3 +213,190 @@ unchanged HEAD 111d3b8695573e43ac56c813c2b45e0781e86843. Source/eligibility/fenc
 semantics were not edited to obtain passing checks. Historical
 [R4 acceptance](r4-verification.md), failed partial attempts and this incident
 remain retained. No commit/push, R5-R9 expansion or manual rate reset occurred.
+
+## Root cause and application fix (October 25, 2026)
+
+### Status: issue persists, application-layer workaround
+
+**The backward-clock issue persists.** Docker Desktop still steps the shared WSL2
+clock backwards about every 30 seconds, and PostgreSQL `clock_timestamp()` still
+observes those steps. The workaround is at the application layer: R2/R4 job claim
+logic no longer assumes database wall time is monotonic.
+
+No system-level fix was attempted. Docker Desktop, WSL, the host clock, Windows time
+service, chrony and timesyncd were left as they were. That level has no supported
+control for this writer, and the earlier exploration there caused the incident
+recorded above.
+
+### Attribution
+
+Environment: Docker Desktop 4.92.0 (engine 29.8.0), WSL 2.4.12, kernel
+5.15.167.4-microsoft-standard-WSL2. The settimeofday writer traced above (Docker
+initd TIDs 322/283, ~30s cadence) matches publicly reported Docker Desktop behaviour.
+/initd in the docker-desktop distro steps the single shared WSL2 VM clock about
+every 30 seconds, usually 1-2ms backwards
+([docker/desktop-feedback#761](https://github.com/docker/desktop-feedback/issues/761)).
+
+- That thread has no maintainer fix and offers no setting to disable the correction.
+- Reporters found `hv_utils.timesync_implicit=0` ineffective. Only quitting Docker
+  Desktop stops the steps.
+- Reports for 4.95/4.96 describe larger steps (about 5-32ms), so upgrading is not a fix.
+
+No Docker, WSL, host-clock, timesyncd or original-service change was made.
+
+Fresh measurements on October 25:
+
+- **Dense native probe** (same dense_native.py, Ubuntu-22.04): 515,085 samples over
+  90.000104s. Three backward steps, -1.844905, -1.692398 and -1.383656ms, 29.999s
+  and 30.001s apart. Evidence: clockfix-dense-native.json.
+- **Server-side clock_timestamp() loop** on the owned database: 407,800,000 samples
+  over 90.016148 database seconds. One backward step, -1.344ms. Evidence:
+  clockfix-server-dense.sql/log.
+- **Conclusion:** database time itself is not monotonic.
+
+### Why the application failed
+
+Submission wrote `eligible_at = clock_timestamp()`. A later claim transaction then
+required `eligible_at <= clock_timestamp()`. A backward step larger than the gap
+between submit and claim made freshly queued work unclaimable. The synchronous R1
+path then raised "inline ingestion job is not eligible", and an immediate R4 worker
+returned zero runs.
+
+The synchronous retry path had the same weakness. It sleeps on the host for the
+database-computed remaining delay and then claimed only once, so it failed whenever
+database time had not yet reached eligibility.
+
+### Change (claims only, user-authorized)
+
+- **Queued claims.** In R2 `jobs.claim` and R4 `store.claim`, `queued` work is
+  eligible without a later wall-clock comparison. `retry_wait` still requires
+  `eligible_at <= clock_timestamp()`, and expired running work still requires
+  `lease_until <= clock_timestamp()`. `queued` is written only by submit, with
+  `eligible_at = created_at = now`, so the change is behaviour-identical except for
+  the clock-step case. `eligible_at` remains recorded.
+- **Synchronous retry recheck.** When a due-looking `retry_wait` claim returns none,
+  `ingest_day` re-reads persisted eligibility and the database-time delay at most
+  three times per attempt, then raises "not eligible". Running/unexpired, terminal or
+  locked jobs still raise as before.
+- **Unchanged:** 60s leases, 10s heartbeat, three attempts including crashes, fencing
+  token increments, stale-owner rejection, SKIP LOCKED, generic-worker source/contract
+  filters, fenced atomic publication, schema, migrations, dependencies and lock.
+- **Worst case:** if database time stalled entirely, one synchronous retry gap could
+  now wait up to four times its remaining delay. That is still bounded, by the three
+  rechecks and the existing 3600s cap.
+
+### Verification
+
+All verification ran on an owned disposable PostgreSQL:
+
+- Container `marketlab-clockfix-pg-20261025`, ID d2d0c524933254f70262c01d0ca41571fdf3033cf3121fdf6ee3017c06d399e4.
+- Image postgres:17-alpine eee6c6e1b089, no pull, loopback 127.0.0.1:55436.
+- Label marketlab.clock.owner=clockfix-20261025, migrated to 0005_research.
+
+`uv` was not on PATH in this shell. Checks therefore ran from the project .venv
+(Python 3.13.7, same pytest plugins as the earlier logs), with uv.lock hash 730f02be…
+unchanged.
+
+- **Ruff and format:** clean (96 files). Strict mypy passed 31 sources.
+- **Offline:** 655 passed.
+- **Real PostgreSQL:** 158 passed (152 retained + 6 new). Evidence:
+  clockfix-integration-final.log, clockfix-offline-final.log.
+- **New deterministic regressions** use no real clock step:
+  - A queued R2 job and R4 run with `eligible_at` one hour in the future (equivalent
+    to a backward step) are claimed with attempt 1/token 1. After a transient
+    failure the future `retry_wait` is still not claimable.
+  - `ingest_archive` succeeds end to end after a post-submit backward step.
+  - `ingest_day` rechecks when database time trails the host sleep, then succeeds with
+    attempts transient/succeeded and token 2.
+  - The recheck is bounded: exactly four waits, then "not eligible", with the job left
+    in retry_wait/attempt 1.
+  - Resuming an unexpired owner is still not eligible.
+- **Relaxed test bounds:** three upper bounds on DB-time deltas gained +1s slack for a
+  backward step after the write: lease 60 to 61, retry 10/30 to +1, Retry-After 120
+  to 121. The lower bounds are unchanged.
+- **Live stress (claim_fixed.py):** over 180.001 host seconds, all 4,901 R2 and 4,900
+  R4 submissions were claimed immediately with zero unclaimed. However, no backward
+  step fell inside a submit-to-claim gap: there were zero backward-since-submit
+  observations, because ~18ms iteration spacing exceeds the ~1.5ms steps. This run
+  shows no regression under real steps; the deterministic cases are what demonstrate
+  the fix. Evidence: clockfix-claim-stress.json/log.
+- **Clock acceptance:** `r4_clock_acceptance.py --after-fix --port 55436 ...` passed
+  in 268.266s:
+  - 1,000/1,000 immediate claims per kind. The queued predicate makes these pass by
+    design, so this is not clock evidence.
+  - Replay/conflict/SKIP LOCKED cases passed.
+  - Retry gates were observed at 10.0127 and 30.1390s.
+  - Three genuine lease-expiry cycles took 60.0120, 60.2014 and 60.1816s.
+  - Six heartbeats per kind followed the 10s cadence.
+  - Stale mutations and a fourth attempt were rejected.
+  - Public counts were unchanged and the owned schema was removed.
+
+  Evidence: clockfix-acceptance-complete.json/log. The script's fixed output names
+  initially overwrote the October 24 acceptance-complete/progress files. They had been
+  copied beforehand and were restored byte-identical (SHA-256 1c7264d6… and ebcc3de5…;
+  *.20261024.json copies kept). The script now takes `--evidence-prefix`, refuses to
+  overwrite completed acceptance evidence, records its arguments and resource ID, requires a
+  loopback binding and keeps record files inside artifacts/r4-clock.
+- **Final-tooling acceptance:** a rerun with `--evidence-prefix clockfix-final-`
+  passed in 269.881s:
+  - 1,000/1,000 claims per kind.
+  - Retry gates at 10.2382 and 30.1786s.
+  - Lease cycles of 60.1089, 60.1065 and 60.2375s.
+  - Twelve heartbeats with no failures, and resource ID d2d0c524… recorded.
+
+  The default-name invocation refused to overwrite completed acceptance evidence, and a record
+  path outside artifacts/r4-clock was rejected. Evidence:
+  clockfix-final-acceptance-complete.json/log.
+- **Cleanup and preservation:** the owned container was removed by ID after its ID,
+  name, owner label and loopback binding were verified, and the clock-owner
+  inventory is empty. The original API/PostgreSQL/Redis containers kept identical IDs,
+  identical October 24 StartedAt times (22:02:04, 22:02:56, 22:03:10 UTC), zero
+  restarts and healthy status. API /health/live and /health/ready returned 200.
+  Evidence: clockfix-original-services-before/after.txt, clockfix-owned-cleanup.txt.
+- **Independent review:** a read-only Claude subagent reviewed the diff, replacing
+  the unavailable coder/reviewer models at the user's choice. It found no blocking
+  issues. Its should-fix items were the evidence overwrite and docs still claiming
+  unchanged eligibility; both were resolved. Its nits were also applied: a one-hour
+  future offset, an end-to-end ingest_archive case and the missing slack comment.
+
+### Remaining limitations
+
+- The backward-clock issue persists at the system level. Only the application-layer
+  workaround is in place; no system-level fix was attempted.
+- In the acceptance script, `retries()`/`leases()` still claim immediately after
+  waiting for database time. A millisecond step inside that window could still fail
+  an assertion. This is pre-existing tooling behaviour and rare.
+- Peak memory is unmeasured. At application-fix closeout hosted CI was unrun and
+  publication was excluded; the fix sat on the user's local backup commit f600ccb.
+  The later publication authority below supersedes that restriction. R5-R9 remain
+  unauthorized.
+
+## Fresh verification and publication authority (October 25, 2026)
+
+Fresh locked verification passed 655 offline/158 real PostgreSQL tests, including
+the six deterministic clock regressions. Independent gpt-6-astra read-only review
+found no blocking source issue. Live acceptance passed in 249.827s: 1,000 immediate
+claims per kind, concurrent replay/conflict/SKIP LOCKED checks, real 10s/30s retry
+gates, twelve successful heartbeats, three real 60s lease-expiry cycles,
+stale-worker rejection and the three-attempt limit.
+
+The application works as intended with the known Docker clock discrepancy. A
+separate server-only clock loop collected 409,100,000 samples over 90.021s and
+captured three backward steps, largest 2.788ms; no system clock fix is claimed.
+Retry gates and leases still use database wall time, and bounded rechecks do not
+guarantee progress under arbitrary sustained reversal.
+
+Evidence remains ignored under artifacts/r4-clock/verify-20261025-2250dfb0-*.
+The owned database on loopback 55437 and its acceptance schema were removed after
+ownership checks. Original service IDs/images/start times/restart counts/health
+matched the baseline; API live/ready returned 200 and Redis PING returned PONG.
+The harness's first launch stopped before acceptance because the newly written
+resource record was an object rather than an array; correcting only that evidence
+record allowed the completed run. Sandbox cache-permission failures also preceded
+the successful locked test invocations; their logs remain retained.
+
+The user then authorized committing/pushing verified R4 and the application clock
+fix and checking hosted CI. This supersedes earlier publication restrictions for
+that scope only. Hosted CI is pending; its exact revision/run outcome belongs in
+[R4 verification](r4-verification.md). Historical failures and the October 24
+preservation incident remain recorded above. R5-R9 remain unauthorized.

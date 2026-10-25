@@ -2,9 +2,10 @@
 
 October 24, 2026. R4 implementation, full local numerical/compatibility acceptance,
 independent source review and ownership-checked cleanup passed. Final locked checks
-passed **655 offline and 152 real PostgreSQL cases**, zero skips. No commit or push
-is authorized; hosted CI is unrun. R5-R9 remain unauthorized. R1-R3 historical
-evidence is retained unchanged.
+passed **655 offline and 152 real PostgreSQL cases**, zero skips. The initial
+request excluded commit/push and hosted CI was unrun at that closeout. The later
+October 25 publication authorization and fresh verification are recorded below.
+R5-R9 remain unauthorized. R1-R3 historical evidence is retained unchanged.
 
 ## Scope, environment and provenance
 
@@ -182,3 +183,43 @@ the explicitly observed DB-clock environment limitation, no unresolved R4 code o
 numerical acceptance blocker remains.
 
 A later user-authorized clock follow-up partially mitigated large distortion, but dense sampling still found smaller Docker initd backwards steps. An exploratory initd help command unexpectedly restarted original containers and violated uptime preservation; standard recovery restored the same IDs/images/volumes and healthy host endpoints. Recovery is separate from earlier R4 acceptance, and uptime/cache continuity are not claimed. See [actual follow-up and incident](r4-clock.md). Historical results/immutable fingerprints remain unchanged; no application eligibility/fencing change or commit/push occurred. The clock fix remains incomplete.
+
+## Fresh application verification and publication authority (October 25, 2026)
+
+The user subsequently authorized the application claim fix described in
+[the clock report](r4-clock.md#root-cause-and-application-fix-october-25-2026).
+Fresh locked verification passed **655 offline and 158 real PostgreSQL tests**,
+including all six deterministic clock regressions. Independent gpt-6-astra
+read-only source review found no blocking issue. Queued R2/R4 claims no longer
+compare submission eligibility against a later wall-clock reading; synchronous
+ingestion has bounded database-time retry rechecks. Retry gates, leases,
+heartbeats, fencing, publication and the three-attempt cap retain their contracts.
+
+Live acceptance passed in **249.827s** on owned disposable PostgreSQL container
+4c3866c60d2e5c41d22678815792cfdb6724025900e61304cf176816b6cbab22,
+loopback port 55437, owner verify-20261025-2250dfb0. All 1,000 immediate R2 and
+1,000 immediate R4 claims passed, with concurrent replay/conflict/SKIP LOCKED
+checks, real 10s/30s retry gates, twelve successful heartbeats, three genuine
+60s lease-expiry cycles, stale-mutation rejection and no fourth attempt.
+Public table counts were unchanged and the owned acceptance schema was removed.
+
+The application works as intended with the known Docker clock discrepancy. A
+separate read-only server loop collected 409,100,000 clock samples over 90.021s
+and detected three backward steps, largest 2.788ms. This confirms the system clock
+issue persists; bounded retry rechecks do not guarantee progress under arbitrary
+sustained wall-clock reversal. The application change does not claim a system
+clock fix. The full January numerical reconciliation remains the historical R4
+acceptance above and was not rerun by this focused verification.
+
+Cleanup verified the exact owned container ID/name/label/loopback binding before
+removal. Original API/PostgreSQL/Redis IDs, images, start times, restart counts
+and healthy states matched the pre-verification baseline; API live/ready were
+200 and Redis PING returned PONG. Evidence, source hashes, review summary, test
+logs, server-clock output and cleanup results remain ignored under
+artifacts/r4-clock/verify-20261025-2250dfb0-*.
+
+After this verification the user explicitly authorized committing/pushing the
+verified R4 changes and application clock fix, then checking hosted CI. This
+supersedes earlier no-commit/push restrictions for that scope. Artifacts/data,
+credentials, environments and weights remain excluded; R5-R9 remain unauthorized.
+Hosted CI is pending and its exact published revision/run outcome must be recorded.

@@ -119,6 +119,56 @@ def test_skip_locked_claims_another_job_without_waiting(dataset_engine: Engine) 
     assert claim(dataset_engine, submission_id=identity) is None
 
 
+def test_queued_claim_survives_backward_database_time_but_retry_backoff_holds(
+    dataset_engine: Engine,
+) -> None:
+    identity = request(dataset_engine, days=2)
+    first_id, second_id = (
+        row["job_id"] for row in inspect_submission(dataset_engine, identity)["jobs"]
+    )
+    # A future submission timestamp is what a backward database clock step looks like.
+    with dataset_engine.begin() as connection:
+        connection.execute(
+            jobs.update()
+            .where(jobs.c.submission_id == identity)
+            .values(eligible_at=sa.func.clock_timestamp() + sa.text("INTERVAL '1 hour'"))
+        )
+    current = claim(dataset_engine, job_id=first_id)
+    assert current is not None and current.attempt == 1 and current.token == 1
+    fail(dataset_engine, current, TransientSourceError("outage"))
+    assert claim(dataset_engine, job_id=first_id) is None
+    other = claim(dataset_engine, submission_id=identity)
+    assert other is not None and other.job_id == second_id
+
+
+def test_synchronous_ingestion_survives_backward_database_time_after_submit(
+    dataset_engine: Engine, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from marketlab.datasets import publication
+
+    original_submit = publication.submit
+    identities = []
+
+    def stepped_submit(*args, **kwargs) -> str:
+        identity = original_submit(*args, **kwargs)
+        identities.append(identity)
+        with dataset_engine.begin() as connection:
+            connection.execute(
+                jobs.update()
+                .where(jobs.c.submission_id == identity)
+                .values(eligible_at=sa.func.clock_timestamp() + sa.text("INTERVAL '1 hour'"))
+            )
+        return identity
+
+    monkeypatch.setattr(publication, "submit", stepped_submit)
+    archive, checksum = archive_files(tmp_path / "fixture")
+    result = ingest_archive(dataset_engine, tmp_path / "storage", archive, checksum)
+    state = inspect_submission(dataset_engine, identities[0])
+    assert state["complete"] and state["jobs"][0]["attempt_count"] == 1
+    assert [item["outcome"] for item in state["jobs"][0]["attempts"]] == ["succeeded"]
+    assert state["jobs"][0]["result_version"] == result["dataset_version_id"]
+
+
 def test_simultaneous_workers_claim_distinct_jobs(dataset_engine: Engine) -> None:
     identity = request(dataset_engine, days=2)
     barrier = Barrier(2)
@@ -147,7 +197,8 @@ def test_heartbeat_uses_database_time_and_cannot_revive_expired_owner(
                 jobs.c.job_id == current.job_id
             )
         )
-    assert 55 <= seconds <= 60
+    # The upper slack tolerates a backward database clock step after heartbeat().
+    assert 55 <= seconds <= 61
     expire(dataset_engine, current.job_id)
     assert not heartbeat(dataset_engine, current)
     replacement = claim(dataset_engine, submission_id=identity)
@@ -199,7 +250,8 @@ def test_transient_retries_have_delay_and_total_three_attempt_budget(
                     sa.extract("epoch", jobs.c.eligible_at - sa.func.clock_timestamp())
                 ).where(jobs.c.job_id == current.job_id)
             )
-        assert expected_delay - 2 <= seconds <= expected_delay
+        # The upper slack tolerates a backward database clock step after fail().
+        assert expected_delay - 2 <= seconds <= expected_delay + 1
         assert claim(dataset_engine, submission_id=identity) is None
         ready(dataset_engine, current.job_id)
     assert claim(dataset_engine, submission_id=identity) is None
@@ -231,7 +283,8 @@ def test_retry_after_delay_is_retained(dataset_engine: Engine) -> None:
                 jobs.c.job_id == current.job_id
             )
         )
-    assert 118 <= seconds <= 120
+    # The upper slack tolerates a backward database clock step after fail().
+    assert 118 <= seconds <= 121
 
 
 def test_incompatible_execution_contract_is_not_claimed(dataset_engine: Engine) -> None:
@@ -768,6 +821,90 @@ def test_synchronous_transient_source_retries_same_durable_job_then_succeeds(
     assert state["jobs"][0]["attempt_count"] == 2
     assert [item["outcome"] for item in state["jobs"][0]["attempts"]] == ["transient", "succeeded"]
     assert state["jobs"][0]["result_version"] == result["dataset_version_id"]
+
+
+def test_synchronous_retry_rechecks_database_time_that_trails_host_sleep(
+    dataset_engine: Engine, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import httpx
+
+    from marketlab.datasets import ingest_day, publication
+
+    archive, checksum = archive_files(tmp_path / "fixture")
+    calls = []
+    sleeps = []
+
+    def response(request: httpx.Request) -> httpx.Response:
+        calls.append(str(request.url))
+        if len(calls) == 1:
+            return httpx.Response(503)
+        body = (
+            checksum.read_bytes()
+            if request.url.path.endswith(".CHECKSUM")
+            else archive.read_bytes()
+        )
+        return httpx.Response(200, content=body)
+
+    def trailing_database_time(delay: float) -> None:
+        # The first host wait ends before database time reaches retry eligibility.
+        sleeps.append(delay)
+        if len(sleeps) > 1:
+            with dataset_engine.begin() as connection:
+                connection.execute(
+                    jobs.update()
+                    .where(jobs.c.state == "retry_wait")
+                    .values(eligible_at=sa.func.clock_timestamp() - sa.text("INTERVAL '1 second'"))
+                )
+
+    monkeypatch.setattr(publication.time, "sleep", trailing_database_time)
+    with httpx.Client(transport=httpx.MockTransport(response)) as client:
+        result = ingest_day(
+            dataset_engine, tmp_path / "storage", symbol="BTCUSDT", trade_date=JAN, client=client
+        )
+    assert len(calls) == 3 and len(sleeps) == 2
+    assert 8 <= sleeps[0] <= 11 and 8 <= sleeps[1] <= 11
+    with dataset_engine.connect() as connection:
+        identity = connection.scalar(sa.select(submissions.c.submission_id))
+    state = inspect_submission(dataset_engine, identity)["jobs"][0]
+    assert state["attempt_count"] == state["fencing_token"] == 2
+    assert [item["outcome"] for item in state["attempts"]] == ["transient", "succeeded"]
+    assert state["result_version"] == result["dataset_version_id"]
+
+
+def test_synchronous_retry_recheck_is_bounded(
+    dataset_engine: Engine, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import httpx
+
+    from marketlab.datasets import ingest_day, publication
+
+    sleeps = []
+    monkeypatch.setattr(publication.time, "sleep", sleeps.append)
+    with (
+        httpx.Client(transport=httpx.MockTransport(lambda _: httpx.Response(503))) as client,
+        pytest.raises(DatasetError, match="not eligible"),
+    ):
+        ingest_day(
+            dataset_engine, tmp_path / "storage", symbol="BTCUSDT", trade_date=JAN, client=client
+        )
+    assert len(sleeps) == 4
+    with dataset_engine.connect() as connection:
+        identity = connection.scalar(sa.select(submissions.c.submission_id))
+    state = inspect_submission(dataset_engine, identity)["jobs"][0]
+    assert state["state"] == "retry_wait" and state["attempt_count"] == 1
+
+
+def test_synchronous_resume_of_unexpired_owner_is_not_eligible(
+    dataset_engine: Engine, tmp_path: Path
+) -> None:
+    from marketlab.datasets import ingest_day
+
+    identity = request(dataset_engine, source_mode="inline")
+    job_id = inspect_submission(dataset_engine, identity)["jobs"][0]["job_id"]
+    assert claim(dataset_engine, job_id=job_id) is not None
+    with pytest.raises(DatasetError, match="not eligible"):
+        ingest_day(dataset_engine, tmp_path, symbol="BTCUSDT", trade_date=JAN, resume_job_id=job_id)
+    assert inspect_submission(dataset_engine, identity)["jobs"][0]["attempt_count"] == 1
 
 
 @pytest.mark.parametrize(
