@@ -415,5 +415,9 @@ live claim/retry/heartbeat/lease/fencing acceptance in 249.827s. Independent rev
 found no blocking issue. The application works as intended with the known Docker
 clock discrepancy. The owned test database was removed; original service IDs,
 start times and health were preserved. The user then authorized committing/pushing
-R4 and the application clock fix and checking hosted CI. Hosted verification is
-pending; see [R4 verification](docs/r4-verification.md).
+R4 and the application clock fix and checking hosted CI. Published implementation
+commit `2c0dd0b` passed [hosted CI run 40167912094](https://github.com/atharva-m/MarketLab/actions/runs/40167912094):
+655 offline tests on both Ubuntu and Windows, 158 real PostgreSQL tests on Linux,
+plus quality/build/API/optional-Redis-outage/cleanup checks. No CI fix was needed.
+Hosted smoke is separate from the local full-month and clock acceptance evidence;
+see [R4 verification](docs/r4-verification.md).

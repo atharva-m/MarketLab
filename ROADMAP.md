@@ -1,6 +1,6 @@
 # MarketLab recovery roadmap
 
-Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. R4 and clock-fix publication is authorized October 25; hosted CI is pending. R5–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
+Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. Verified R4 and the clock fix were published as 2c0dd0b; hosted CI run 40167912094 passed for that revision. R5–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
@@ -367,5 +367,25 @@ issue. The application works as intended with the known Docker clock discrepancy
 409,100,000 server clock samples over 90.021s still captured three backward steps,
 largest 2.788ms. The owned test database was removed; original service IDs, start
 times and health were unchanged. Evidence remains ignored under
-artifacts/r4-clock/verify-20261025-2250dfb0-*. Hosted CI is pending; actual results
-belong in [R4 verification](docs/r4-verification.md).
+artifacts/r4-clock/verify-20261025-2250dfb0-*. Hosted CI was pending at authorization;
+the actual outcome follows and is recorded in [R4 verification](docs/r4-verification.md).
+
+### R4 publication and hosted CI verified (October 25, 2026)
+
+Verified R4 and its application clock fix were committed/pushed normally to
+origin/main as 2c0dd0bbf8ebfcac9dd6a5cbd5255d288f383d0c. The push included the
+existing R4 backup commit f600ccb7e1fc1487f88328c2826d72f956631e52. No market
+artifacts/data, credentials, environments or weights were included.
+[Hosted CI run 40167912094](https://github.com/atharva-m/MarketLab/actions/runs/40167912094)
+passed all three jobs for that exact implementation revision.
+
+Ubuntu quality passed 655 offline tests in 8.07s; Windows quality passed 655 in
+14.35s. Linux integration passed 158 real PostgreSQL tests in 30.05s. Ruff
+lint/format, strict mypy, Compose validation, image build/startup, API smoke,
+optional Redis-outage checks and cleanup passed. No CI fix was needed and no
+R4 publication/CI blocker remains.
+
+Hosted smoke does not repeat the local all-62-partition numerical reconciliation,
+real cache-eviction harness or dense Docker clock acceptance. Those records and
+the known system-clock discrepancy remain intact. Exact hosted metadata/logs
+remain ignored under artifacts/r4-ci/. R5-R9 remain unauthorized.

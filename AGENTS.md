@@ -139,5 +139,12 @@ heartbeats, three lease-expiry cycles, stale-worker rejection and the attempt ca
 Independent read-only review found no blocking issue. The application works as
 intended with the known Docker clock discrepancy; a 90-second server sample still
 captured three backward steps, largest 2.788ms. Owned resources were removed and
-original service IDs/start times/health were unchanged. Hosted CI is pending and
-must be recorded for the exact published revision in [R4 verification](docs/r4-verification.md).
+original service IDs/start times/health were unchanged.
+
+Verified R4 and the application clock fix were committed/pushed to origin/main as
+2c0dd0bbf8ebfcac9dd6a5cbd5255d288f383d0c, including the existing R4 backup commit
+f600ccb7e1fc1487f88328c2826d72f956631e52. [Hosted CI run 40167912094](https://github.com/atharva-m/MarketLab/actions/runs/40167912094)
+passed for that exact revision: 655 offline tests on Ubuntu and Windows, 158 real
+PostgreSQL tests on Linux, quality/build/API/optional-Redis-outage/cleanup checks.
+No CI fix was needed. Hosted smoke is separate from local month reconciliation
+and clock acceptance; see [R4 verification](docs/r4-verification.md).

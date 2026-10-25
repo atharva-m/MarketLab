@@ -397,6 +397,11 @@ the successful locked test invocations; their logs remain retained.
 
 The user then authorized committing/pushing verified R4 and the application clock
 fix and checking hosted CI. This supersedes earlier publication restrictions for
-that scope only. Hosted CI is pending; its exact revision/run outcome belongs in
-[R4 verification](r4-verification.md). Historical failures and the October 24
+that scope only. Verified implementation commit
+2c0dd0bbf8ebfcac9dd6a5cbd5255d288f383d0c was published and passed
+[hosted CI run 40167912094](https://github.com/atharva-m/MarketLab/actions/runs/40167912094):
+655 offline tests on Ubuntu and Windows, 158 real PostgreSQL tests on Linux and
+quality/build/API/optional-Redis-outage/cleanup checks. No CI fix was needed.
+Hosted smoke is separate from the local dense-clock and real-lease acceptance;
+see [R4 verification](r4-verification.md). Historical failures and the October 24
 preservation incident remain recorded above. R5-R9 remain unauthorized.

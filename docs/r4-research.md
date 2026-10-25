@@ -242,5 +242,11 @@ clock fix, then checking hosted CI. This changes publication authority only; the
 numerical contract, preservation requirements and excluded scope remain intact.
 Fresh verification passed 655 offline/158 real PostgreSQL tests and live
 claim/retry/heartbeat/lease/fencing acceptance. The application works as intended
-with the known Docker clock discrepancy; no system clock fix is claimed. Hosted
-CI is pending; see [actual verification](r4-verification.md).
+with the known Docker clock discrepancy; no system clock fix is claimed.
+
+Verified implementation commit `2c0dd0b` was published to origin/main and passed
+[hosted CI run 40167912094](https://github.com/atharva-m/MarketLab/actions/runs/40167912094):
+655 offline tests on Ubuntu and Windows, 158 real PostgreSQL tests on Linux and
+quality/build/API/optional-Redis-outage/cleanup checks. No CI fix was needed. The
+exact revision and hosted/local evidence distinction are recorded in
+[actual verification](r4-verification.md).

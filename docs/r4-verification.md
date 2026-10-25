@@ -178,7 +178,8 @@ restored before cleanup. catalog-final.json was validated as ten accepted runs/
 62 dataset registrations before removal. Evidence is artifacts/r4/cleanup.json.
 
 Artifacts/evidence/snapshots remain ignored, no market data or credentials enter
-Git, and nothing has been committed or pushed. Hosted CI remains unrun. Apart from
+Git. At this local closeout nothing had been committed/pushed and hosted CI was
+unrun. Apart from
 the explicitly observed DB-clock environment limitation, no unresolved R4 code or
 numerical acceptance blocker remains.
 
@@ -222,4 +223,35 @@ After this verification the user explicitly authorized committing/pushing the
 verified R4 changes and application clock fix, then checking hosted CI. This
 supersedes earlier no-commit/push restrictions for that scope. Artifacts/data,
 credentials, environments and weights remain excluded; R5-R9 remain unauthorized.
-Hosted CI is pending and its exact published revision/run outcome must be recorded.
+Hosted CI was pending at this authorization; its observed outcome follows.
+
+## Publication and hosted CI verified (October 25, 2026)
+
+Verified R4 and the application clock fix were committed/pushed normally to
+origin/main as **2c0dd0bbf8ebfcac9dd6a5cbd5255d288f383d0c**. The push included
+the existing R4 backup commit f600ccb7e1fc1487f88328c2826d72f956631e52. Published
+files contain scoped source/tests/migration/tooling/documentation; no market
+artifacts/data, credentials, environments or weights were included.
+
+[Hosted CI run 40167912094](https://github.com/atharva-m/MarketLab/actions/runs/40167912094)
+completed successfully for that exact implementation SHA. All three jobs passed:
+
+| Hosted job | Observed tests | Pytest time |
+| --- | --- | --- |
+| Ubuntu quality | 655 offline | 8.07s |
+| Windows quality | 655 offline | 14.35s |
+| Linux integration | 158 real PostgreSQL | 30.05s |
+
+Quality passed locked Ruff lint/format and strict mypy. Integration passed Compose
+validation, API image build/startup, database migrations/tests, API smoke, initially
+healthy Redis and optional Redis-outage smoke, and cleanup. No CI fix was needed;
+no unresolved R4 publication/CI blocker remains. Exact hosted metadata and logs
+remain ignored under artifacts/r4-ci/, including
+2c0dd0bbf8ebfcac9dd6a5cbd5255d288f383d0c-logs.json.
+
+Hosted smoke does not repeat the local 62-partition/230,311,900-trade numerical
+reconciliation, real summary-cache eviction harness or dense clock/lease acceptance.
+The historical dirty-source month execution, later metadata-only fix/readback,
+application clock workaround and known Docker system-clock discrepancy retain
+their separate evidence above. Peak memory remains unmeasured; R5-R9 remain
+unauthorized.
