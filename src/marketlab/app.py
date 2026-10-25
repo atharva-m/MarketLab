@@ -16,6 +16,8 @@ from marketlab.analytics.routes import router as bar_router
 from marketlab.config import Settings
 from marketlab.health import build_checks, readiness
 from marketlab.observability import RequestMetrics, RequestMiddleware, configure_logging
+from marketlab.research.routes import router as research_router
+from marketlab.research.service import ResearchService
 from marketlab.trades.routes import router as trade_router
 
 
@@ -47,6 +49,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             settings.redis_url.get_secret_value(),
             registry=metrics.registry,
         )
+        app.state.research_service = ResearchService(app.state.bar_service)
         async with httpx.AsyncClient(
             base_url=settings.ollama_url, timeout=settings.dependency_timeout_seconds
         ) as client:
@@ -54,6 +57,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             try:
                 yield
             finally:
+                await app.state.research_service.close()
                 await app.state.bar_service.close()
                 await run_in_threadpool(trade_engine.dispose)
                 await redis.aclose()
@@ -65,6 +69,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_middleware(RequestMiddleware, metrics=metrics)
     app.include_router(trade_router)
     app.include_router(bar_router)
+    app.include_router(research_router)
 
     @app.exception_handler(Exception)
     async def unexpected_error(request: Request, exc: Exception) -> JSONResponse:

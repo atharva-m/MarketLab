@@ -306,8 +306,8 @@ analytical capacity; cache metrics have bounded labels.
 The asynchronous library interface is `marketlab.analytics.BarsRequest.create`
 and `BarService(engine, storage_root, redis_url=None)`, followed by
 `await service.read(request)` and `await service.close()`. Without `redis_url`,
-reads compute with `BYPASS`. Completed-summary cache policy is fixture-tested;
-research calculations and summary endpoints remain R4 work.
+reads compute with `BYPASS`. R3's completed-summary cache policy was fixture-tested;
+the approved R4 below adds actual research calculations and summary endpoints.
 
 See [R3 contract](docs/r3-analytics.md) and [R3 verification](docs/r3-verification.md)
 for exact errors, limits, completed local acceptance evidence and subsequent
@@ -327,6 +327,72 @@ unrun. The user subsequently authorized verified R3 commit/push, hosted CI and
 actual R3-only fixes/outcome documentation; see the verification publication record.
 The verified implementation was subsequently committed/pushed and its hosted CI
 passed as linked above; no CI fix was needed. Hosted smoke does not repeat the
-local retained-month or real cached-bar outage/eviction acceptance. R4-R9 require
-separate authorization. Market data/artifacts, credentials, environments and
+local retained-month or real cached-bar outage/eviction acceptance. R4 was subsequently
+approved as described below; R5-R9 require separate authorization. Market
+data/artifacts, credentials, environments and
 weights remain excluded from Git.
+
+## R4 deterministic manual research
+
+R4 adds strict `research-spec-v1` requests for five-minute `market_profile`,
+`cross_asset` and `volatility_cluster` workflows. Each request pins registered
+January dataset versions, explicit UTC history/evaluation boundaries, typed
+predicates and metrics. Missing bars stay missing. Profile/cross-asset require
+12 preceding bars; clusters require 288 preceding valid volatility observations
+(300 bars/25 hours with complete data). Requests never silently shorten their
+period or download earlier history. Derived statistics use Decimal80 and versioned
+definitions; they describe assets and do not represent strategy performance.
+
+Apply `alembic upgrade head` to the intended database. The additive migration
+creates separate research submissions/runs/attempts/results and preserves ingestion
+and trade tables. Submit a strict spec file, execute a bounded local worker, inspect
+state and retrieve immutable results:
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.research_cli submit --spec request.json --key my-research
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.research_cli worker --max-runs 1 --run RUN_UUID
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.research_cli inspect --run RUN_UUID
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.research_cli results --run RUN_UUID
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.research_cli summary --run RUN_UUID
+```
+
+HTTP equivalents are `POST /v1/research/runs` with an `Idempotency-Key` header and
+JSON spec, then `GET /v1/research/runs/{run_id}`, `/results` and `/summary`.
+Submission validates actual initial warm-up and can read all requested inputs;
+it returns a durable queued identity. HTTP does not automatically start a worker.
+Same key/canonical request returns the original run; a fresh key creates an
+independent reproducibility run. Worker retries include crashes: three attempts,
+database-time leases and fencing, immutable staged artifacts and atomic numerical
+registration/success. Results do not depend on Ollama. Redis summaries retain R3's
+one-hour jittered TTL, 1 MiB cap and bounded outage bypass. Research composes the
+same bounded BarService; its `/v1/bars` contract is unchanged.
+
+Use one shared BarService and ResearchService per application process/event loop;
+close research before bars. New research execution captures Git revision, dirty
+source fingerprint and lock hash from the source checkout; packaged images without
+Git retain startup, existing APIs and registered numerical reads, but cannot create
+new checkout-pinned research executions. No deployment configuration was changed.
+
+See the [R4 contract](docs/r4-research.md) for exact fields, numerical definitions,
+bounds and errors, and [R4 verification](docs/r4-verification.md) for actual checks
+and limitations. R4 local acceptance/review/owned cleanup passed: 655 offline/152
+real PostgreSQL cases, independent all-62-partition reconciliation and ten durable
+workflow runs/repeats with matching hashes (31 BTC/33 ETH clusters). Retained R1-R3
+behavior and original services/data were preserved. Isolated diagnostics captured
+a recurring backwards DB-clock issue that can temporarily make immediate claims
+ineligible; the final passing suite does not resolve that environment limitation.
+Peak memory is unmeasured and hosted R4 CI is unrun. Nothing is committed/pushed;
+R5-R9 remain unauthorized backlog.
+
+The user subsequently authorized a scoped clock follow-up; see
+[partial mitigation, incident and recovery](docs/r4-clock.md). Guest NTP conflict
+removal reduced large distortion, and real unchanged claim/lease tests passed.
+Dense sampling still found smaller Docker initd backwards steps; the clock is
+not fully fixed. The coarse 50ms helper cannot prove that shorter steps ceased.
+
+An exploratory initd help command unexpectedly restarted original containers;
+stale host forwarding required standard recovery restarts. The same original IDs,
+images and volumes are healthy again. Uptime was interrupted; Redis cache continuity
+was not verified and is not claimed. Owned resources were cleaned. Application eligibility/fencing remains
+unchanged; nothing was committed/pushed. A safe supported live control for the
+remaining Docker clock writer was not identified.

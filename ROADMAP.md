@@ -1,12 +1,14 @@
 # MarketLab recovery roadmap
 
-Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3; R4–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
+Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; recurring DB-clock environment limitation is explicitly retained in verification. R4 remains uncommitted/unpushed; R5–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
 ## Authority and approval boundary
 
-On October 24, 2026 the user approved the detailed R3 scope, ROADMAP.md/AGENTS.md updates, the [R3 contract](docs/r3-analytics.md) before code, prescribed coder/reviewer implementation and full acceptance. Preserve R1/R2. The initial implementation request excluded commit/push; the later R3 publication authorization below supersedes that restriction. R4-R9 remain unauthorized. These R3 approvals are the current execution authority; earlier milestone closeouts remain historical evidence.
+Current authority (October 24, 2026): the user approved the detailed R4 scope, ROADMAP.md/AGENTS.md updates, the [R4 contract](docs/r4-research.md) before code, implementation through the prescribed coder/reviewer workflow, full acceptance and actual outcome documentation. Preserve R1-R3. Do not commit or push. R5-R9 remain unauthorized. The older approval records below retain their historical scope.
+
+On October 24, 2026 the user approved the detailed R3 scope, ROADMAP.md/AGENTS.md updates, the [R3 contract](docs/r3-analytics.md) before code, prescribed coder/reviewer implementation and full acceptance. Preserve R1/R2. The initial implementation request excluded commit/push; the later R3 publication authorization below supersedes that restriction. R4-R9 remain unauthorized. These R3 approvals are historical execution authority; the R4 approval below now governs current work. Earlier milestone closeouts remain historical evidence.
 
 Later on October 24, 2026, after completed R3 local verification/review/cleanup, the user explicitly authorized committing/pushing the verified R3 changes, checking hosted CI, fixing actual R3-only CI failures through the prescribed coder/reviewer workflow and documenting/publishing actual outcomes. This supersedes the initial R3 no-commit instruction without expanding feature scope. Archives/artifacts/data, credentials, environments and weights remain excluded from Git; R4-R9 remain unauthorized. Hosted results must be observed for the exact published revision and recorded in [R3 verification](docs/r3-verification.md).
 
@@ -19,6 +21,27 @@ The user explicitly approved this roadmap and authorized R1 implementation, AGEN
 After explicit approval, record the approval and approved milestone here, then update AGENTS.md to that milestone before implementation. Approval of the roadmap establishes direction; execute only the milestone the user authorizes. If an approval is ambiguous, clarify the execution scope. Keep later milestones as backlog.
 
 Use this root document as the durable roadmap reference for future sessions. Preserve the historical week 1–9 documents and commits; those labels describe completed repository increments, not completion of the original 14-week schedule. Use R1–R9 below for recovery milestones. Do not relabel unrelated work as progress on the original plan.
+
+## Current R4 execution authority (October 24, 2026)
+
+The user approved the detailed deterministic R4 proposal, ROADMAP.md/AGENTS.md
+updates, the [R4 contract](docs/r4-research.md) before code, prescribed coder/reviewer
+implementation, full acceptance and honest actual outcome documentation. No commit
+or push is authorized. R5-R9 remain unauthorized. This later approval supersedes
+historical R4 exclusions only for the approved contract; preserve R1-R3.
+
+Deliver strict typed ResearchSpec, five-minute profile/cross-asset/clusters with
+explicit January warm-up, Decimal80 definitions, separate durable research schema
+and fenced execution/publication, immutable numerical results/summary, manual API/
+CLI and actual summary caching. No pre-January ingestion or model/UI work. Full
+retained suites, real PostgreSQL/crash/Redis checks, independent all-62-partition
+reconciliation and repeatability are completion gates. Actual evidence belongs in
+[verification](docs/r4-verification.md). Implementation, local acceptance, independent
+source review and owned cleanup passed. Final locked checks: 655 offline/152 real
+PostgreSQL cases. All 62 January partitions/230,311,900 trades reconciled independently;
+ten durable workflow runs/repeats matched all numerical hashes, BTC/ETH clusters
+31/33, source artifacts unchanged. The measured DB-clock regression remains an
+environment limitation, not a resolved issue; see exact failures and provenance.
 
 ## Product objective retained from the original plan
 
@@ -39,7 +62,7 @@ Baseline evidence: 456 offline and 76 PostgreSQL tests passed locally, six week 
 
 Keep existing `/trades` contracts, synthetic fixtures, global synthetic trade-ID behavior, import transactionality and streamed 1 MiB limit, filtering/pagination semantics, exact serialization, local CLI behavior, redacted errors, health/observability and locked environment. Do not replace the tested subsystem with historical ingestion.
 
-R1 completed historical downloads/checksums/provenance, immutable dataset publication and the minimal catalog. R2 completed durable ingestion jobs and fenced publication, with actual month-scale publication/readback and same-source recheck. Remaining backlog includes analytical bars, application caching, research workflows, DSL/submission, copilot, memos and frontend. Installed DuckDB/PyArrow dependencies, a Redis container and an Ollama smoke are foundations, not implementations of those later capabilities.
+R1 completed historical downloads/checksums/provenance, immutable dataset publication and the minimal catalog. R2 completed durable ingestion jobs and fenced publication, with actual month-scale publication/readback and same-source recheck. R3 subsequently completed bars and resilient caching; R4 completed typed manual research, durable numerical runs and summaries. Remaining backlog is copilot, memos, frontend and later evaluation/demo work. An Ollama smoke is a foundation, not an implementation of those later model capabilities.
 
 ## Sequenced recovery milestones
 
@@ -108,7 +131,13 @@ Detailed approved contract: [R3 analytical reads](docs/r3-analytics.md). Impleme
 
 Define completed UTC bars, exact aggregation/rounding rules and 1m/5m intervals; missing bars remain missing, with no forward filling. Query published dataset versions via fixed templates and bound parameters. Cache immutable bar responses and completed numerical summaries only. Keys include cache schema, dataset/run identity and canonical parameter hash. Preserve the original TTLs (15 minutes bars, one hour summaries, ±10% jitter), 1 MiB value cap, 100 ms Redis timeouts, no automatic retries and a ten-second bypass after three failures. Coalesce identical reads per process and cap expensive uncached queries at two. Provide `X-Cache: HIT|MISS|BYPASS` and metrics; retain 256 MiB allkeys-lru/no persistence with container headroom. Test actual cached results during outage and eviction, beyond health probes.
 
-### R4: deterministic research before natural language
+### Approved R4: deterministic research before natural language
+
+Detailed approved contract: [R4 deterministic research](docs/r4-research.md).
+Implementation, full local acceptance, independent source review and owned cleanup
+passed; [actual verification](docs/r4-verification.md) retains initial failures,
+recurring DB-clock limitation and pre/post metadata-fix execution provenance.
+No commit/push is authorized; R5-R9 remain backlog.
 
 Implement a versioned strict ResearchSpec with dataset version, allowlisted workflow/symbols/metrics, explicit timestamps, interval and typed parameters/predicates. No expression strings, arbitrary SQL/code/paths. Validate shape, units/meaning, coverage and warm-up. Manual submissions use one idempotent application service and pin dataset versions, parameters, code revision and lock hash.
 
@@ -255,3 +284,50 @@ R3 cached-bar outage/eviction harness; those remain distinct completed evidence.
 Peak memory is unmeasured. This outcome follow-up is documentation only; no
 runtime, dependency/lock, deployment or workflow change was needed. Exact hosted
 metadata/logs remain ignored under artifacts/r3-ci/. R4-R9 remain unauthorized.
+
+### R4 local closeout (October 24, 2026)
+
+COMPLETE under the approved [R4 contract](docs/r4-research.md): strict typed
+five-minute research, three deterministic workflows, separate durable research
+schema/execution, immutable numerical publication, manual API/CLI and real summary
+cache. Final locked checks passed 655 offline/152 real PostgreSQL cases, zero
+skips. Independent source review resolved all five actionable findings; final
+metadata-only replay-response correction was verified separately from the actual
+month execution source snapshot.
+
+An independent fresh scan reconciled all 62 retained partitions/230,311,900 trades
+and 17,856 five-minute bars. Ten durable runs (five requests plus independent fresh
+key repeats) succeeded in one attempt each and matched all 20 reference numerical
+payload hashes. BTC/ETH cluster counts were 31/33. Real migration/fencing/process
+crash/cache outage/eviction, Ollama-unavailable numerics, retained live contracts
+and original R1 readback passed. All source artifacts remained unchanged; a final
+snapshot preserves accepted run/catalog records before owned-resource cleanup.
+Original service IDs/health were preserved and the three owned containers/image
+removed. See [actual verification](docs/r4-verification.md) for exact evidence.
+
+Recurring backwards PostgreSQL wall time was captured causing temporary immediate
+claim ineligibility; affinity and quiescent diagnostics did not resolve it. Initial
+failed suites remain recorded alongside the final passing suite; no retained
+runtime/test eligibility or host clock was changed. This environment limitation
+is still present. Peak memory is unmeasured; hosted R4 CI is unrun. All R4 changes
+remain uncommitted/unpushed under the user's explicit instruction. R5-R9 require
+separate authorization; no market artifacts/data, credentials, environments or
+weights belong in Git.
+
+### Authorized post-R4 clock follow-up: partial mitigation, unresolved (October 24, 2026)
+
+The user authorized investigating/fixing the clock environment with prescribed
+review, preservation and actual verification, no commit/push. [The report](docs/r4-clock.md)
+retains before/failed partial evidence, Ubuntu timesyncd disable and PHC convergence,
+actual job/lease and retained-suite passes, and unresolved smaller Docker initd
+clock steps. No safe supported live control for that writer was identified; the
+clock fix is incomplete.
+
+An exploratory initd help command unexpectedly attempted VM initialization and
+restarted original containers, violating uptime preservation. Stale host forwards
+required standard API/PostgreSQL/Redis recovery restarts. Same original IDs/images/
+volumes and healthy host endpoints were verified; uptime/cache continuity are not
+claimed. Owned resources were cleaned. No manual rate reset or R1-R4 eligibility/
+fencing change was applied. Historical R4 results and this incident remain intact;
+R5-R9 remain unauthorized. Any later Docker/vendor maintenance needs a separate
+reviewed operational plan.
