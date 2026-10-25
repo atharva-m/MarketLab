@@ -421,3 +421,101 @@ commit `2c0dd0b` passed [hosted CI run 40167912094](https://github.com/atharva-m
 plus quality/build/API/optional-Redis-outage/cleanup checks. No CI fix was needed.
 Hosted smoke is separate from the local full-month and clock acceptance evidence;
 see [R4 verification](docs/r4-verification.md).
+
+## R5 durable inbound copilot
+
+R5 is complete under its approved contract: final locked checks passed 736
+offline/174 real PostgreSQL cases; independent review and owned cleanup passed.
+Ten full-month copilot/manual runs matched all numerical references over all 62
+January partitions. At local closeout no commit/push or hosted CI had occurred.
+The user subsequently authorized verified R5 publication, hosted CI checks,
+actual R5-only fixes and outcome documentation; those results are not yet
+observed. R6-R9 remain unauthorized.
+
+R5 adds an optional local natural-language entry point over the same validated
+R4 research submission service. See [the contract](docs/r5-copilot.md) and
+[actual verification and limitations](docs/r5-verification.md). Numerical
+execution and result retrieval remain available without Ollama.
+
+Apply the additive migration with `alembic upgrade head`. Create a JSON file:
+
+```json
+{
+  "schema": "copilot-request-v1",
+  "text": "Compute a descriptive OHLCV profile of Bitcoin using five-minute bars; metrics profile. Evaluation from 2025-01-01T01:00:00Z to 2025-01-02T00:00:00Z; history from 2025-01-01T00:00:00Z.",
+  "dataset_versions": ["<explicit registered January BTCUSDT version>"],
+  "context": {}
+}
+```
+
+Replace the placeholder with the actual registered 64-character version. Supply
+one version per required UTC day and symbol; a larger explicit selection is
+permitted, and the application pins the exact needed subset. Clear text can be
+combined with explicit `context` fields: workflow, symbols, start, end,
+history_start, interval and metrics. Dates are UTC half-open bounds, bars 5m,
+only January 2025. No implicit latest selection, dates, thresholds or downloads.
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.copilot_cli create --request request.json --key example-copilot
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.copilot_cli worker --max-jobs 1 --request REQUEST_UUID
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.copilot_cli inspect --request REQUEST_UUID
+```
+
+Equivalent HTTP endpoints are `POST /v1/copilot/requests`, `GET
+/v1/copilot/requests/{request_id}` and `POST
+/v1/copilot/requests/{request_id}/clarifications`; POST requires JSON and an
+`Idempotency-Key`. Creation queues interpretation promptly. A separate bounded
+copilot worker runs inference; existing research workers execute submitted
+numerics. `submitted` includes a durable run ID and does not mean execution has
+finished. Poll existing research inspection/results/summary endpoints for it.
+
+Ambiguous input yields durable `needs_clarification` with field-specific
+questions and no numerical run. Answer with the current revision, for example:
+
+```json
+{
+  "schema": "copilot-answer-v1",
+  "expected_revision": 0,
+  "text": "Use this explicit history start.",
+  "context": {"history_start": "2025-01-01T00:00:00Z"}
+}
+```
+
+Use `copilot_cli answer --request REQUEST_UUID --answer answer.json --key
+ANSWER_KEY`, then invoke the worker again. Up to five answer rounds are allowed.
+Unrelated answers do not resolve prior ambiguity.
+The original dataset selection stays fixed across answers; create a fresh request
+to add or replace dataset versions. Answers can explicitly correct the research
+period/history within that selection. Unsupported work returns
+`unsupported`; bounded inference or validation failures produce safe durable
+failure state. Same request/answer key and body replay, conflicting reuse fails.
+
+Ollama uses existing `MARKETLAB_OLLAMA_URL`; optional
+`MARKETLAB_COPILOT_MODEL` defaults to `qwen3.5:4b-q8_0` and
+`MARKETLAB_COPILOT_MODEL_DIGEST` can require an installed digest. No automatic
+model pull/update or fallback. One cooperating inference call at a time, 120s
+deadline, two durably reserved calls per revision, three execution attempts
+including crashes. Provenance pins model/source/settings and bounded response
+evidence. Model output must pass independent conservative semantic checks and all
+R4 shape/catalog/integrity/warm-up checks. Requests outside the recognized explicit
+language may require structured clarification even when a human finds them clear.
+The recorded R5 60-case evaluation achieved 18/20 correct clear specs and zero
+unsafe submissions across 40 negative cases; 25 negative cases received the
+expected clarification/refusal and 15 failed safely. See verification for model
+limitations and earlier failed evaluations.
+
+Each body is at most 64 KiB, each text 8 KiB, at most 62 selected versions. Total
+model text/context/system/schema input is bounded to 6000 UTF-8 bytes with 2048
+output tokens in the 8192 context; larger conversations fail clearly without
+truncation. Never place credentials in prompts. Responses/prompts are durable
+local request evidence but are omitted from normal logs and metric labels.
+
+Existing numerical manifests/results are unchanged. Adding source changes R4
+execution fingerprints: old completed results remain readable and incompatible
+queued execution is rejected. The Docker clock discrepancy persists; R5 follows
+the established database-time lease/retry and immediate queued-claim protocol.
+The later R5 publication approval authorizes commit/push of the verified scope,
+hosted CI checks, actual R5-only fixes through the prescribed coder/reviewer
+workflow and publication of actual outcomes. See verification for the exact
+published revision and hosted results when observed. Local acceptance remains
+separate; artifacts/data, credentials, environments and weights stay outside Git.

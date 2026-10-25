@@ -1,6 +1,6 @@
 # MarketLab contributor instructions
 
-Historical completed scope is R2 in [ROADMAP.md](ROADMAP.md) and [R2 contract](docs/r2-jobs.md): durable PostgreSQL jobs and fenced publication for Binance Spot BTCUSDT/ETHUSDT daily trades covering [2025-01-01T00:00:00Z, 2025-02-01T00:00:00Z), 62 daily partitions. User approved this scope, documentation updates, prescribed coder/reviewer workflow, acceptance verification and honest results/blocker documentation. R1 is complete and must be preserved. R2 implementation, full verification, independent review and owned-resource cleanup are complete; see docs/r2-verification.md. The initial implementation request excluded commit/push. On October 24, 2026 the user subsequently authorized committing/pushing the verified R2 changes, checking hosted CI, fixing actual R2-only CI failures and documenting/publishing actual outcomes. Hosted CI passed for the reviewed documentation fix commit d22523aaafc2182fc411c1615ad615e0be24c771 in run 40067854743 after the initial formatting failure recorded in docs/r2-verification.md. Never commit archives/artifacts/data, credentials, environments or weights. R3 is complete; R4 is now authorized below and R5-R9 remain unauthorized. Historical week 1-9 labels remain repository increments, not completion of original plan milestones. Read the full approved R2 contract and retained R1 contract before changes.
+Historical completed scope is R2 in [ROADMAP.md](ROADMAP.md) and [R2 contract](docs/r2-jobs.md): durable PostgreSQL jobs and fenced publication for Binance Spot BTCUSDT/ETHUSDT daily trades covering [2025-01-01T00:00:00Z, 2025-02-01T00:00:00Z), 62 daily partitions. User approved this scope, documentation updates, prescribed coder/reviewer workflow, acceptance verification and honest results/blocker documentation. R1 is complete and must be preserved. R2 implementation, full verification, independent review and owned-resource cleanup are complete; see docs/r2-verification.md. The initial implementation request excluded commit/push. On October 24, 2026 the user subsequently authorized committing/pushing the verified R2 changes, checking hosted CI, fixing actual R2-only CI failures and documenting/publishing actual outcomes. Hosted CI passed for the reviewed documentation fix commit d22523aaafc2182fc411c1615ad615e0be24c771 in run 40067854743 after the initial formatting failure recorded in docs/r2-verification.md. Never commit archives/artifacts/data, credentials, environments or weights. R1-R4 are complete; R5 is now authorized under the current milestone below. R6-R9 remain unauthorized. Historical week 1-9 labels remain repository increments, not completion of original plan milestones. Read the full approved R2 contract and retained R1 contract before changes.
 
 Retained R2 preservation requirements (R3 adds no schema): before R2 migration/code, document schema constraints, state transitions and fencing/publication protocol. Use existing locked Python 3.13 dependencies. Add additive submission/job/attempt schema; FOR UPDATE SKIP LOCKED claims, 10-second heartbeat, 60-second leases, monotonically increasing fencing tokens, three total attempts including crashes. Use database time. Match current owner/token/unexpired lease for mutations; stale workers cannot publish. Stage and fully verify artifacts before short bounded publication transactions; atomically register catalog and job success under current ownership. Retain R1 version advisory locks and orphan verification/adoption without overwrite. Only catalog-registered versions are discoverable.
 
@@ -36,7 +36,7 @@ smoke coverage; see docs/r3-verification.md. No R4-R9 authorization follows.
 User approved October 24, 2026 the detailed R3 scope in [ROADMAP.md](ROADMAP.md) and [R3 contract](docs/r3-analytics.md), documentation updates before code, prescribed coder/reviewer implementation, full acceptance and honest results/blockers. The initial no-commit/push restriction is superseded only by the later R3 publication authorization above. Read and preserve full R1/R2 contracts. Implement on-demand deterministic UTC 1m/5m bars over explicit registered January BTCUSDT/ETHUSDT versions; exact decimal arithmetic, numeric tie order, no filled missing bars. Add only GET /v1/bars/OpenAPI plus scoped modules/settings; no migrations, persistent bars or job changes. Use bounded fixed-template DuckDB, two expensive reads/process, actual interruption/cleanup, strict catalog verification. Implement roadmap Redis TTL/jitter/1 MiB/100 ms/no-retry/three-failure ten-second bypass, coalescing, metrics and real outage/eviction verification. Summary-cache fixture support only; research summaries remain R4. Full 62-partition independent streaming reconciliation, retained suites and live compatibility are required; isolate resources and preserve original services/data. No dependencies/lock changes, artifact rewrites, warm-up, scheduling, GC, UI/models/research or multi-host claims. R4-R9 remain unauthorized. Never include market data/artifacts, credentials, environments or weights in Git.
 
 
-## Current authorized milestone: R4 - complete
+## Historical completed milestone: R4
 
 User approved October 24, 2026 the detailed R4 proposal and authorized ROADMAP.md/
 AGENTS.md updates, the full [R4 contract](docs/r4-research.md) before code, prescribed
@@ -148,3 +148,60 @@ passed for that exact revision: 655 offline tests on Ubuntu and Windows, 158 rea
 PostgreSQL tests on Linux, quality/build/API/optional-Redis-outage/cleanup checks.
 No CI fix was needed. Hosted smoke is separate from local month reconciliation
 and clock acceptance; see [R4 verification](docs/r4-verification.md).
+
+## Current authorized milestone: R5 - complete (October 25, 2026)
+
+The user approved the detailed R5 proposal, ROADMAP.md/AGENTS.md updates, full
+[R5 contract](docs/r5-copilot.md) BEFORE code, prescribed coder gpt-6.1-sol high
+then independent read-only reviewer gpt-6-astra medium, full acceptance and actual
+outcomes. The initial implementation request excluded commit/push; the later
+R5 publication authorization below now governs publication. This supersedes
+historical R5/copilot exclusions only
+within that contract; R6-R9 remain unauthorized. Preserve full R1-R4 contracts,
+immutable artifacts and historical evidence.
+
+R5 implementation, full locked verification, independent review, actual model/
+month acceptance and ownership-checked cleanup passed; see
+[R5 verification](docs/r5-verification.md). Strict durable interpretation and
+clarification, additive schema, DB-time fenced execution (three attempts/two
+reserved model calls), atomic same-service research handoff and bounded local
+Ollama/API/CLI are complete. Final checks passed 736 offline/174 real PostgreSQL
+cases. Frozen v3 met the model gates: 18/20 clear correct and zero unsafe
+submissions among 40 negative cases; 25 negatives received expected clarification/
+refusal and 15 failed safely. Do not claim unrestricted model understanding or
+40/40 successful clarification/refusal.
+
+Ten full-month runs (five copilot/five manual), all attempt 1, matched every
+canonical spec/results/summary hash against retained independent R4 references
+over 62 January partitions/230,311,900 trades, in 2473.395s. The tested dirty source
+fingerprint, earlier failed v1/v2 evaluations (including one unsafe queued v2 run,
+never numerically executed), harness/source-drift/orchestration failures and actual
+client-cancellation versus model-load-abortion observations remain explicit in
+verification. No active-token generation cancellation claim follows from the
+final load-abortion log. Peak memory remains unmeasured; hosted CI is unrun.
+
+All 124 original dataset files and 53 protected files (including 40 old research
+files) retained their hashes. Owned resources were removed; original service IDs,
+images/start times/restart counts/health and HTTP/Redis endpoints were preserved.
+The Docker clock discrepancy persists; preserve the application workaround. No
+dependencies/lock/deployment changes, downloads/model pulls, memos/UI/scheduling/
+GC, Docker/WSL/initd/clock experiments or original-service restarts were added.
+No artifacts/data/credentials/environments/weights belong in Git. R5 completion
+provides no R6-R9 authority; publication requires the explicit later approval below.
+
+## Authorized R5 publication (October 25, 2026)
+
+After verified local closeout, the user explicitly authorized committing/pushing
+verified R5, checking hosted CI, fixing actual R5-only CI failures through the
+prescribed coder gpt-6.1-sol/high and independent read-only reviewer
+gpt-6-astra/medium workflow, and documenting/publishing actual outcomes. This
+supersedes earlier R5 no-commit/push restrictions for this publication scope only.
+Preserve R1-R4, all local acceptance/source/model/cancellation/failure evidence,
+the dirty-source fingerprint, model-quality limitations and unresolved system
+clock discrepancy. Do not include archives/artifacts/data, credentials,
+environments or weights in Git. R6-R9 remain unauthorized.
+
+Publication and hosted CI outcomes have not yet been observed at this authority
+update. Record the exact published SHA and actual hosted results in
+[verification](docs/r5-verification.md); local acceptance is not a hosted CI pass.
+Do not infer new feature/deployment authority from publication approval.

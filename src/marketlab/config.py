@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     redis_url: SecretStr = SecretStr("redis://127.0.0.1:6379/0")
     database_password: SecretStr | None = None
     ollama_url: str = "http://127.0.0.1:11434"
+    copilot_model: str = "qwen3.5:4b-q8_0"
+    copilot_model_digest: str | None = None
     storage_path: Path = Path("./data")
     dependency_timeout_seconds: float = Field(default=3.0, gt=0, le=30)
     database_connect_timeout_seconds: int = Field(default=5, ge=2, le=30)

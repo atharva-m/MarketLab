@@ -188,14 +188,17 @@ class ResearchService:
         original = await asyncio.to_thread(store.replay, self.engine, key, spec.digest)
         if original:
             return original, True
+        fingerprint = await self.prepare(spec)
+        return await asyncio.to_thread(store.submit, self.engine, key, spec.body(), fingerprint)
+
+    async def prepare(self, spec: ResearchSpec) -> dict[str, Any]:
+        """Complete the same catalog, integrity and warm-up validation for all callers."""
+        spec = ResearchSpec.create(spec.body())
         async with asyncio.timeout(self.attempt_timeout):
             inputs, rows = await self.load(spec)
-            # Validate actual initial rolling coverage, not just elapsed duration.
             cancelled = threading.Event()
             await self.bars._thread(lambda: calculate(spec, inputs, cancelled), cancelled)
-        return await asyncio.to_thread(
-            store.submit, self.engine, key, spec.body(), self.fingerprint(rows)
-        )
+        return self.fingerprint(rows)
 
     def stage(
         self,

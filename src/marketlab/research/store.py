@@ -119,47 +119,57 @@ def submit(
     digest = hashlib.sha256(canonical(spec)).hexdigest()
     replay(engine, key, digest)
     with engine.begin() as connection:
-        bounded(connection)
-        advisory(connection, "submission:" + key)
-        row = (
-            connection.execute(
-                sa.select(submissions, runs.c.run_id)
-                .join(runs, runs.c.submission_id == submissions.c.submission_id)
-                .where(submissions.c.idempotency_key == key)
-            )
-            .mappings()
-            .one_or_none()
-        )
-        if row:
-            if row["request_sha256"] != digest:
-                raise ResearchError("Research idempotency key conflict", 409)
-            return str(row["run_id"]), True
-        submission, run = str(uuid4()), str(uuid4())
-        now = connection.scalar(sa.select(sa.func.clock_timestamp()))
+        return register(connection, key, spec, fingerprint)
+
+
+def register(
+    connection: Connection, key: str, spec: dict[str, Any], fingerprint: dict[str, Any]
+) -> tuple[str, bool]:
+    """Register a prepared request in the caller's transaction (also used by copilot)."""
+    if re.fullmatch(r"[A-Za-z0-9_.-]{1,128}", key) is None:
+        raise ResearchError("Invalid research idempotency key")
+    digest = hashlib.sha256(canonical(spec)).hexdigest()
+    bounded(connection)
+    advisory(connection, "submission:" + key)
+    row = (
         connection.execute(
-            submissions.insert().values(
-                submission_id=submission,
-                idempotency_key=key,
-                request_sha256=digest,
-                spec=canonical(spec).decode(),
-                fingerprint=canonical(fingerprint).decode(),
-                fingerprint_sha256=hashlib.sha256(canonical(fingerprint)).hexdigest(),
-                created_at=now,
-            )
+            sa.select(submissions, runs.c.run_id)
+            .join(runs, runs.c.submission_id == submissions.c.submission_id)
+            .where(submissions.c.idempotency_key == key)
         )
-        connection.execute(
-            runs.insert().values(
-                run_id=run,
-                submission_id=submission,
-                state="queued",
-                attempt_count=0,
-                fencing_token=0,
-                eligible_at=now,
-                created_at=now,
-                updated_at=now,
-            )
+        .mappings()
+        .one_or_none()
+    )
+    if row:
+        if row["request_sha256"] != digest:
+            raise ResearchError("Research idempotency key conflict", 409)
+        return str(row["run_id"]), True
+    submission, run = str(uuid4()), str(uuid4())
+    now = connection.scalar(sa.select(sa.func.clock_timestamp()))
+    connection.execute(
+        submissions.insert().values(
+            submission_id=submission,
+            idempotency_key=key,
+            request_sha256=digest,
+            spec=canonical(spec).decode(),
+            fingerprint=canonical(fingerprint).decode(),
+            fingerprint_sha256=hashlib.sha256(canonical(fingerprint)).hexdigest(),
+            created_at=now,
         )
-        return run, False
+    )
+    connection.execute(
+        runs.insert().values(
+            run_id=run,
+            submission_id=submission,
+            state="queued",
+            attempt_count=0,
+            fencing_token=0,
+            eligible_at=now,
+            created_at=now,
+            updated_at=now,
+        )
+    )
+    return run, False
 
 
 def claim(engine: Engine, run_id: str | None = None) -> Claim | None:

@@ -14,6 +14,9 @@ from marketlab import __version__
 from marketlab.analytics import BarService
 from marketlab.analytics.routes import router as bar_router
 from marketlab.config import Settings
+from marketlab.copilot.model import Ollama
+from marketlab.copilot.routes import router as copilot_router
+from marketlab.copilot.service import CopilotService
 from marketlab.health import build_checks, readiness
 from marketlab.observability import RequestMetrics, RequestMiddleware, configure_logging
 from marketlab.research.routes import router as research_router
@@ -50,6 +53,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             registry=metrics.registry,
         )
         app.state.research_service = ResearchService(app.state.bar_service)
+        app.state.copilot_service = CopilotService(
+            app.state.research_service,
+            Ollama(settings.ollama_url, settings.copilot_model, settings.copilot_model_digest),
+            registry=metrics.registry,
+        )
         async with httpx.AsyncClient(
             base_url=settings.ollama_url, timeout=settings.dependency_timeout_seconds
         ) as client:
@@ -70,6 +78,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(trade_router)
     app.include_router(bar_router)
     app.include_router(research_router)
+    app.include_router(copilot_router)
 
     @app.exception_handler(Exception)
     async def unexpected_error(request: Request, exc: Exception) -> JSONResponse:

@@ -1,12 +1,14 @@
 # MarketLab recovery roadmap
 
-Status: R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. Verified R4 and the clock fix were published as 2c0dd0b; hosted CI run 40167912094 passed for that revision. R5–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
+Status: R5 COMPLETE with full local acceptance/review/owned cleanup; verified R5 publication and hosted CI are authorized, outcomes pending; R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. Verified R4 and the clock fix were published as 2c0dd0b; hosted CI run 40167912094 passed for that revision. R5 is authorized under docs/r5-copilot.md; R6–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
 ## Authority and approval boundary
 
-Current authority (October 25, 2026): the user authorized committing/pushing the verified R4 changes and application clock fix, then checking hosted CI. This supersedes the earlier publication restriction without expanding R4 scope. The October 24 approval covered the detailed R4 scope, ROADMAP.md/AGENTS.md updates, the [R4 contract](docs/r4-research.md) before code, prescribed coder/reviewer implementation, full acceptance and actual outcome documentation. Preserve R1-R3 and historical evidence. R5-R9 remain unauthorized. Record actual hosted results for the exact published revision in [R4 verification](docs/r4-verification.md).
+Current authority (October 25, 2026): the user authorized committing/pushing verified R5, checking hosted CI, fixing actual R5-only CI failures through the prescribed coder/reviewer workflow, and documenting/publishing actual outcomes. Preserve R1–R4 and all R5 local evidence. This supersedes the initial R5 no-commit restriction only for this publication scope; R6–R9 remain unauthorized. Publication/hosted outcomes are not yet observed. See R5 approval, closeout and publication authority below.
+
+Historical R4 publication authority (October 25, 2026): the user authorized committing/pushing the verified R4 changes and application clock fix, then checking hosted CI. This supersedes the earlier publication restriction without expanding R4 scope. The October 24 approval covered the detailed R4 scope, ROADMAP.md/AGENTS.md updates, the [R4 contract](docs/r4-research.md) before code, prescribed coder/reviewer implementation, full acceptance and actual outcome documentation. Preserve R1-R3 and historical evidence. R5-R9 remain unauthorized. Record actual hosted results for the exact published revision in [R4 verification](docs/r4-verification.md).
 
 On October 24, 2026 the user approved the detailed R3 scope, ROADMAP.md/AGENTS.md updates, the [R3 contract](docs/r3-analytics.md) before code, prescribed coder/reviewer implementation and full acceptance. Preserve R1/R2. The initial implementation request excluded commit/push; the later R3 publication authorization below supersedes that restriction. R4-R9 remain unauthorized. These R3 approvals are historical execution authority; the R4 approval below now governs current work. Earlier milestone closeouts remain historical evidence.
 
@@ -389,3 +391,66 @@ Hosted smoke does not repeat the local all-62-partition numerical reconciliation
 real cache-eviction harness or dense Docker clock acceptance. Those records and
 the known system-clock discrepancy remain intact. Exact hosted metadata/logs
 remain ignored under artifacts/r4-ci/. R5-R9 remain unauthorized.
+
+## R5 approval (October 25, 2026)
+
+R5 APPROVED for implementation under [R5 contract](docs/r5-copilot.md), written
+before code. User approved the detailed proposal, ROADMAP.md/AGENTS.md updates,
+prescribed coder/reviewer workflow, full acceptance and honest actual outcome
+documentation. NO COMMIT/PUSH. This supersedes historical R5 exclusions only
+within the contract; R6-R9 remain unauthorized. Preserve completed R1-R4 and the
+unresolved system clock discrepancy. Completion requires durable clarification,
+atomic validated handoff, actual recovery/model evaluation and retained-month
+numerical equivalence, independent review and owned cleanup. Estimated effort
+40-60 hours, not measured velocity. Earlier status/authority statements above are
+historical; this is the current execution authority.
+
+## R5 local closeout (October 25, 2026)
+
+COMPLETE under the approved [R5 contract](docs/r5-copilot.md), with source frozen,
+independent read-only review and full actual acceptance; see
+[R5 verification](docs/r5-verification.md). Durable strict interpretation/
+clarification and fenced jobs, bounded local Ollama, atomic registration through
+the same manual research service, additive API/CLI and provenance are implemented.
+R1-R4 and week 1-9 contracts remain preserved. At local closeout no commit/push
+or hosted CI had occurred; later publication authority below now governs.
+
+Final locked checks passed 736 offline/174 real PostgreSQL cases, Ruff lint/format
+and strict mypy (38 sources). Actual v3 evaluation passed the specified gates:
+18/20 correct clear specs and zero unsafe submissions among 40 negative requests;
+25 negatives produced expected clarification/refusal and 15 failed safely.
+Earlier v1/v2 failures, including one unsafe queued v2 run never numerically
+executed, and harness/source-drift/orchestration failures remain recorded. Do not
+claim all 40 negatives were correctly clarified or refused.
+
+All five retained-month scenarios completed through both copilot and manual
+submission: 10/10 durable runs, all attempt 1, every canonical spec/results/summary
+hash matched retained independent references across 62 January partitions/
+230,311,900 trades. Actual elapsed 2473.395s (41.22min), dirty-source fingerprint
+recorded. Real migration/crash/fencing/retry/lease, API/CLI/cache, unavailable-
+model/manual-independence, cancellation/client cleanup, packaged startup and old
+R4 readback/incompatible-code checks passed. Final cancellation logs demonstrate
+model-load abortion, not active-token generation cancellation.
+
+All 124 original dataset files and 53 protected files, including 40 old research
+files, retained their hashes. Owned resources were removed after identity checks;
+original service IDs/images/start times/restart counts/health and endpoints were
+preserved. Peak memory remains unmeasured; the known Docker clock discrepancy
+persists. No unresolved R5 acceptance blocker remains. R6-R9 remain unauthorized;
+no market artifacts/data, credentials, environments or weights belong in Git.
+
+## R5 publication authorized (October 25, 2026)
+
+After completed local acceptance/review/cleanup, the user explicitly authorized
+normal commit/push of verified R5, hosted CI verification, actual R5-only CI fixes
+through the prescribed coder/reviewer workflow, and documentation/publication of
+actual outcomes. This supersedes the earlier R5 publication restriction without
+expanding feature scope. R6-R9 remain unauthorized. Archives/artifacts/data,
+credentials, environments and weights remain excluded from Git.
+
+Preserve the local dirty-source month/model evidence, quality limitations,
+unsafe queued v2 failure, clock discrepancy, cancellation/load-abortion distinction
+and all historical failures. Publication and hosted CI results are unobserved at
+this authority update; record the exact revision and actual later outcomes in
+[R5 verification](docs/r5-verification.md). Hosted checks do not replace the local
+retained-month/model/operational acceptance.
