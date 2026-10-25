@@ -5,7 +5,8 @@ Implementation, independent read-only review, full locked checks, actual model
 and retained-month acceptance, preservation and owned-resource cleanup passed.
 At local closeout no commit/push or hosted CI had occurred. The user later
 explicitly authorized verified R5 publication, hosted CI, actual R5-only fixes
-and actual outcome documentation/publication; results are not yet observed.
+and actual outcome documentation/publication. Verified implementation 19a1363
+was published and its exact hosted CI passed as recorded below.
 R6-R9 remain unauthorized. The known Docker system clock discrepancy persists;
 this work preserves the application workaround.
 
@@ -293,10 +294,52 @@ supersedes the earlier R5 no-commit/push instruction for this publication scope
 only. R6-R9 remain unauthorized. Archives/artifacts/data, credentials,
 environments and weights must not be included in Git.
 
-No publication or hosted CI result has been observed at this authorization
-update. The published SHA and actual hosted run outcomes must be recorded after
+No publication or hosted CI result had been observed at that authorization
+update; the actual later outcome follows. The published SHA and actual hosted run outcomes must be recorded after
 they are observed; local 736/174 checks and month/model acceptance are not hosted
 CI results. Preserve all local source hashes, dirty-source provenance, initial
 failures and unsafe queued v2 result, model-quality limitations, clock history and
 client-cancellation versus model-load-abortion distinction. Publication approval
 does not reclassify earlier failed runs or expand feature scope.
+
+## Publication and hosted CI verified (October 25, 2026)
+
+Verified R5 was committed/pushed normally to **origin/main** as
+**19a136350e53418e46e99f739597e231628a8f55**, with exactly 23 scoped source, test,
+migration, acceptance-tooling and documentation files. The staged-file inventory
+was checked; no market archives/artifacts/data, credentials, environments or
+weights were included. [Hosted CI run 40177491693](https://github.com/atharva-m/MarketLab/actions/runs/40177491693)
+completed successfully for this exact implementation SHA; all three jobs passed.
+
+| Hosted job | Actual tests | Pytest time |
+| --- | --- | --- |
+| Ubuntu quality | 736 offline | 7.03s |
+| Windows quality | 736 offline | 18.77s |
+| Linux integration | 174 real PostgreSQL | 35.42s |
+
+Both quality jobs passed locked setup, Ruff lint, Ruff format (110 files) and
+strict mypy (38 sources). Linux integration passed locked setup, Compose
+validation, API image build/startup, all 174 PostgreSQL cases, API live/ready/
+dependencies/metrics smoke, initially healthy Redis, actual optional-Redis-outage
+smoke with degraded readiness and Redis down, and cleanup. The integration run's
+736 deselected cases are not offline passes; offline passes are recorded from
+the two separate quality jobs. Failure-conditional Logs did not run on this
+successful workflow; cleanup ran. **No CI fix was needed** and no R5 publication/
+CI blocker remains.
+
+The exact run/job metadata and downloaded logs remain ignored under
+artifacts/r5-ci/, including
+19a136350e53418e46e99f739597e231628a8f55-logs.json and the three
+40177491693-<job_id>.log files. This outcome follow-up changes documentation only:
+no runtime, tests, tooling, dependencies/lock, deployment or workflow changes
+were needed for hosted CI.
+
+Hosted checks do not repeat the actual installed-model 60-case evaluation,
+62-partition/230,311,900-trade local month acceptance, real timeout/cancellation
+observations or operational clock/lease harness. Those remain separate completed
+local evidence with the original **dirty-source** identity on HEAD daae762, not
+new executions under published HEAD 19a1363. The 18/20 clear result, 25/40 expected
+negative outcomes plus 15 safe failures, unsafe queued v2 history, earlier
+harness/source-drift/orchestration failures, unmeasured peak memory, known Docker
+clock discrepancy and load-abortion/token-generation distinction remain unchanged.
+R6-R9 remain unauthorized; no broader feature/publication scope follows.

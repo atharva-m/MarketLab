@@ -429,8 +429,12 @@ offline/174 real PostgreSQL cases; independent review and owned cleanup passed.
 Ten full-month copilot/manual runs matched all numerical references over all 62
 January partitions. At local closeout no commit/push or hosted CI had occurred.
 The user subsequently authorized verified R5 publication, hosted CI checks,
-actual R5-only fixes and outcome documentation; those results are not yet
-observed. R6-R9 remain unauthorized.
+actual R5-only fixes and outcome documentation. Published implementation
+`19a1363` passed [hosted CI run 40177491693](https://github.com/atharva-m/MarketLab/actions/runs/40177491693):
+736 offline tests on Ubuntu and Windows, 174 real PostgreSQL tests on Linux, plus
+quality/build/API/optional-Redis-outage/cleanup checks. No CI fix was needed.
+Hosted smoke is separate from the actual local model/month acceptance and its
+dirty-source provenance; see verification. R6-R9 remain unauthorized.
 
 R5 adds an optional local natural-language entry point over the same validated
 R4 research submission service. See [the contract](docs/r5-copilot.md) and
@@ -516,6 +520,6 @@ queued execution is rejected. The Docker clock discrepancy persists; R5 follows
 the established database-time lease/retry and immediate queued-claim protocol.
 The later R5 publication approval authorizes commit/push of the verified scope,
 hosted CI checks, actual R5-only fixes through the prescribed coder/reviewer
-workflow and publication of actual outcomes. See verification for the exact
-published revision and hosted results when observed. Local acceptance remains
+workflow and publication of actual outcomes. Verification records the exact
+published revision and observed hosted results. Local acceptance remains
 separate; artifacts/data, credentials, environments and weights stay outside Git.

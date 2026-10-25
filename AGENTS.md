@@ -178,7 +178,8 @@ fingerprint, earlier failed v1/v2 evaluations (including one unsafe queued v2 ru
 never numerically executed), harness/source-drift/orchestration failures and actual
 client-cancellation versus model-load-abortion observations remain explicit in
 verification. No active-token generation cancellation claim follows from the
-final load-abortion log. Peak memory remains unmeasured; hosted CI is unrun.
+final load-abortion log. Peak memory remains unmeasured. Hosted CI was unrun at
+local closeout; actual later publication/CI results are recorded below.
 
 All 124 original dataset files and 53 protected files (including 40 old research
 files) retained their hashes. Owned resources were removed; original service IDs,
@@ -201,7 +202,22 @@ the dirty-source fingerprint, model-quality limitations and unresolved system
 clock discrepancy. Do not include archives/artifacts/data, credentials,
 environments or weights in Git. R6-R9 remain unauthorized.
 
-Publication and hosted CI outcomes have not yet been observed at this authority
-update. Record the exact published SHA and actual hosted results in
+Publication and hosted CI outcomes were unobserved at that authority update;
+the actual later outcome follows. Record the exact published SHA and actual hosted results in
 [verification](docs/r5-verification.md); local acceptance is not a hosted CI pass.
 Do not infer new feature/deployment authority from publication approval.
+
+## R5 publication and hosted CI verified (October 25, 2026)
+
+Verified R5 was committed/pushed normally to origin/main as
+19a136350e53418e46e99f739597e231628a8f55, with 23 scoped source/test/migration/
+acceptance-tooling/documentation files and no market artifacts/data, credentials,
+environments or weights. [Hosted CI run 40177491693](https://github.com/atharva-m/MarketLab/actions/runs/40177491693)
+passed for that exact revision: 736 offline cases on Ubuntu and Windows, 174 real
+PostgreSQL cases on Linux, quality/build/API/optional-Redis-outage/cleanup checks.
+No CI fix was needed. No R5 publication/CI blocker remains.
+
+Hosted checks are separate from local actual-model/month/operational acceptance,
+which retains its dirty-source fingerprint, quality limits and all earlier
+failures. The clock discrepancy and cancellation/load-abortion distinction remain
+unchanged. See [R5 verification](docs/r5-verification.md). R6-R9 remain unauthorized.

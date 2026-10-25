@@ -191,6 +191,19 @@ clock discrepancy and cancellation evidence. No feature scope expansion or R6-R9
 authorization follows. Archives/artifacts/data, credentials, environments and
 weights remain excluded from Git.
 
-Publication and hosted CI outcomes are not yet observed at this authorization
-update. Record actual results for the exact published revision in verification;
+Publication and hosted CI outcomes were unobserved at that authorization
+update; the actual later outcome follows. Record actual results for the exact published revision in verification;
 local acceptance is separate from hosted smoke coverage.
+
+## Publication and hosted CI verified (October 25, 2026)
+
+Verified implementation 19a136350e53418e46e99f739597e231628a8f55 was committed/
+pushed normally to origin/main. [Hosted CI run 40177491693](https://github.com/atharva-m/MarketLab/actions/runs/40177491693)
+passed for that exact revision: 736 offline cases on each of Ubuntu and Windows,
+174 real PostgreSQL cases on Linux and quality/build/API/optional-Redis-outage/
+cleanup checks. No CI fix was needed. No market artifacts/data, credentials,
+environments or weights were included. No R6-R9 authority follows.
+
+Hosted smoke does not replace or rerun local actual-model/month acceptance.
+Its original dirty-source identity, quality limitations, known clock discrepancy
+and all failed historical evidence remain intact in [verification](r5-verification.md).
