@@ -23,3 +23,10 @@ htmlcov/
 secrets/
 *.pem
 *.key
+
+# R7 local browser workspace outputs
+frontend/node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+frontend/.vite/

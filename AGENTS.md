@@ -1,5 +1,78 @@
 # MarketLab contributor instructions
 
+## Current R7 publication authority (October 26, 2026)
+
+After verified R7 local closeout and the scoped Windows Firefox follow-up, the
+user explicitly authorized committing/pushing verified R7, checking hosted CI,
+fixing actual R7-related CI failures through coder gpt-6.1-sol/high followed by
+independent read-only reviewer gpt-6-astra/medium, and documenting/publishing
+observed outcomes. This supersedes earlier R7 no-commit/push restrictions only
+for this verified publication scope. R8/R9, new features, deployment/system
+changes and unrelated repairs remain unauthorized.
+
+Preserve R1-R6 and all immutable artifacts, the dirty tested source identity,
+526.987887s actual cold pass, model-quality/safe-failure/cancellation/cache/memory
+limits, every failed harness/browser/reinstall/probe and the clock discrepancy.
+The original 33-browser pass and later pristine Windows Firefox 11/11 physical-
+cache invocation are separate evidence; the default logical MSIX path remains
+affected. Never commit artifacts/data/archives/credentials/environments/weights.
+Publication and hosted R7 CI are pending at this authority record. Record the
+exact published SHA, actual run links and outcomes in
+[R7 verification](docs/r7-verification.md); local acceptance is not a hosted pass.
+
+## Current R7: complete (October 26, 2026)
+
+The user approved the detailed R7 plan and authorized ROADMAP.md/AGENTS.md updates,
+the full [R7 contract](docs/r7-ui.md) BEFORE code, prescribed coder gpt-6.1-sol/high
+then independent read-only reviewer gpt-6-astra/medium, implementation, full
+acceptance and honest outcome documentation. The initial approval excluded
+commit/push; the later publication authority above now governs. R8/R9 remain
+unauthorized. This supersedes historical UI/frontend-dependency exclusions only
+within the R7 contract; retain all R1-R6 contracts and historical evidence below.
+
+Implement local React/TypeScript/Vite catalog/ingestion/jobs/manual research/
+copilot clarification/provenance/charts/memo workspace, additive bounded discovery
+and R2 ingestion HTTP adapters, separate locked frontend tooling and scoped
+browser CI. Existing bounded CLI workers execute jobs; no browser process launch,
+scheduler, auth/public hosting, new analytics/model behavior or migrations.
+Python lock/dependencies/deployment/system settings remain unchanged. Preserve
+exact decimal/integer display, explicit versions/history, replay-safe operations,
+bounded polling/chart windows, independent numerical/memo reads, safe local origins.
+
+Full locked/offline/PostgreSQL/live preservation and Chromium/Firefox/WebKit tests,
+Windows Chromium, actual retained 62-partition/five-scenario/model browser flows,
+fresh manual hash equality/cold all-62 <1800s/owned model+Redis outage and cleanup
+are required. Use
+owned disposable resources, snapshot protected files/original service identities
+before operations, preserve them and inspect exact ownership before cleanup.
+Document actual outcomes/source identity/failures/limits in docs/r7-verification.md,
+README and roadmap. No artifacts/data/archives/credentials/environments/weights
+belong in Git. Clock discrepancy and prior model/cancellation/memory limits persist.
+
+R7 implementation/full local acceptance passed: 853 offline/193 PostgreSQL cases,
+18 frontend components and 33 browser cases (Windows Chromium/WebKit, Linux
+Firefox), actual retained five-scenario and exact chart readback, model/manual/
+memo/ingestion/outage/corruption/live compatibility and packaged Linux checks.
+Fresh actual browser/API/separate-worker all-62 workflow passed in 526.987887s,
+230,311,900 trades and every hash exact, numerical attempt one, memo queued with
+zero calls; later memo ready on one attempt/one call. Independent source review
+found no remaining blocker. Final source/test/evidence review and exact owned
+cleanup passed; all 271 protected hashes and original service IDs/images/start/
+restart counts/health/endpoints stayed unchanged. Owned containers/volumes/images/
+processes and ports were cleaned. See [R7 verification](docs/r7-verification.md).
+Preserve the actual safe failed ambiguous-10 case (not successful clarification),
+all harness/browser failures and the separate Linux Firefox pass. Windows
+Firefox's logical MSIX cache path remains affected; the later documented
+[physical-cache invocation](docs/r7-verification.md#windows-firefox-physical-cache-configuration-fix-october-26-2026)
+passed 11/11 with pristine binaries and no persistent environment change.
+Model semantics and historical quality/cancellation/memory/
+clock limits are unchanged. No commit/push or hosted R7 run occurred at local
+closeout; later publication follows the authority above. No R8/R9 authority.
+
+All earlier R7-R9 exclusions below are historical and superseded for R7 only by
+the authority above; R8/R9 remain unauthorized.
+
+
 Historical completed scope is R2 in [ROADMAP.md](ROADMAP.md) and [R2 contract](docs/r2-jobs.md): durable PostgreSQL jobs and fenced publication for Binance Spot BTCUSDT/ETHUSDT daily trades covering [2025-01-01T00:00:00Z, 2025-02-01T00:00:00Z), 62 daily partitions. User approved this scope, documentation updates, prescribed coder/reviewer workflow, acceptance verification and honest results/blocker documentation. R1 is complete and must be preserved. R2 implementation, full verification, independent review and owned-resource cleanup are complete; see docs/r2-verification.md. The initial implementation request excluded commit/push. On October 24, 2026 the user subsequently authorized committing/pushing the verified R2 changes, checking hosted CI, fixing actual R2-only CI failures and documenting/publishing actual outcomes. Hosted CI passed for the reviewed documentation fix commit d22523aaafc2182fc411c1615ad615e0be24c771 in run 40067854743 after the initial formatting failure recorded in docs/r2-verification.md. Never commit archives/artifacts/data, credentials, environments or weights. R1-R6 are complete; the current R6 local closeout is recorded below. R7-R9 remain unauthorized. Historical week 1-9 labels remain repository increments, not completion of original plan milestones. Read the full approved R2 contract and retained R1 contract before changes.
 
 Retained R2 preservation requirements (R3 adds no schema): before R2 migration/code, document schema constraints, state transitions and fencing/publication protocol. Use existing locked Python 3.13 dependencies. Add additive submission/job/attempt schema; FOR UPDATE SKIP LOCKED claims, 10-second heartbeat, 60-second leases, monotonically increasing fencing tokens, three total attempts including crashes. Use database time. Match current owner/token/unexpired lease for mutations; stale workers cannot publish. Stage and fully verify artifacts before short bounded publication transactions; atomically register catalog and job success under current ownership. Retain R1 version advisory locks and orphan verification/adoption without overwrite. Only catalog-registered versions are discoverable.

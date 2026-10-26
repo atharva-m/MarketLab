@@ -1,12 +1,73 @@
 # MarketLab recovery roadmap
 
+## Current R7 publication authority (October 26, 2026)
+
+The user explicitly authorized committing/pushing verified R7, checking hosted
+CI, fixing actual R7-related failures through prescribed coder gpt-6.1-sol/high
+then independent read-only reviewer gpt-6-astra/medium, and documenting/publishing
+actual outcomes. This supersedes earlier R7 no-commit/push restrictions only for
+the verified implementation and scoped Firefox-follow-up publication. R8/R9 and
+unrelated features, deployment/system changes or repairs remain unauthorized.
+
+Preserve all R1-R6 behavior/artifacts and tested-source distinctions, the
+526.987887s cold acceptance, original 33 browser cases and later separate pristine
+Windows Firefox 11/11 physical-cache pass, every failure/probe and all model/
+cancellation/memory/clock limits. Artifacts/data/archives/credentials/environments/
+weights stay out of Git. Publication and hosted CI are pending at this record;
+record exact SHA/run links and observed results in
+[R7 verification](docs/r7-verification.md). Local acceptance is not a hosted pass.
+
+## Current R7: complete (October 26, 2026)
+
+The user approved the detailed R7 local React workspace plan, ROADMAP.md/AGENTS.md
+updates, full [R7 contract](docs/r7-ui.md) BEFORE code, prescribed coder
+gpt-6.1-sol/high then independent read-only reviewer gpt-6-astra/medium,
+implementation/full acceptance and honest actual outcome documentation.
+The initial approval excluded commit/push; the publication authority above now
+governs. R8/R9 remain unauthorized. Historical authority/status below is
+retained; R1-R6/verifier closeout and corrective hosted pass remain preserved.
+
+Deliver catalog/explicit version selection, bounded ingestion submission/jobs,
+manual research, copilot clarification/provenance, exact tables/bounded charts and
+independent memo status/content. Add only required bounded discovery/R2 HTTP
+adapters, separate locked frontend dependencies and scoped browser CI; existing
+CLI workers execute jobs. No schema, Python-lock/deployment/system/model/numerical
+changes. Full retained checks, cross-browser tests, actual retained-data/model UI
+flows and fresh all-62/hash preservation/owned cleanup are completion gates.
+Record actual evidence/blockers in docs/r7-verification.md; prior 819/189 hosted
+and 266.692329s cold evidence are baselines, not R7 passes. Planning estimate 55-80
+engineering hours replaces the earlier 35-55 for this detailed scope, not measured
+velocity. Never Git artifacts/data/archives/credentials/environments/weights.
+
+R7 implementation and full local acceptance passed: 853 offline/193 PostgreSQL,
+18 frontend component and 33 browser cases across Windows Chromium/WebKit and
+owned Linux Firefox, locked quality/build checks, actual retained five-scenario
+readback/charts, model/clarification/memo flows, one-day official source recheck,
+live legacy compatibility, Redis outage/recovery and isolated memo corruption.
+The fresh browser/API/separate-worker all-62 workflow passed in 526.987887s with
+all 230,311,900 trades/hashes and independent numerical payloads exact, attempt
+one and memo queued with zero calls. A later fresh memo used one attempt/one call.
+Source identity and every failed model/harness/browser result remain explicit in
+[R7 verification](docs/r7-verification.md), including safe ambiguous-10 rejection,
+initial Windows Firefox startup failures and the separate Linux pass. A later
+[scoped Windows follow-up](docs/r7-verification.md#windows-firefox-physical-cache-configuration-fix-october-26-2026)
+passed 11/11 with pristine binaries and a process-only physical-cache path;
+the default logical MSIX path remains affected. Independent source/test/
+evidence review and ownership-checked cleanup passed; all 271 protected hashes
+and original service IDs/start/restart/health/endpoints were unchanged. Owned
+containers/volumes/images/processes and ports were cleaned. No commit/push or
+hosted R7 run occurred at local closeout; current publication authority is above.
+R8/R9 remain unauthorized.
+
+### Historical pre-R7 status (retained)
+
 Status: R6 and its cold-verifier follow-up COMPLETE with full local acceptance/review/owned cleanup; corrective commit 0e054bd passed hosted run 40276563068 (819 offline on Ubuntu/Windows and 189 PostgreSQL), following the retained failed c94ef4b/6084ac5 attempts; R7-R9 remain unauthorized backlog. R5 COMPLETE with full local acceptance/review/owned cleanup; verified R5 was published as 19a1363 and hosted CI run 40177491693 passed; R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. Verified R4 and the clock fix were published as 2c0dd0b; hosted CI run 40167912094 passed for that revision. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
 ## Authority and approval boundary
 
-Current publication authority (October 26, 2026): the user authorized
+Historical R6 publication authority (October 26, 2026): the user authorized
 committing/pushing verified R6 and its approved cold-verifier optimization,
 checking hosted CI, fixing actual scope-related CI failures through prescribed
 coder gpt-6.1-sol/high then independent read-only reviewer gpt-6-astra/medium,

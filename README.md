@@ -1,5 +1,69 @@
 # MarketLab
 
+## R7 local research workspace
+
+The approved [R7 contract](docs/r7-ui.md) adds a local React workspace over the
+retained R1-R6 services. Implementation/full local acceptance passed: 853 offline,
+193 PostgreSQL, 18 frontend component and 33 browser cases. The actual fresh
+all-62 browser workflow passed in 526.988s with exact retained hashes. Independent
+review and owned cleanup passed; original artifacts/services were preserved.
+Actual outcomes and limitations
+are in [R7 verification](docs/r7-verification.md), including the safe failed
+ambiguous model case and initial Windows Firefox startup failures. A later
+[Windows Firefox follow-up](docs/r7-verification.md#windows-firefox-physical-cache-configuration-fix-october-26-2026)
+passed all 11 cases with pristine binaries using Playwright's process-only
+physical-cache path setting; its default logical MSIX path remains affected.
+No R7 commit/push or hosted CI had occurred at local closeout. Verified R7
+publication and hosted CI are now authorized and pending; actual outcomes will
+be recorded in verification. R8/R9 remain backlog.
+
+The workspace browses catalog versions and durable jobs, submits bounded January
+ingestion/research/copilot requests, displays numerical results and separately
+retrieves memo status/content. Dataset selection is explicit, including warm-up
+history; an existing version is never silently replaced with a newer one.
+Catalog metadata listings are distinguished from fully verified artifact detail.
+Chart windows obey the existing 1,440-bucket bound; exact strings in tables and
+tooltips remain authoritative over approximate chart coordinates.
+
+After the configured database is migrated, run the API from this checkout and
+the separate frontend in two terminals:
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked uvicorn marketlab.app:create_app --factory --host 127.0.0.1 --port 8000
+```
+
+```powershell
+Set-Location frontend
+npm ci
+npm run dev
+```
+
+To keep an existing API on port 8000 running, use the dedicated local R7 test
+port instead: start the checkout API with `--port 58007`, then set
+`$env:MARKETLAB_R7_TEST_API_PORT = '58007'` in the frontend terminal before
+`npm run dev`. The proxy accepts only its normal port 8000 or this fixed test port.
+
+Open `http://127.0.0.1:5173`. The fixed local proxy defaults to API port 8000;
+there is no public-hosting/authentication deployment in R7. Startup does not
+launch workers. Use the same configured database/storage/source checkout for
+the existing bounded worker commands, as appropriate:
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli worker --max-jobs 62
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.research_cli worker --max-runs 1 --run RUN_UUID
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.inference_cli worker --max-jobs 1
+```
+
+These commands are operator invocations, not a scheduler. Research validation can
+take time before a durable run is returned. If a submission response is lost,
+reuse the saved operation key/body; do not create a fresh operation merely to
+check whether the original succeeded. Browser cancellation does not cancel a
+durable job or establish upstream model cancellation. Memo failure or unavailable
+Ollama does not change successful numerical results. Terminal memo jobs cannot be
+reset or regenerated for the same run. A blank migrated database legitimately has
+an empty catalog; use registered versions in the configured database/storage.
+Ignored acceptance snapshots are not automatically restored into user services.
+
 R1 restored the historical research roadmap with checksum-verified one-day Binance Spot
 BTCUSDT ingestion, immutable Parquet publication and a separate PostgreSQL dataset catalog.
 See [the approved recovery roadmap](ROADMAP.md), [R1 contract](docs/r1-datasets.md) and

@@ -25,6 +25,8 @@ from marketlab.observability import RequestMetrics, RequestMiddleware, configure
 from marketlab.research.routes import router as research_router
 from marketlab.research.service import ResearchService
 from marketlab.trades.routes import router as trade_router
+from marketlab.workspace import WorkspaceService
+from marketlab.workspace import router as workspace_router
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -56,6 +58,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             registry=metrics.registry,
         )
         app.state.research_service = ResearchService(app.state.bar_service)
+        app.state.workspace_service = WorkspaceService(app.state.bar_service)
         app.state.copilot_service = CopilotService(
             app.state.research_service,
             Ollama(settings.ollama_url, settings.copilot_model, settings.copilot_model_digest),
@@ -73,6 +76,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             try:
                 yield
             finally:
+                await app.state.workspace_service.close()
                 await app.state.research_service.close()
                 await app.state.bar_service.close()
                 await run_in_threadpool(trade_engine.dispose)
@@ -84,6 +88,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.metrics = metrics
     app.add_middleware(RequestMiddleware, metrics=metrics)
     app.include_router(trade_router)
+    app.include_router(workspace_router)
     app.include_router(bar_router)
     app.include_router(research_router)
     app.include_router(copilot_router)
