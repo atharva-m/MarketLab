@@ -1,10 +1,13 @@
 """Real bounded spawned verification, cancellation, coalescing and shared SQL budget."""
 
 import asyncio
+import concurrent.futures.process as stdlib
 import ctypes
 import multiprocessing
+import multiprocessing.connection as connection
 import os
 import signal
+import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -209,9 +212,45 @@ def test_one_cancelled_waiter_does_not_cancel_shared_survivor(tmp_path, monkeypa
         pool.close()
 
 
-def test_killed_worker_fails_closed_for_sql_until_recreation(tmp_path, monkeypatch):
+def force_old_spawn_order(monkeypatch):
+    """Test-only ordering of public submissions, never a production workaround."""
+    paused, watched = threading.Event(), threading.Event()
+    state = {}
+    original_adjust = stdlib.ProcessPoolExecutor._adjust_process_count
+    original_wait = connection.wait
+
+    def adjust(executor):
+        before = set(executor._processes)
+        if len(before) == 1:
+            paused.set()
+            assert watched.wait(5), "manager did not enter old one-worker wait"
+        result = original_adjust(executor)
+        if len(before) == 1:
+            created = set(executor._processes) - before
+            assert len(created) == 1
+            state["second_pid"] = created.pop()
+        return result
+
+    def observe(objects, timeout=None):
+        caller = sys._getframe(1)
+        if caller.f_code.co_name == "wait_result_broken_or_wakeup" and paused.is_set():
+            manager = caller.f_locals["self"]
+            if len(manager.processes) == 1:
+                state["old_sentinels"] = list(caller.f_locals["worker_sentinels"])
+                watched.set()  # Snapshot exists before the second spawn is allowed.
+        return original_wait(objects, timeout)
+
+    monkeypatch.setattr(stdlib.ProcessPoolExecutor, "_adjust_process_count", adjust)
+    monkeypatch.setattr(connection, "wait", observe)
+    return state
+
+
+@pytest.mark.parametrize("forced_spawn_order", [False, True])
+def test_killed_worker_fails_closed_for_sql_until_recreation(
+    tmp_path, monkeypatch, forced_spawn_order
+):
     requests, _ = fixtures(tmp_path, 2)
-    touch(tmp_path, requests[0], "crash-target")
+    ordering = force_old_spawn_order(monkeypatch) if forced_spawn_order else {}
     monkeypatch.setattr(module, "_verify_file", crash_gate_verify)
     compute = ComputeBudget()
     pool = VerificationPool(compute)
@@ -219,7 +258,27 @@ def test_killed_worker_fails_closed_for_sql_until_recreation(tmp_path, monkeypat
         with gate_callers(pool, tmp_path, requests, workers=1) as callers:
             running = callers.submit(pool.verify_many, requests, threading.Event())
             wait_for(lambda: all(entered(tmp_path, request) for request in requests))
-            pid = int(entered(tmp_path, requests[0])[0].name.rsplit("-", 1)[1])
+            pids = [
+                int(entered(tmp_path, request)[0].name.rsplit("-", 1)[1]) for request in requests
+            ]
+            assert len(set(pids)) == 2 and all(alive(pid) for pid in pids)
+            pid = ordering["second_pid"] if forced_spawn_order else pids[0]
+            assert pid in pids
+            if forced_spawn_order:
+                assert len(ordering["old_sentinels"]) == 1
+            touch(tmp_path, requests[pids.index(pid)], "crash-target")
+            with pool.condition:
+                assert len(pool.flights) == 2
+                assert all(not flight.future.done() for flight in pool.flights.values())
+            (tmp_path / "control" / "crash-arm").write_text("both workers ready")
+            wait_for(
+                lambda: all(
+                    list((tmp_path / "control").glob(request.version + ".armed-*"))
+                    for request in requests
+                )
+            )
+            with pool.condition:
+                assert all(not flight.future.done() for flight in pool.flights.values())
             assert alive(pid) and not running.done()
             owned = {child.pid: child for child in multiprocessing.active_children()}
             assert pid in owned
@@ -227,12 +286,14 @@ def test_killed_worker_fails_closed_for_sql_until_recreation(tmp_path, monkeypat
             # Windows SIGTERM forces TerminateProcess; POSIX SIGTERM is graceful
             # and may be inherited as blocked/ignored, so use actual crash semantics.
             crash = signal.SIGTERM if os.name == "nt" else signal.SIGKILL
+            killed_at = time.monotonic()
             os.kill(pid, crash)  # Exactly this known owned worker, never PID wildcard.
             # A POSIX zombie has exited but kill(pid, 0) still succeeds until the
             # executor reaps it. Observe exit now; assert actual reaping after close.
             assert wait([exited], timeout=5) == [exited]
             with pytest.raises(VerificationUnavailable):
                 running.result(timeout=10)
+            assert time.monotonic() - killed_at < 5
             assert pool.snapshot()["broken"] and compute.snapshot()["failed"]
             with pytest.raises(VerificationUnavailable):
                 with compute.query(threading.Event(), 0.05):
@@ -246,6 +307,45 @@ def test_killed_worker_fails_closed_for_sql_until_recreation(tmp_path, monkeypat
         assert requests[0].version in replacement.verify_many(requests[:1], threading.Event())
     finally:
         replacement.close()
+
+
+def test_crash_gate_budget_starts_after_delayed_second_worker_readiness(tmp_path, monkeypatch):
+    requests, _ = fixtures(tmp_path, 2)
+    touch(tmp_path, requests[0], "crash-target")
+    touch(tmp_path, requests[1], "delay-entry")
+    (tmp_path / "control" / "crash-gate-seconds").write_text("0.05")
+    monkeypatch.setattr(module, "_verify_file", crash_gate_verify)
+    pool = VerificationPool(ComputeBudget())
+    cancelled = threading.Event()
+    try:
+        with gate_callers(pool, tmp_path, requests, workers=1) as callers:
+            running = callers.submit(pool.verify_many, requests, cancelled)
+            wait_for(
+                lambda: (
+                    entered(tmp_path, requests[0])
+                    and list((tmp_path / "control").glob(requests[1].version + ".starting-*"))
+                )
+            )
+            time.sleep(0.15)  # Deliberate startup delay beyond the 50 ms active budget.
+            assert not entered(tmp_path, requests[1]) and not running.done()
+            assert not list((tmp_path / "control").glob("*.expired-*"))
+            with pool.condition:
+                assert all(not flight.future.done() for flight in pool.flights.values())
+            touch(tmp_path, requests[1], "allow-entry")
+            wait_for(lambda: all(entered(tmp_path, request) for request in requests))
+            pids = [
+                int(entered(tmp_path, request)[0].name.rsplit("-", 1)[1]) for request in requests
+            ]
+            assert len(set(pids)) == 2 and all(alive(pid) for pid in pids)
+            assert not list((tmp_path / "control").glob("*.armed-*"))
+            cancelled.set()
+            with pytest.raises(VerificationCancelled):
+                running.result(timeout=5)
+            assert pool.snapshot()["compute"]["active"] == 0
+    finally:
+        touch(tmp_path, requests[1], "allow-entry")
+        pool.close()
+    assert not any(alive(pid) for pid in pool.snapshot()["worker_pids"])
 
 
 def catalog_reader(root, requests, manifests):

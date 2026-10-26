@@ -1,6 +1,6 @@
 # MarketLab recovery roadmap
 
-Status: R6 and its cold-verifier follow-up COMPLETE with full local acceptance/review/owned cleanup; published as c94ef4b, initial hosted run 40269166877 failed and reviewed test-only CI recovery is in progress; R7-R9 remain unauthorized backlog. R5 COMPLETE with full local acceptance/review/owned cleanup; verified R5 was published as 19a1363 and hosted CI run 40177491693 passed; R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. Verified R4 and the clock fix were published as 2c0dd0b; hosted CI run 40167912094 passed for that revision. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
+Status: R6 and its cold-verifier follow-up COMPLETE with full local acceptance/review/owned cleanup; published as c94ef4b with recovery 6084ac5; both hosted attempts failed, and the reviewed executor-startup correction passed local 819/189 checks and 266.692s cold acceptance; corrective publication/hosted verification pending; R7-R9 remain unauthorized backlog. R5 COMPLETE with full local acceptance/review/owned cleanup; verified R5 was published as 19a1363 and hosted CI run 40177491693 passed; R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. Verified R4 and the clock fix were published as 2c0dd0b; hosted CI run 40167912094 passed for that revision. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
@@ -14,8 +14,9 @@ and documenting/publishing observed outcomes. This supersedes earlier
 no-commit/push restrictions only for this verified scope. Preserve all R1-R6
 behavior, immutable artifacts, tested-source distinctions and historical failures
 and limitations. Artifacts/data, archives, credentials, environments and weights
-remain excluded from Git. Verified publication is c94ef4b; initial hosted run
-40269166877 failed and reviewed test-only recovery is being prepared. Exact
+remain excluded from Git. Verified publication is c94ef4b with recovery 6084ac5;
+both hosted attempts failed. The reviewed executor-startup correction passed new
+local checks/acceptance and awaits corrective publication/hosted verification. Exact
 outcomes are recorded in [R6 verification](docs/r6-verification.md) and the
 [optimization follow-up](docs/verifier-optimization.md); local acceptance is not
 a hosted CI pass. R7-R9 and unrelated feature/deployment/system authority do not
@@ -588,3 +589,40 @@ the original R6/model/month and later 272.814s cold evidence are unchanged. Owne
 fix resources were removed with original services preserved. Recovery commit and
 replacement hosted results are pending; see [R6 verification](docs/r6-verification.md)
 and the [optimization follow-up](docs/verifier-optimization.md). R7-R9 remain backlog.
+
+## Confirmed CI executor-startup correction: pre-code approval (October 26, 2026)
+
+Recovery 6084ac58fa49c49015a4b552db68e3be14b6dc2a passed Ubuntu quality and Linux
+integration in [run 40271353210](https://github.com/atharva-m/MarketLab/actions/runs/40271353210),
+but Windows failed the worker-crash test again. A production-executor trace
+confirmed the stdlib dynamic-spawn sentinel-registration race. Parent and
+independent reviewer approved the public-API, two-worker barrier bootstrap design
+in [the contract](docs/verifier-optimization.md) BEFORE runtime changes.
+
+The correction retains every verification/hash and two shared compute permits;
+startup capacity remains held until actual readiness tasks drain. No dependency,
+lockfile, deployment or system change. New frozen-source/full-suite/cold62/Linux
+acceptance on owned resources is required; the old f12cf32/272.814s record remains
+historical. This necessary actual-CI correction grants no R7-R9 authority and no
+overall hosted pass has yet been observed.
+
+## Startup correction locally reverified (October 26, 2026)
+
+Reviewed public-API bootstrap source
+bb4d69804069735dd258d1f6550b7fb1772339d61c547cd4df0c9c3cf0a4476f passed 819
+offline/189 PostgreSQL cases, Ruff/format136 and mypy48. A new fresh-process cold62
+submit/execute/readback plus cleanup passed in 266.692329s with exact 230,311,900
+rows/all retained hashes and independent numerical results, numerical attempt one
+and autoqueued memo without inference. Two readiness workers completed before
+observed file work; shared capacity stayed two and workers were reaped. Sequential
+Linux startup/bar-read/close smoke passed. All 263 protected hashes and original
+service IDs/start/restart/health/endpoints survived exact owned cleanup.
+
+The first new cold harness remains FAILED due to a post-close diagnostic
+assumption; corrected observation used retained actual pre-close PID proof and a
+new fresh run, preserving both statuses in the database snapshot. Earlier source/
+model/month/cold/hosted/diagnostic failures and limitations are unchanged.
+Independent read-only review accepted final source/tests/docs/evidence. Corrective
+publication/hosted verification remain pending;
+see [R6 verification](docs/r6-verification.md) and the
+[follow-up](docs/verifier-optimization.md). R7-R9 remain unauthorized.

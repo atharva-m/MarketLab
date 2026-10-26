@@ -366,7 +366,80 @@ normal/abnormal logs and `pool-cleanup-final.json` remain in `artifacts/r6-ci/`;
 both owned CI resource inventories were empty after cleanup. These local passes
 do not establish a replacement hosted pass.
 
-Only tests/documentation are being changed for this recovery; runtime source,
-dependencies, lockfile, deployment, numerical definitions and the recorded local
-acceptance remain unchanged. No recovery commit or replacement hosted result is
-claimed in this record yet.
+That first recovery changed only tests/documentation; runtime source, dependencies,
+lockfile, deployment, numerical definitions and recorded local acceptance were
+unchanged. Its actual publication and next hosted outcome follow below.
+
+## Second hosted attempt and necessary startup correction (October 26, 2026)
+
+Reviewed recovery was committed/pushed as
+`6084ac58fa49c49015a4b552db68e3be14b6dc2a`.
+[Replacement run 40271353210](https://github.com/atharva-m/MarketLab/actions/runs/40271353210)
+passed Ubuntu quality (811 offline, 19.75s) and Linux integration (189 PostgreSQL,
+79.29s), including API/optional-Redis-outage/cleanup checks. Windows quality again
+failed the worker-crash test (810 passed/one failed), reporting the controlled
+release timeout after exit observation. This second run is not an overall pass.
+
+Further direct evidence confirmed a Python 3.13 executor dynamic-spawn race: its
+manager's captured wait set could omit the newly spawned worker's sentinel.
+Death of that unobserved worker did not promptly trigger broken-pool handling
+without another event. Earlier signal/readiness explanations and test-only
+corrections did not establish or solve this production ordering issue. The
+confirmation JSON/logs remain under `artifacts/r6-ci/`.
+
+The parent and independent reviewer approved a necessary runtime design within
+the existing actual-CI-fix authority; it was recorded BEFORE code in
+[the optimization contract](verifier-optimization.md). A lazy public-API bootstrap
+uses exactly two barrier readiness tasks in distinct worker PIDs, reserves both
+shared compute permits atomically, and dispatches no real file task until both
+complete. Startup decision bounds never release permits before actual draining.
+No private executor hooks, larger pool, skipped checks, dependency/lock/deployment
+change or altered numerical identity is authorized.
+
+New focused lifecycle/regression tests, independent review, source freeze and
+full locked/offline/PostgreSQL checks plus actual fresh cold62/Linux acceptance
+are required on the corrected source. The original c9a6 model/month record and
+f12cf32/272.814s cold record remain historical; they are not acceptance on the new
+runtime. New owned evidence/resources are isolated under
+`artifacts/r6-ci/executor-startup-fix/`, with a fresh 263-file protection baseline.
+Correction/reverification and a subsequent overall hosted pass remain pending.
+
+## Executor-startup correction locally reverified (October 26, 2026)
+
+The reviewed public-API two-worker bootstrap is implemented and frozen as runtime
+source `bb4d69804069735dd258d1f6550b7fb1772339d61c547cd4df0c9c3cf0a4476f` on dirty
+HEAD 6084ac58. Full locked checks passed 819 offline (48.32s), 189 PostgreSQL
+(122.92s), Ruff lint/format (136 files) and mypy (48 sources). Six startup tests
+include cancellation/close/failure/recreation and a decision-timeout test proving
+occupied capacity is held until actual tasks drain. Independent read-only review
+accepted final source/tests, documentation and actual acceptance/cleanup evidence.
+
+New actual cold acceptance passed in 266.692329s including cleanup, under the same
+1800-second bounds: all 62 partitions/230,311,900 rows and every manifest/physical/
+logical hash reconciled, and the independent R4 result/summary hashes matched.
+Readiness completed in two distinct spawned workers before observed file work,
+shared/unfinished peaks stayed two, and close reaped all children. Run
+62fd8392-1deb-40ba-9408-52e8904ce03f used numerical attempt one and autoqueued a memo
+with zero calls. This was fresh application/cache state, with no preliminary
+profile and no OS cache flush; aggregate memory peak remains unmeasured.
+
+The first new cold harness run remains FAILED despite correct numerical output:
+its ignored post-close diagnostic wrongly expected readiness Futures to persist.
+A reviewed wrapper-only correction carried forward actual pre-close PID proof
+for the same instance and required the Futures to be released. A separate fresh
+process/key produced the passing result above; runtime and tracked harness were
+unchanged between attempts. Both native numerical registrations/artifacts and
+their distinct overall acceptance statuses are preserved in the final owned
+database snapshot.
+
+Sequential Linux readiness/spawn/read/cleanup smoke passed with exact independent
+bars/hashes. All 263 protected originals matched after ownership-checked cleanup;
+owned containers/anonymous volumes/ports were removed and original service IDs,
+start times/restarts/health, HTTP/Redis and optional-Ollama degradation stayed
+unchanged. The post-cleanup source hash still matched bb4d698. Detailed timings,
+resources, failed readiness-only probes and final evidence are in
+[the optimization follow-up](verifier-optimization.md) and ignored
+`artifacts/r6-ci/executor-startup-fix/`. Original c9a6 model/month, f12cf32 cold,
+both hosted failures, clock discrepancy and model/cancellation limits remain
+historical evidence. New corrective publication/hosted verification is pending;
+no overall hosted pass is claimed yet.

@@ -381,3 +381,46 @@ were removed and original services preserved. Recovery publication/replacement
 hosted results are pending; record exact outcomes in
 [R6 verification](docs/r6-verification.md). No hosted pass follows from local
 validation. R7-R9 remain unauthorized.
+
+## Authorized necessary CI executor-startup correction (October 26, 2026)
+
+Recovery 6084ac58fa49c49015a4b552db68e3be14b6dc2a passed Ubuntu quality and Linux
+integration in hosted run 40271353210, but Windows again failed the worker-crash
+case (810 passed/one failed). No overall hosted pass is claimed. Direct evidence
+confirmed a stdlib dynamic-spawn manager wait set missing the new worker sentinel.
+The parent/reviewer-approved design is recorded BEFORE code in
+[the optimization contract](docs/verifier-optimization.md).
+
+Within the existing actual-CI-fix authorization, retain the two-spawn-worker/two-
+compute limits and use a shared lazy public-API bootstrap: atomically reserve two
+permits, complete exactly two barrier readiness tasks in distinct worker PIDs,
+then submit real file work. Ten-second barrier/fifteen-second decision bounds do
+not permit elapsed-time-only capacity release; abort/drain on close/failure and
+retain permits until real work stops. No private wake hooks or weaker verification.
+Require focused regression/lifecycle tests, independent review, new source freeze,
+full locked/offline/PostgreSQL and new actual cold62/Linux acceptance before
+publishing the correction. Preserve all prior outcomes and 263 protected hashes;
+new owned resources/evidence only. R7-R9 remain unauthorized.
+
+## Executor-startup correction: local reverification passed (October 26, 2026)
+
+Reviewed runtime source bb4d69804069735dd258d1f6550b7fb1772339d61c547cd4df0c9c3cf0a4476f
+implements the public-API two-worker bootstrap without weaker checks or larger
+capacity. Full locked checks passed 819 offline/189 PostgreSQL, Ruff/format136
+and mypy48. A new fresh-process cold62 workflow passed in 266.692329s including
+cleanup, with all 230,311,900 rows/physical/logical/manifest hashes and independent
+numerical hashes exact, attempt one and autoqueued memo with zero calls. Two
+distinct readiness results preceded observed file work; all workers were reaped.
+Sequential owned Linux startup/read/close smoke passed. Independent read-only
+review accepted final source/tests/docs/evidence. New corrective publication and
+hosted results remain pending.
+
+Preserve the first new harness outcome as FAILED: numerics were correct but its
+ignored observer wrongly expected readiness Futures after close. A reviewed
+wrapper-only correction and separate fresh process/key produced the pass above.
+Both numerical registrations/overall outcomes were snapshotted. All 263 protected
+original hashes matched after exact owned cleanup; original services/endpoints
+and optional-Ollama degradation stayed unchanged. Old c9a6 model/month and f12cf32
+cold records, both hosted failures, all diagnostic failures and clock/model/
+memory/cancellation limits remain intact. See verification/follow-up; no overall
+hosted pass or R7-R9 authority follows from local acceptance.

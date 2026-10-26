@@ -34,23 +34,27 @@ class ComputeBudget:
         self.kinds = {"verification": 0, "query": 0}
         self.failed = False
 
-    def try_acquire(self, kind: str) -> bool:
+    def try_acquire(self, kind: str, count: int = 1) -> bool:
+        if count not in (1, 2):
+            raise ValueError("invalid compute permit count")
         with self.condition:
             if self.failed:
                 raise VerificationUnavailable("compute workers unavailable")
-            if self.active >= 2:
+            if self.active + count > 2:
                 return False
-            self.active += 1
-            self.kinds[kind] += 1
+            self.active += count
+            self.kinds[kind] += count
             self.peak = max(self.peak, self.active)
             return True
 
-    def release(self, kind: str) -> None:
+    def release(self, kind: str, count: int = 1) -> None:
+        if count not in (1, 2):
+            raise ValueError("invalid compute permit count")
         with self.condition:
-            if self.active <= 0 or self.kinds[kind] <= 0:
+            if self.active < count or self.kinds[kind] < count:
                 raise RuntimeError("compute permit released twice")
-            self.active -= 1
-            self.kinds[kind] -= 1
+            self.active -= count
+            self.kinds[kind] -= count
             self.condition.notify_all()
 
     def fail_closed(self) -> None:
@@ -88,14 +92,16 @@ class ComputeBudget:
 
 
 _PID_QUEUE: Any = None
+_STARTUP_BARRIER: Any = None
 
 
-def _initialize_worker(pid_queue: Any) -> None:
+def _initialize_worker(pid_queue: Any, startup_barrier: Any) -> None:
     """No application clients/configuration; one native CPU/IO thread per child."""
     import pyarrow as pa  # type: ignore[import-untyped]
 
-    global _PID_QUEUE
+    global _PID_QUEUE, _STARTUP_BARRIER
     _PID_QUEUE = pid_queue
+    _STARTUP_BARRIER = startup_barrier
     for name in list(os.environ):
         if name.startswith("MARKETLAB_"):
             os.environ.pop(name, None)
@@ -112,6 +118,13 @@ def _initialize_worker(pid_queue: Any) -> None:
                 os._exit(1)
 
     threading.Thread(target=watch_parent, daemon=True).start()
+
+
+def _ready_worker() -> int:
+    # The first readiness call cannot finish and become idle until a second
+    # distinct spawned process is executing its own readiness call.
+    _STARTUP_BARRIER.wait(timeout=10)
+    return os.getpid()
 
 
 def _peak_rss() -> int | None:
@@ -222,6 +235,10 @@ class VerificationPool:
         self.context = mp.get_context("spawn")
         self.condition = threading.Condition(threading.RLock())
         self.executor: ProcessPoolExecutor | None = None
+        self.startup_barrier: Any = None
+        self.startup_futures: list[Future[int]] = []
+        self.starting = self.ready = False
+        self.bootstrap_submitted = self.bootstrap_completed = self.bootstrap_failed = 0
         self.pid_queue: Any = None
         self.flights: dict[VerificationRequest, _Flight] = {}
         self.worker_pids: set[int] = set()
@@ -239,16 +256,107 @@ class VerificationPool:
                 except (queue.Empty, OSError, EOFError, ValueError):
                     break
 
-    def _executor(self) -> ProcessPoolExecutor:
-        if self.executor is None:
-            self.pid_queue = self.context.Queue(maxsize=2)
-            self.executor = ProcessPoolExecutor(
+    def _ensure_started(self, cancelled: threading.Event) -> bool:
+        with self.condition:
+            if self.closed or self.broken:
+                raise VerificationUnavailable("verification worker unavailable")
+            if self.ready:
+                return True
+            if self.starting:
+                self.condition.wait(0.02)
+                return False
+            if not self.compute.try_acquire("verification", 2):
+                return False
+            self.starting = True
+        error: BaseException | None = None
+        deadline = time.monotonic() + 15
+        futures: list[Future[int]] = []
+        try:
+            # Creation and waits are outside the pool condition: shutdown can
+            # observe startup and abort the public barrier while it is pending.
+            pid_queue = self.context.Queue(maxsize=2)
+            barrier = self.context.Barrier(2)
+            executor = ProcessPoolExecutor(
                 max_workers=2,
                 mp_context=self.context,
                 initializer=_initialize_worker,
-                initargs=(self.pid_queue,),
+                initargs=(pid_queue, barrier),
             )
-        return self.executor
+            with self.condition:
+                self.pid_queue = pid_queue
+                self.startup_barrier = barrier
+                self.executor = executor
+                if self.closed:
+                    raise VerificationUnavailable("verification startup closed")
+            for _ in range(2):
+                with self.condition:
+                    if self.closed:
+                        raise VerificationUnavailable("verification startup closed")
+                future = executor.submit(_ready_worker)
+                futures.append(future)
+                with self.condition:
+                    self.startup_futures.append(future)
+                    self.bootstrap_submitted += 1
+                    self.peak_submitted = max(
+                        self.peak_submitted, sum(not task.done() for task in futures)
+                    )
+            while not all(future.done() for future in futures):
+                for future in futures:
+                    if future.done():
+                        future.result()  # Abort the barrier promptly on a known failure.
+                with self.condition:
+                    if self.closed:
+                        raise VerificationUnavailable("verification startup closed")
+                    self._pids()
+                    self.condition.wait(0.02)
+                if time.monotonic() >= deadline:
+                    raise VerificationUnavailable("verification startup timed out")
+            if time.monotonic() >= deadline:
+                raise VerificationUnavailable("verification startup timed out")
+            pids = [future.result() for future in futures]
+            if len(set(pids)) != 2:
+                raise VerificationUnavailable("verification startup incomplete")
+            with self.condition:
+                if self.closed:
+                    raise VerificationUnavailable("verification startup closed")
+                self.worker_pids.update(pids)
+                # The barrier proves both readiness calls overlapped even if
+                # they finish before submit() returns its second future.
+                self.peak_submitted = max(self.peak_submitted, 2)
+                self.ready = True
+        except BaseException as caught:
+            error = caught
+            with self.condition:
+                self.broken = True
+                self.compute.fail_closed()
+                barrier = self.startup_barrier
+            if barrier is not None:
+                barrier.abort()
+        finally:
+            # An elapsed decision deadline does not release actual startup work.
+            # Aborting the finite barrier lets all submitted tasks drain first.
+            for future in futures:
+                while not future.done():
+                    try:
+                        future.result(timeout=0.05)
+                    except TimeoutError:
+                        continue
+                    except BaseException:
+                        break
+            with self.condition:
+                self.bootstrap_completed = sum(
+                    future.done() and not future.cancelled() and future.exception() is None
+                    for future in futures
+                )
+                self.bootstrap_failed = len(futures) - self.bootstrap_completed
+                self.compute.release("verification", 2)
+                self.starting = False
+                self.condition.notify_all()
+        if error is not None:
+            raise VerificationUnavailable("verification startup unavailable") from error
+        if cancelled.is_set():
+            raise VerificationCancelled("bar request cancelled")
+        return True
 
     @staticmethod
     def _signal(flight: _Flight) -> None:
@@ -312,7 +420,10 @@ class VerificationPool:
         receiver = sender = None
         try:
             receiver, sender = self.context.Pipe(duplex=False)
-            future = self._executor().submit(_verify_file, request.payload, receiver)
+            executor = self.executor
+            if executor is None or not self.ready:
+                raise VerificationUnavailable("verification startup unavailable")
+            future = executor.submit(_verify_file, request.payload, receiver)
             flight = _Flight(future, receiver, sender, {token})
             self.flights[request] = flight
             self.submitted += 1
@@ -355,6 +466,10 @@ class VerificationPool:
             while pending or attached:
                 if cancelled.is_set():
                     raise VerificationCancelled("bar request cancelled")
+                if not self._ensure_started(cancelled):
+                    with self.condition:
+                        self.condition.wait(0.02)
+                    continue
                 with self.condition:
                     self._pids()
                     if self.closed or self.broken:
@@ -413,7 +528,8 @@ class VerificationPool:
                 "start_method": "spawn",
                 "active_submitted": sum(
                     not flight.future.done() for flight in self.flights.values()
-                ),
+                )
+                + sum(not future.done() for future in self.startup_futures),
                 "peak_submitted": self.peak_submitted,
                 "submitted": self.submitted,
                 "completed": self.completed,
@@ -424,15 +540,26 @@ class VerificationPool:
                 "completed_records": list(self.records),
                 "closed": self.closed,
                 "broken": self.broken,
+                "starting": self.starting,
+                "bootstrap_ready": self.ready,
+                "bootstrap_submitted": self.bootstrap_submitted,
+                "bootstrap_completed": self.bootstrap_completed,
+                "bootstrap_failed": self.bootstrap_failed,
+                "startup_deadline_seconds": 15,
+                "barrier_seconds": 10,
                 "compute": self.compute.snapshot(),
             }
 
     def close(self) -> None:
         with self.condition:
             self.closed = True
+            if self.starting and self.startup_barrier is not None:
+                self.startup_barrier.abort()
             for flight in list(self.flights.values()):
                 self._signal(flight)
             self.condition.notify_all()
+            while self.starting:
+                self.condition.wait(0.02)
             executor = self.executor
         if executor is not None:
             executor.shutdown(wait=True, cancel_futures=True)
@@ -443,4 +570,6 @@ class VerificationPool:
                 self.pid_queue.join_thread()
                 self.pid_queue = None
             self.flights.clear()
+            self.startup_futures.clear()
+            self.startup_barrier = None
             self.executor = None

@@ -534,9 +534,13 @@ passed 758 offline/189 PostgreSQL cases; actual bounded memo evaluation passed
 approval authorized publication and actual CI fixes. R6 and its verifier follow-up
 were published as `c94ef4bce9dd292730c8884761c787f799bac2d1`; the first
 [hosted run](https://github.com/atharva-m/MarketLab/actions/runs/40269166877)
-failed Ubuntu quality and integration, and Windows quality was canceled. Reviewed
-test-only fixes passed local checks; replacement hosted results are pending. See verification
-for exact failures and local validation. R7-R9 remain backlog.
+failed Ubuntu quality and integration, and Windows quality was canceled. Recovery
+`6084ac58fa49c49015a4b552db68e3be14b6dc2a` then passed Ubuntu quality and Linux
+integration in [run 40271353210](https://github.com/atharva-m/MarketLab/actions/runs/40271353210),
+but Windows failed the worker-crash test again. A stdlib dynamic-spawn startup
+race was confirmed. The reviewed public-API bootstrap correction passed new
+819-offline/189-PostgreSQL checks and fresh cold/Linux acceptance; corrective
+publication and overall hosted verification are pending. R7-R9 remain backlog.
 
 Apply the locked `alembic upgrade head` to the intended database before using
 R6; additive migration `0007_memos` preserves existing table definitions.
@@ -595,8 +599,14 @@ Full checks passed 811 offline/189 PostgreSQL cases. OS filesystem-cache state
 was uncontrolled; simultaneous whole-application peak memory is unmeasured.
 The earlier R6 cold failure remains historical evidence. Source identity,
 packaged Linux and preservation/cleanup outcomes are recorded in the follow-up.
-Publication follows the later October 26 approval; the initial hosted failures
-and ongoing test-fix validation are recorded in [R6 verification](docs/r6-verification.md).
+Publication follows the later October 26 approval. The old cold measurement is
+retained. Corrected source bb4d698 passed its separate fresh cold workflow in
+266.692s including cleanup, with exact hashes, two-worker readiness and Linux
+spawn/read/close evidence. All 263 protected originals and original services were
+preserved through owned cleanup. The first new diagnostic-wrapper failure remains
+recorded; it was corrected without runtime changes and rerun in a fresh process.
+Hosted failures and recovery are recorded in
+[R6 verification](docs/r6-verification.md).
 
 Library callers should reuse one `BarService` per application and await its
 `close()` during shutdown. Scripts using spawned verification must guard startup

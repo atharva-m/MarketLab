@@ -423,3 +423,144 @@ and ignored `artifacts/r6-ci/`. Runtime source, dependencies, lockfile, deployme
 retained hashes and the 272.814s cold measurement are unchanged. Recovery
 publication and replacement hosted results remain pending; local test passes
 do not replace that gate.
+
+## Second hosted attempt and confirmed executor race (October 26, 2026)
+
+The reviewed first recovery was published as
+`6084ac58fa49c49015a4b552db68e3be14b6dc2a`.
+[Replacement run 40271353210](https://github.com/atharva-m/MarketLab/actions/runs/40271353210)
+passed Ubuntu quality (811 offline, 19.75s) and Linux integration (189 PostgreSQL,
+79.29s), including API, optional-Redis-outage and cleanup checks. Windows quality
+failed the worker-crash case again (810 passed/one failed). This run is not an
+overall pass; the first failed run and all local probe outcomes remain history.
+
+Direct production-executor observation then confirmed a Python 3.13 dynamic-spawn
+race: the manager's captured wait set omitted a newly spawned worker's sentinel.
+If that worker died before another observed event woke the manager, broken-pool
+notification could be delayed until the sibling's controlled task expired. Earlier
+signal/readiness hypotheses did not establish this cause. Exact observations are
+retained in `artifacts/r6-ci/dynamic-spawn-confirmation.json` and its log.
+
+## Reviewed pre-code executor-startup correction
+
+The necessary runtime correction is within the user's October 26 authorization
+to fix actual R6/verifier CI failures. Parent and independent reviewer approved
+this design, recorded here BEFORE its runtime/test implementation:
+
+- Keep the same lazy, maximum-two-worker spawn executor and shared two-permit
+  compute budget. Bootstrap is one shared flight per service, not a per-request
+  pool or persistent cache. Reserve both compute permits atomically; never hold
+  one while waiting for the other. Startup and file/query work cannot overlap
+  beyond the existing two-operation bound.
+- Use only public executor APIs. Submit exactly two readiness tasks. A two-party
+  spawned barrier inside those tasks requires two distinct actual worker PIDs;
+  neither task can finish serially in one worker. Only after both tasks complete
+  may real file tasks be submitted to the established executor. No private manager
+  wake hook, larger pool, serial fallback or skipped verification is permitted.
+- Worker initialization still removes application configuration, sets Arrow CPU/
+  IO pools to one, reports its PID and installs parent-death handling before
+  readiness. Readiness task payloads contain no database/client/model credentials.
+  Bootstrap has separate bounded diagnostics; all 62 real file verifications and
+  their physical/logical/manifest hashes remain separately counted.
+- The barrier timeout is ten seconds; fifteen seconds is the startup decision
+  deadline. Timeout or close aborts the barrier and retains both compute permits
+  until the real startup tasks drain. Elapsed time alone never releases capacity.
+  This is not a hard OS import/termination/reaping deadline. Wait outside the pool
+  condition; close and request cancellation must not deadlock that condition.
+- A canceled waiter drains bounded startup before propagating; an unaffected
+  waiter may reuse a healthy initialized executor. Startup failure fails closed
+  until explicit service close/recreation. Close aborts and drains readiness work
+  and reaps owned children, preserving the existing shutdown boundary.
+
+Require focused startup/concurrency/cancellation/close/failure/recreation tests
+and a regression forcing the old spawn ordering, independent review, a new source
+freeze and all locked/offline/189 real PostgreSQL checks. Repeat actual fresh-
+process all-62 cold submit/execute/readback within the unchanged 1800-second bounds,
+with exact independent numerical hashes and automatic pending memo, plus owned
+Linux spawn/read/cleanup smoke. The earlier `f12cf32...`/272.814s acceptance remains
+historical; new runtime acceptance must record its own source and timings.
+
+Use only new owned resources/evidence under
+`artifacts/r6-ci/executor-startup-fix/`, preserving the original verifier-opt/R6
+records. A fresh 263-file dataset/research/configuration/migration hash baseline
+and original service identity/endpoints were captured before this correction.
+No dependencies/lock/deployment changes, pulls, original-service restarts or
+clock/system experiments are authorized. Implementation/reverification and a
+replacement hosted pass remain pending at this pre-code record.
+
+## Startup correction: actual reverification (October 26, 2026)
+
+The approved public-API bootstrap is implemented. It reserves two shared compute
+permits atomically and completes two barrier readiness tasks in distinct spawned
+workers before any file dispatch. Startup failure/close aborts and drains; a
+decision timeout alone cannot release occupied permits. Six new startup tests
+cover shared initialization, cancellation with a survivor, close, failure and
+recreation, atomic reservation, and the fifteen-second decision branch. That
+branch advances only the module-local test clock and proves both permits stay
+occupied until actual controlled readiness work drains. Production clocks and
+deadlines are unchanged. A readiness-only earlier probe (`crash-barrier-linux.log`)
+had failed despite distinct armed workers; a rejected replacement-executor snapshot
+was not the production proof. Preserve these alongside the later exact-executor
+dynamic-spawn confirmation rather than treating the earlier hypotheses as fixes.
+
+New frozen runtime source SHA-256 is
+`bb4d69804069735dd258d1f6550b7fb1772339d61c547cd4df0c9c3cf0a4476f`, executed on
+dirty HEAD `6084ac58fa49c49015a4b552db68e3be14b6dc2a`. It is distinct from the old
+f12cf32/272.814s record. Source archive/fingerprints and all new evidence are under
+`artifacts/r6-ci/executor-startup-fix/`; no earlier R6/verifier evidence was replaced.
+Locked checks passed Ruff lint/format (136 files), strict mypy (48 sources),
+819 offline tests (48.32s) and 189 real PostgreSQL tests (122.92s). The new owned
+database migration passed. Independent read-only review accepted the final
+source/tests, documentation and actual cold/Linux/snapshot/preservation/cleanup
+evidence, with no blocking finding.
+
+The first new cold numerical run matched all hashes but the overall acceptance
+FAILED: the ignored diagnostic wrapper incorrectly required live readiness
+Futures after legitimate service close had released them. Its failure remains
+recorded under `verifier-executor-bootstrap-cold-first*`. A reviewed wrapper-only
+correction retains observed pre-close PID proof for that exact pool instance,
+explicitly requires cleared Futures after close, and preserves every capacity,
+hash, source and no-child gate. Runtime/tracked harness did not change.
+
+A new process and unique second key then PASSED the complete cold gate:
+
+| Phase | Actual seconds |
+| --- | --- |
+| Prepare | 264.052920 |
+| Prepare plus durable submission | 264.076957 |
+| Execute | 2.499030 |
+| Verified numerical readback | 0.023271 |
+| Service/pool cleanup | 0.172960 |
+| Whole workflow including cleanup | 266.692329 |
+
+Entry had zero verified versions, file/readiness tasks or worker PIDs. Owned Redis
+was reset and asserted empty; there was no preliminary profile. OS cache state
+was uncontrolled. Exactly 62 file records reconciled 230,311,900 rows and every
+physical/logical/manifest hash; results and summary matched the independent R4
+reference. Numerical run `62fd8392-1deb-40ba-9408-52e8904ce03f` used attempt one and
+atomically queued a memo with zero attempts/calls. Readiness task results identified
+two actual PIDs (3268/24656), with completed readiness required in all observed
+file-submission snapshots. Focused tests separately observe file withholding
+before readiness. Total unfinished work/shared-compute peaks stayed two, with
+zero file failures/cancellations and no children after close. Parent CPU was
+41.000s; summed file-task CPU was 379.641s. The two worker lifetime RSS high-water
+marks were 123,162,624 and 123,916,288 bytes; these are not a simultaneous aggregate
+peak, which remains unmeasured. The old and new timings are measured workloads,
+not universal latency guarantees.
+
+The sequential owned Linux overlay also PASSED: two readiness workers (18/21),
+one fully verified 1,151,908-row partition, twelve exact independent-reference
+five-minute bars (MISS), and zero children/active compute after close. File-task
+wall/CPU were 2.227818s/1.255915s. Its exact owned container/image were removed;
+the overlay reused locked dependencies with no pulls or deployment edits.
+
+`cold-catalog-final.json` preserves both new numerical runs and their queued
+memos, explicitly keeping the first overall harness outcome failed and the second
+passed. All 263 protected original dataset/research/configuration/migration files
+matched before and after cleanup (final comparison 1.878s). Exact owned PostgreSQL/
+Redis containers and anonymous volumes were removed, ports 55440/56382 closed,
+and original IDs/images/start times/restarts/health, HTTP endpoints, Redis PONG
+and the identical optional-Ollama readiness degradation were preserved. Post-cleanup
+source still matched bb4d698. No data, dependency/lock, deployment or clock change
+occurred. A new corrective publication and overall hosted pass remain pending;
+neither earlier failed hosted run is relabeled as successful.
