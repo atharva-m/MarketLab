@@ -2,9 +2,12 @@
 
 **R6 COMPLETE** under the approved [contract](r6-memos.md), October 25, 2026.
 Implementation, independent source/evidence review, full local acceptance and
-ownership-checked cleanup passed. No commit/push is authorized or performed;
-hosted R6 CI is unrun. R7-R9 remain unauthorized. All failures and limitations
-below remain part of the observed outcome.
+ownership-checked cleanup passed. The initial closeout excluded commit/push;
+later October 26 publication authority superseded that restriction. Verified R6
+and its verifier follow-up were published as `c94ef4bce9dd292730c8884761c787f799bac2d1`.
+The first hosted run failed as recorded below; CI recovery is still in progress.
+R7-R9 remain unauthorized. All local failures and limitations below remain part
+of the observed outcome.
 
 ## Source, implementation and review
 
@@ -287,7 +290,83 @@ weights remain excluded from Git. The known clock discrepancy, constrained-model
 limits, upstream cancellation uncertainty, OS-cache condition and unmeasured
 aggregate peak memory remain explicit.
 
-At this authority update, publication and hosted CI outcomes are pending. The
-exact published commit, hosted run link and observed results will be recorded
-here; the completed 811 offline/189 PostgreSQL local suite and actual-model/cold
-acceptance are separate evidence, not a hosted CI pass.
+At that authority update, publication and hosted CI outcomes were pending.
+Their actual later outcomes follow. The completed 811 offline/189 PostgreSQL
+local suite and actual-model/cold acceptance remain separate evidence.
+
+## Publication and initial hosted failure (October 26, 2026)
+
+Verified R6 and the cold-verifier optimization were committed/pushed normally as
+`c94ef4bce9dd292730c8884761c787f799bac2d1`, containing 38 audited scoped source,
+test, migration, acceptance-tooling and documentation files. No artifacts/data,
+archives, credentials, environments or weights were included. Runtime source
+SHA-256 remains `f12cf32c7a33b8b81691cebd40195a6d174cc113be4aa35190dd209ccb3e1035`.
+This does not relabel the earlier dirty-source model/month/cold executions as
+new executions under the published commit.
+
+[Hosted CI run 40269166877](https://github.com/atharva-m/MarketLab/actions/runs/40269166877)
+failed for that exact revision:
+
+| Hosted job | Observed outcome |
+| --- | --- |
+| Ubuntu quality | Failed: 810 offline passed, one worker-crash test failed; 189 integration deselected. |
+| Linux integration | Failed: 188 PostgreSQL cases passed, one synchronous retry test failed; 811 offline deselected. |
+| Windows quality | Canceled by matrix fail-fast; 802 reported passes are partial evidence, not a completed quality pass. |
+
+Ubuntu lint/format (134 files) and strict mypy (48 sources) passed before its
+offline failure. Integration passed Compose validation, image build and startup;
+later API/Redis smoke steps did not run after the test failure. Cleanup ran.
+Exact hosted logs are retained under ignored `artifacts/r6-ci/` with the run and
+job IDs. This initial failed run remains a failure even if recovery later passes.
+
+The ingestion test patched `publication.time.sleep`, mutating the shared stdlib
+module. POSIX subprocess timeout polling during Git provenance reads then added
+two unrelated 0.001-second calls to its retry-wait list. Its three HTTP calls were
+correct; the observed waits were `[9.992866, 0.001, 0.001]`. The test-only fix replaces
+the publication module's `time` binding with a local sleep adapter in all three
+related synchronous-retry cases. Exact HTTP/sleep/attempt assertions remain intact.
+Owned real PostgreSQL validation passed 12 synchronous cases (2.38s) and all 40
+durable-job integration cases (20.92s). A Linux subprocess probe reproduced the
+global polling leakage and verified exactly one application wait with the local
+adapter. Its first environment probe lacked the current source in the old base
+image; the corrected read-only source mount passed without pulls/dependency changes.
+Evidence and ownership-checked cleanup are in `artifacts/r6-ci/jobs-sleep-fix/`.
+The owned PostgreSQL/anonymous volume and probe containers were removed; original
+service identities/start times/restarts/health, HTTP endpoints and Redis PONG
+were preserved.
+
+The Ubuntu worker-crash test sent POSIX SIGTERM without establishing that the
+owned worker had exited; its controlled release checkpoint expired. The proposed
+test-only correction uses forced crash semantics on POSIX and observes the exact
+owned process sentinel before retaining broken-pool, SQL-fencing, reaping and
+recreation assertions. Windows uses its existing forced SIGTERM behavior.
+Post-fix normal validation passed 811 Windows offline cases (38.76s). After the
+final sentinel refinement, Windows pool validation passed 11 cases (12.09s) and
+the Linux pool/parent-death group passed 13 (22.09s). A separate final Linux
+launcher probe with inherited blocked SIGTERM passed its targeted case (13.83s):
+the sentinel was ready, the exited worker was temporarily a `/proc` zombie, and
+its exit code was -9. This distinguishes actual exit from `kill(pid, 0)`, which
+still succeeds for a zombie until reaping; the final close assertion continues
+to require reaping. The original hosted worker's signal state was not captured
+and is not inferred from these injected local conditions.
+
+Earlier local probe failures remain recorded: the first fixture changed both
+workers and interfered with stdlib sibling cleanup; that exact owned container
+was recorded and stopped. The fixture now alters only the selected target and
+normalizes its sibling. An earlier exit probe incorrectly required PID
+disappearance before reaping, and its first diagnostic then hit a disappearing
+proc-file race. Initial Linux collection also encountered an unavailable Windows
+Hypothesis native module; corrected runs used existing Linux-compatible pytest/
+asyncio packages without installs or downloads. These were test/probe failures,
+not changes to production signal handling or verifier semantics.
+
+Independent read-only review approved both final test fixes. Ruff lint/format
+(134 files), strict mypy (48 sources) and diff whitespace checks passed. Exact
+normal/abnormal logs and `pool-cleanup-final.json` remain in `artifacts/r6-ci/`;
+both owned CI resource inventories were empty after cleanup. These local passes
+do not establish a replacement hosted pass.
+
+Only tests/documentation are being changed for this recovery; runtime source,
+dependencies, lockfile, deployment, numerical definitions and the recorded local
+acceptance remain unchanged. No recovery commit or replacement hosted result is
+claimed in this record yet.

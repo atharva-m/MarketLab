@@ -2,6 +2,7 @@
 
 import asyncio
 import ctypes
+import multiprocessing
 import os
 import signal
 import threading
@@ -9,12 +10,13 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from datetime import UTC, date, datetime, timedelta
+from multiprocessing.connection import wait
 
 import pytest
 import sqlalchemy as sa
 from test_bars import FakeRedis, expensive_native
 from test_datasets import archive_files, normalize
-from verifier_helpers import gate_verify
+from verifier_helpers import crash_gate_verify, gate_verify
 
 import marketlab.analytics.verification as module
 from marketlab.analytics.bars import BarError, BarService, BarsRequest
@@ -209,7 +211,8 @@ def test_one_cancelled_waiter_does_not_cancel_shared_survivor(tmp_path, monkeypa
 
 def test_killed_worker_fails_closed_for_sql_until_recreation(tmp_path, monkeypatch):
     requests, _ = fixtures(tmp_path, 2)
-    monkeypatch.setattr(module, "_verify_file", gate_verify)
+    touch(tmp_path, requests[0], "crash-target")
+    monkeypatch.setattr(module, "_verify_file", crash_gate_verify)
     compute = ComputeBudget()
     pool = VerificationPool(compute)
     try:
@@ -217,8 +220,17 @@ def test_killed_worker_fails_closed_for_sql_until_recreation(tmp_path, monkeypat
             running = callers.submit(pool.verify_many, requests, threading.Event())
             wait_for(lambda: all(entered(tmp_path, request) for request in requests))
             pid = int(entered(tmp_path, requests[0])[0].name.rsplit("-", 1)[1])
-            assert alive(pid)
-            os.kill(pid, signal.SIGTERM)  # Exactly this known owned worker, never PID wildcard.
+            assert alive(pid) and not running.done()
+            owned = {child.pid: child for child in multiprocessing.active_children()}
+            assert pid in owned
+            exited = owned[pid].sentinel
+            # Windows SIGTERM forces TerminateProcess; POSIX SIGTERM is graceful
+            # and may be inherited as blocked/ignored, so use actual crash semantics.
+            crash = signal.SIGTERM if os.name == "nt" else signal.SIGKILL
+            os.kill(pid, crash)  # Exactly this known owned worker, never PID wildcard.
+            # A POSIX zombie has exited but kill(pid, 0) still succeeds until the
+            # executor reaps it. Observe exit now; assert actual reaping after close.
+            assert wait([exited], timeout=5) == [exited]
             with pytest.raises(VerificationUnavailable):
                 running.result(timeout=10)
             assert pool.snapshot()["broken"] and compute.snapshot()["failed"]

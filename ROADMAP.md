@@ -1,6 +1,6 @@
 # MarketLab recovery roadmap
 
-Status: R6 and its cold-verifier follow-up COMPLETE with full local acceptance/review/owned cleanup; October 26 publication/hosted-CI authority is approved, actual publication/CI outcomes pending; R7-R9 remain unauthorized backlog. R5 COMPLETE with full local acceptance/review/owned cleanup; verified R5 was published as 19a1363 and hosted CI run 40177491693 passed; R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. Verified R4 and the clock fix were published as 2c0dd0b; hosted CI run 40167912094 passed for that revision. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
+Status: R6 and its cold-verifier follow-up COMPLETE with full local acceptance/review/owned cleanup; published as c94ef4b, initial hosted run 40269166877 failed and reviewed test-only CI recovery is in progress; R7-R9 remain unauthorized backlog. R5 COMPLETE with full local acceptance/review/owned cleanup; verified R5 was published as 19a1363 and hosted CI run 40177491693 passed; R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. Verified R4 and the clock fix were published as 2c0dd0b; hosted CI run 40167912094 passed for that revision. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
@@ -14,16 +14,18 @@ and documenting/publishing observed outcomes. This supersedes earlier
 no-commit/push restrictions only for this verified scope. Preserve all R1-R6
 behavior, immutable artifacts, tested-source distinctions and historical failures
 and limitations. Artifacts/data, archives, credentials, environments and weights
-remain excluded from Git. Exact publication/CI outcomes are pending and will be
-recorded in [R6 verification](docs/r6-verification.md) and the
+remain excluded from Git. Verified publication is c94ef4b; initial hosted run
+40269166877 failed and reviewed test-only recovery is being prepared. Exact
+outcomes are recorded in [R6 verification](docs/r6-verification.md) and the
 [optimization follow-up](docs/verifier-optimization.md); local acceptance is not
 a hosted CI pass. R7-R9 and unrelated feature/deployment/system authority do not
 follow. Earlier authority/closeout records below remain historical.
 
-Current post-R6 follow-up authority: the user authorized exact cold-verifier
+Historical post-R6 implementation authority: the user authorized exact cold-verifier
 optimization and bounded CPU parallelism under [the pre-code contract](docs/verifier-optimization.md),
 with prescribed coder/reviewer, full cold all-62 numerical-workflow acceptance
-within 1800s, retained R1-R6 checks/hashes and owned cleanup. NO COMMIT/PUSH.
+within 1800s, retained R1-R6 checks/hashes and owned cleanup. The initial request
+excluded commit/push; later publication authority above now governs.
 Historical R6 completion and its cold/ordered evidence remain intact; R7-R9
 remain unauthorized. This scoped authority supersedes verifier/concurrency freeze
 only as specified, not numerical definitions or resource/deployment protections.
@@ -530,7 +532,8 @@ read-only review, full local acceptance and ownership-checked cleanup; see
 [actual verification](docs/r6-verification.md). Separate atomically enqueued memo
 jobs, grounded three-paragraph supplements, immutable manifests, bounded API/CLI
 and shared nonpreemptive copilot-priority inference are implemented. R1-R5 remain
-preserved. NO COMMIT/PUSH; hosted R6 CI is unrun and R7-R9 remain unauthorized.
+preserved. At that local closeout no commit/push or hosted R6 CI had occurred;
+later publication outcomes follow below. R7-R9 remain unauthorized.
 
 Final locked checks passed 758 offline/189 real PostgreSQL cases, Ruff lint/format
 and strict mypy. Actual constrained memo evaluation passed 20/20 with independent
@@ -560,4 +563,28 @@ supplements and replayable database/source snapshots remain ignored evidence.
 Execution used dirty source c9a6c63d1af3299060f211682614d2eba66c680345a3af31a02ab9e5d337aabc;
 all initial test/harness/cold failures and the known system-clock discrepancy
 remain explicit. No dependency/lock/deployment change or original-service restart
-occurred. R6 completion does not authorize publication or R7-R9.
+occurred. R6 completion itself does not authorize publication or R7-R9.
+
+## R6/verifier publication and first hosted outcome (October 26, 2026)
+
+Verified R6 plus its cold-verifier follow-up were committed/pushed as
+`c94ef4bce9dd292730c8884761c787f799bac2d1`, containing 38 audited scoped files
+without artifacts/data, archives, credentials, environments or weights.
+[Hosted run 40269166877](https://github.com/atharva-m/MarketLab/actions/runs/40269166877)
+failed: Ubuntu quality 810 offline passes/one worker-crash-test failure; Linux
+integration 188 passes/one retry-test failure. Windows quality was canceled after
+802 reported passes, which remain partial evidence rather than a complete pass.
+
+Reviewed test-only corrections isolate the ingestion sleep mock from stdlib
+subprocess polling and observe forced worker exit through its owned process
+sentinel before asserting final reaping. Strict retry/broken-pool/SQL-fencing/
+reaping/recreation assertions remain. Local validation passed 811 Windows offline,
+40 PostgreSQL ingestion, 11 final Windows pool, 13 final Linux lifecycle and one
+abnormal Linux launcher case. Original hosted signal state remains unknown; the
+failed run and every diagnostic/helper failure remain recorded.
+
+Runtime source hash remains f12cf32c7a33b8b81691cebd40195a6d174cc113be4aa35190dd209ccb3e1035;
+the original R6/model/month and later 272.814s cold evidence are unchanged. Owned
+fix resources were removed with original services preserved. Recovery commit and
+replacement hosted results are pending; see [R6 verification](docs/r6-verification.md)
+and the [optimization follow-up](docs/verifier-optimization.md). R7-R9 remain backlog.

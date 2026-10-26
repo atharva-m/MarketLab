@@ -7,7 +7,8 @@ before runtime/test implementation. Prescribed coder gpt-6.1-sol/high and indepe
 read-only reviewer gpt-6-astra/medium apply. NO COMMIT/PUSH. R7-R9 remain unauthorized.
 Parent review of these implementation details preceded code. Implementation,
 full checks, actual cold/Linux acceptance and owned cleanup have passed; final
-independent closeout review is recorded below. No commit/push was performed.
+independent closeout review is recorded below. No commit/push was performed at
+that local closeout; actual later publication outcomes follow below.
 
 The later October 26 publication authority below supersedes the initial
 no-commit/push restriction for the verified R6/verifier scope only. Historical
@@ -370,8 +371,8 @@ no blocking finding. This authorized follow-up is complete. After
 documentation-only edits, checks
 passed Ruff lint, formatting (134 files), strict mypy (48 sources) and
 `git diff --check`; the execution fingerprint remained frozen and unchanged.
-No commit/push, hosted CI, dependencies/lock/deployment changes or R7-R9 authority
-is claimed.
+At that local closeout, commit/push and hosted CI had not occurred. No dependency,
+lockfile or deployment change or R7-R9 authority follows from the local pass.
 
 ## Authorized publication (October 26, 2026)
 
@@ -386,7 +387,39 @@ environments or weights in Git.
 
 The frozen dirty execution source, exact local measurements, all failures and
 preservation/cleanup evidence remain the local acceptance record. Publication
-and hosted CI outcomes are pending at this authority update. Record the exact
+and hosted CI outcomes were pending at that authority update. Record the exact
 published SHA and observed hosted run/results here and in
 [R6 verification](r6-verification.md); the local cold pass and full retained
 suites do not establish a hosted CI pass.
+
+## Published revision and hosted test failures (October 26, 2026)
+
+Verified R6 and this optimization were published as
+`c94ef4bce9dd292730c8884761c787f799bac2d1` with 38 audited scoped files, excluding
+artifacts/data, archives, credentials, environments and weights. Runtime source
+hash remains `f12cf32c7a33b8b81691cebd40195a6d174cc113be4aa35190dd209ccb3e1035`;
+the earlier dirty-source acceptance is not a new run under the published commit.
+
+[Hosted run 40269166877](https://github.com/atharva-m/MarketLab/actions/runs/40269166877)
+failed Ubuntu quality (810 offline passes/one worker-crash-test failure) and Linux
+integration (188 passes/one retry-test failure). Windows quality was canceled
+after 802 reported passes; it is not a completed quality pass. Later integration
+API/Redis smoke steps did not run. Preserve this failed run as history.
+
+Reviewed corrections change tests only: a local sleep adapter avoids counting
+POSIX subprocess polling as ingestion retry waits, and a forced POSIX crash plus
+the owned process sentinel separates worker exit from zombie reaping. Exact
+retry, broken-pool, SQL-fencing, reaping and recreation assertions remain intact.
+Final Windows pool validation passed 11 cases (12.09s), Linux pool/lifecycle
+validation passed 13 (22.09s), and the abnormal inherited-signal launcher probe
+passed one (13.83s). The latter captured a ready sentinel and -9 exit code while
+`/proc` showed an exited zombie; the hosted worker's original signal state was
+not observed. Windows full offline validation passed 811 cases (38.76s), and all
+40 PostgreSQL ingestion cases passed (20.92s). Independent review approved the
+final fixes and owned cleanup passed.
+
+Probe failures and refinement details remain in [R6 verification](r6-verification.md)
+and ignored `artifacts/r6-ci/`. Runtime source, dependencies, lockfile, deployment,
+retained hashes and the 272.814s cold measurement are unchanged. Recovery
+publication and replacement hosted results remain pending; local test passes
+do not replace that gate.

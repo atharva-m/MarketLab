@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
 from pathlib import Path
 from threading import Barrier
+from types import SimpleNamespace
 from uuid import uuid4
 
 import pytest
@@ -807,7 +808,9 @@ def test_synchronous_transient_source_retries_same_durable_job_then_succeeds(
                 .values(eligible_at=sa.func.clock_timestamp() - sa.text("INTERVAL '1 second'"))
             )
 
-    monkeypatch.setattr(publication.time, "sleep", advance_eligibility)
+    # Keep the retry wait local: POSIX subprocess provenance reads also use
+    # the shared stdlib time.sleep for their own millisecond polling.
+    monkeypatch.setattr(publication, "time", SimpleNamespace(sleep=advance_eligibility))
     with httpx.Client(transport=httpx.MockTransport(response)) as client:
         result = ingest_day(
             dataset_engine, tmp_path / "storage", symbol="BTCUSDT", trade_date=JAN, client=client
@@ -856,7 +859,7 @@ def test_synchronous_retry_rechecks_database_time_that_trails_host_sleep(
                     .values(eligible_at=sa.func.clock_timestamp() - sa.text("INTERVAL '1 second'"))
                 )
 
-    monkeypatch.setattr(publication.time, "sleep", trailing_database_time)
+    monkeypatch.setattr(publication, "time", SimpleNamespace(sleep=trailing_database_time))
     with httpx.Client(transport=httpx.MockTransport(response)) as client:
         result = ingest_day(
             dataset_engine, tmp_path / "storage", symbol="BTCUSDT", trade_date=JAN, client=client
@@ -879,7 +882,7 @@ def test_synchronous_retry_recheck_is_bounded(
     from marketlab.datasets import ingest_day, publication
 
     sleeps = []
-    monkeypatch.setattr(publication.time, "sleep", sleeps.append)
+    monkeypatch.setattr(publication, "time", SimpleNamespace(sleep=sleeps.append))
     with (
         httpx.Client(transport=httpx.MockTransport(lambda _: httpx.Response(503))) as client,
         pytest.raises(DatasetError, match="not eligible"),

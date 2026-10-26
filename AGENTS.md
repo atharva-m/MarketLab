@@ -227,7 +227,8 @@ unchanged. See [R5 verification](docs/r5-verification.md). R6-R9 remain unauthor
 The user approved the detailed R6 plan, ROADMAP.md/AGENTS.md updates, the full
 [R6 contract](docs/r6-memos.md) BEFORE code, prescribed coder gpt-6.1-sol/high then
 independent read-only reviewer gpt-6-astra/medium, full acceptance and honest
-outcomes. NO COMMIT/PUSH. This supersedes historical R6/memo exclusions only for
+outcomes. The initial request excluded commit/push; later October 26 publication
+authority below governs current publication. This supersedes historical R6/memo exclusions only for
 that contract. R1-R5 are complete and preserved; R7-R9 remain unauthorized.
 
 Implement separate unique-run durable memo jobs atomically enqueued with numerical
@@ -289,8 +290,9 @@ memo supplements and the matching catalog/source snapshots remain ignored
 acceptance evidence. No dependencies/lock/deployment changes or original
 service restarts occurred. The Docker clock discrepancy persists. Dirty execution
 source c9a6c63d1af3299060f211682614d2eba66c680345a3af31a02ab9e5d337aabc and all
-prior/harness/cold failures remain explicit. NO COMMIT/PUSH; hosted R6 CI is unrun.
-R6 completion grants no R7-R9 or publication authority. Never commit artifacts/
+prior/harness/cold failures remain explicit. At local closeout no commit/push or
+hosted R6 CI had occurred; actual later publication outcomes follow below.
+R6 completion itself grants no R7-R9 or publication authority. Never commit artifacts/
 data/credentials/environments/weights.
 
 ## Current authorized post-R6 follow-up: cold verifier optimization
@@ -300,7 +302,8 @@ parallelism changes so a fresh all-62-partition numerical workflow completes
 within thirty minutes, with exact retained checks/hashes and R1-R6 preservation.
 The pre-code [optimization contract](docs/verifier-optimization.md) governs this
 follow-up; prescribed coder gpt-6.1-sol/high then independent read-only reviewer
-gpt-6-astra/medium apply. NO COMMIT/PUSH. R7-R9 remain unauthorized.
+gpt-6-astra/medium apply. The initial no-commit/push restriction is superseded only
+by the later October 26 publication authority below. R7-R9 remain unauthorized.
 
 Preserve the old R6 cold failure and ordered success as historical evidence.
 Allow native fixed18 canonical encoding with exact legacy logical bytes and one
@@ -354,3 +357,27 @@ exact published SHA, run links and actual results in
 [R6 verification](docs/r6-verification.md) and the
 [optimization follow-up](docs/verifier-optimization.md). Local acceptance does
 not constitute a hosted CI pass.
+
+## R6/verifier publication and initial CI failure (October 26, 2026)
+
+Verified R6 and the scoped verifier optimization were committed/pushed normally
+as c94ef4bce9dd292730c8884761c787f799bac2d1 with 38 audited scoped files and no
+artifacts/data, archives, credentials, environments or weights.
+[Hosted run 40269166877](https://github.com/atharva-m/MarketLab/actions/runs/40269166877)
+failed: Ubuntu quality reported 810 offline passes/one worker-crash-test failure;
+Linux integration reported 188 passes/one retry-test failure. Windows quality was
+canceled after 802 reported passes, which are partial evidence and not a completed
+quality pass. Preserve this failed run and every prior local acceptance record.
+
+Reviewed test-only fixes isolate the ingestion sleep mock from stdlib subprocess
+polling and distinguish forced worker exit from zombie reaping through the owned
+process sentinel. Strict retry/fencing/reaping/recreation assertions remain.
+Local validation passed 811 Windows offline cases, 40 PostgreSQL ingestion cases,
+11 final Windows pool cases, 13 final Linux pool/lifecycle cases and the abnormal
+Linux launcher probe. Runtime source SHA-256 remains
+f12cf32c7a33b8b81691cebd40195a6d174cc113be4aa35190dd209ccb3e1035; dependencies,
+lockfile, deployment and immutable artifacts are unchanged. Owned fix resources
+were removed and original services preserved. Recovery publication/replacement
+hosted results are pending; record exact outcomes in
+[R6 verification](docs/r6-verification.md). No hosted pass follows from local
+validation. R7-R9 remain unauthorized.

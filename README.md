@@ -530,8 +530,13 @@ R6 is complete with full local acceptance, independent review and owned cleanup
 under [the memo contract](docs/r6-memos.md). [Verification](docs/r6-verification.md)
 records the actual source, checks, failures and limitations. Final locked checks
 passed 758 offline/189 PostgreSQL cases; actual bounded memo evaluation passed
-20/20 and eight monthly memos were independently audited. No R6 commit/push is
-authorized or performed; hosted R6 CI is unrun. R7-R9 remain backlog.
+20/20 and eight monthly memos were independently audited. The later October 26
+approval authorized publication and actual CI fixes. R6 and its verifier follow-up
+were published as `c94ef4bce9dd292730c8884761c787f799bac2d1`; the first
+[hosted run](https://github.com/atharva-m/MarketLab/actions/runs/40269166877)
+failed Ubuntu quality and integration, and Windows quality was canceled. Reviewed
+test-only fixes passed local checks; replacement hosted results are pending. See verification
+for exact failures and local validation. R7-R9 remain backlog.
 
 Apply the locked `alembic upgrade head` to the intended database before using
 R6; additive migration `0007_memos` preserves existing table definitions.
@@ -590,7 +595,8 @@ Full checks passed 811 offline/189 PostgreSQL cases. OS filesystem-cache state
 was uncontrolled; simultaneous whole-application peak memory is unmeasured.
 The earlier R6 cold failure remains historical evidence. Source identity,
 packaged Linux and preservation/cleanup outcomes are recorded in the follow-up.
-No commit/push is authorized.
+Publication follows the later October 26 approval; the initial hosted failures
+and ongoing test-fix validation are recorded in [R6 verification](docs/r6-verification.md).
 
 Library callers should reuse one `BarService` per application and await its
 `close()` during shutdown. Scripts using spawned verification must guard startup
