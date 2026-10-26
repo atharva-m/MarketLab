@@ -38,6 +38,9 @@ def research_engine(dataset_engine):
             "research_runs",
             "research_attempts",
             "research_results",
+            "memo_jobs",
+            "memo_attempts",
+            "memo_results",
         ):
             connection.execute(
                 sa.text(f'CREATE TABLE "{schema}".{name} (LIKE public.{name} INCLUDING ALL)')

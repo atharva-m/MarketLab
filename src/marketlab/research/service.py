@@ -277,6 +277,14 @@ class ResearchService:
                         registered_at=sa.func.clock_timestamp(),
                     )
                 )
+                from marketlab.memos.store import enqueue
+
+                enqueue(
+                    connection,
+                    current.run_id,
+                    digest,
+                    manifest["artifacts"]["summary.json"]["sha256"],
+                )
                 store.finish(connection, current)
         finally:
             if staging.exists():

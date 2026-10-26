@@ -1,7 +1,6 @@
 """Durable copilot orchestration using the existing research application service."""
 
 import asyncio
-import hashlib
 from datetime import datetime
 from typing import Any
 
@@ -10,6 +9,8 @@ import sqlalchemy as sa
 from prometheus_client import CollectorRegistry, Counter, Histogram
 
 from marketlab.datasets.publication import dataset_versions
+from marketlab.inference import INFERENCE_LOCK as INFERENCE_LOCK
+from marketlab.inference import admission, release_current
 from marketlab.research.service import ResearchService, transient_failure
 from marketlab.research.spec import ResearchError
 
@@ -17,10 +18,6 @@ from . import store
 from .model import ModelFailure, Ollama
 from .spec import QUESTIONS, assemble, decide, turn
 from .spec import key as validate_key
-
-INFERENCE_LOCK = int.from_bytes(
-    hashlib.sha256(b"marketlab:copilot:inference-v1").digest()[:8], "big", signed=True
-)
 
 
 class CopilotService:
@@ -94,31 +91,7 @@ class CopilotService:
     async def infer(
         self, current: store.Claim, turns: list[dict[str, Any]], pinned: str | None
     ) -> tuple[dict[str, Any], dict[str, Any]]:
-        # Invalidate the physical connection on every path: session locks cannot
-        # escape into the pool, even if cancellation races acquisition.
-        def acquire() -> tuple[Any, bool]:
-            connection = self.engine.connect()
-            try:
-                acquired = bool(
-                    connection.scalar(sa.select(sa.func.pg_try_advisory_lock(INFERENCE_LOCK)))
-                )
-                connection.commit()
-                return connection, acquired
-            except BaseException:
-                try:
-                    connection.invalidate()
-                finally:
-                    connection.close()
-                raise
-
-        task = asyncio.create_task(asyncio.to_thread(acquire))
-        connection = None
-        try:
-            try:
-                connection, acquired = await asyncio.shield(task)
-            except asyncio.CancelledError:
-                connection, _ = await task
-                raise
+        async with admission(self.engine) as acquired:
             if not acquired:
                 raise ResearchError("Copilot inference capacity unavailable", 503)
             async with asyncio.timeout(120):
@@ -143,21 +116,6 @@ class CopilotService:
                                 store.checkpoint, self.engine, current, None, error.provenance
                             )
                         raise
-        finally:
-            if connection is not None:
-
-                def release() -> None:
-                    try:
-                        connection.invalidate()
-                    finally:
-                        connection.close()
-
-                cleanup = asyncio.create_task(asyncio.to_thread(release))
-                try:
-                    await asyncio.shield(cleanup)
-                except asyncio.CancelledError:
-                    await cleanup
-                    raise
 
     async def execute(self, current: store.Claim) -> None:
         done = asyncio.Event()
@@ -187,6 +145,7 @@ class CopilotService:
                 model = stored
                 if revision["provenance"]["execution"] != self.research.execution:
                     raise ResearchError("Copilot execution fingerprint mismatch")
+            await release_current(self.engine)
             outcome, intent, unresolved = decide(turns, model)
             spec = fingerprint = None
             if outcome == "candidate":
@@ -234,9 +193,12 @@ class CopilotService:
         async with self.worker_lock:
             attempted = 0
             while attempted < maximum:
-                current = await asyncio.to_thread(store.claim, self.engine, request_id)
-                if current is None:
-                    break
-                await self.execute(current)
-                attempted += 1
+                async with admission(self.engine) as acquired:
+                    if not acquired:
+                        break
+                    current = await asyncio.to_thread(store.claim, self.engine, request_id)
+                    if current is None:
+                        break
+                    await self.execute(current)
+                    attempted += 1
             return attempted

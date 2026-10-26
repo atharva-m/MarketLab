@@ -1,0 +1,2136 @@
+{
+  "schema": "r6-memo-corpus-v1",
+  "description": "Frozen before first actual model evaluation. Synthetic summaries computed through retained research-numerics-v1, with explicit coverage cases; no market data.",
+  "cases": [
+    {
+      "id": "memo-01",
+      "coverage_case": "BTC rising profile",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "market_profile",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC"
+          }
+        },
+        "profiles": {
+          "BTCUSDT": {
+            "coverage": {
+              "expected": 8,
+              "observed": 8,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:35:00Z",
+            "first_open": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "last_close": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "high": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "low": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "base_volume": "8.000000000000000000",
+            "quote_volume": "924.000000000000000000",
+            "trade_count": 8,
+            "vwap": {
+              "value": "115.500000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "close_change": {
+              "value": "0.062500000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_mean": {
+              "value": "0.008737124303943272",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_stddev": {
+              "value": "0.000186998236330875",
+              "reason": null,
+              "observation_count": 8
+            },
+            "sharpe": {
+              "value": "46.723030523580865251",
+              "reason": null,
+              "observation_count": 8
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-01T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-02",
+      "coverage_case": "ETH falling profile",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "market_profile",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "ETHUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "ETHUSDT": "ETH"
+          }
+        },
+        "profiles": {
+          "ETHUSDT": {
+            "coverage": {
+              "expected": 8,
+              "observed": 8,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:35:00Z",
+            "first_open": {
+              "value": "188.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "last_close": {
+              "value": "181.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "high": {
+              "value": "188.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "low": {
+              "value": "181.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "base_volume": "8.000000000000000000",
+            "quote_volume": "1476.000000000000000000",
+            "trade_count": 8,
+            "vwap": {
+              "value": "184.500000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "close_change": {
+              "value": "-0.037234042553191489",
+              "reason": null,
+              "observation_count": 8
+            },
+            "drawdown": {
+              "value": "-0.037234042553191489",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_mean": {
+              "value": "-0.005391658284876025",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_stddev": {
+              "value": "0.000071208167832024",
+              "reason": null,
+              "observation_count": 8
+            },
+            "sharpe": {
+              "value": "-75.716851718395800943",
+              "reason": null,
+              "observation_count": 8
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-01T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-03",
+      "coverage_case": "flat profile null Sharpe",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "market_profile",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC"
+          }
+        },
+        "profiles": {
+          "BTCUSDT": {
+            "coverage": {
+              "expected": 8,
+              "observed": 8,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:35:00Z",
+            "first_open": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "last_close": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "high": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "low": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "base_volume": "8.000000000000000000",
+            "quote_volume": "800.000000000000000000",
+            "trade_count": 8,
+            "vwap": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "close_change": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_mean": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_stddev": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "sharpe": {
+              "value": null,
+              "reason": "zero_variance",
+              "observation_count": 8
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-01T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-04",
+      "coverage_case": "BTC gap after valid warmup",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "market_profile",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC"
+          }
+        },
+        "profiles": {
+          "BTCUSDT": {
+            "coverage": {
+              "expected": 8,
+              "observed": 7,
+              "missing": 1,
+              "incomplete_grid": true
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:35:00Z",
+            "first_open": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 7
+            },
+            "last_close": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 7
+            },
+            "high": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 7
+            },
+            "low": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 7
+            },
+            "base_volume": "7.000000000000000000",
+            "quote_volume": "807.000000000000000000",
+            "trade_count": 7,
+            "vwap": {
+              "value": "115.285714285714285714",
+              "reason": null,
+              "observation_count": 7
+            },
+            "close_change": {
+              "value": "0.062500000000000000",
+              "reason": null,
+              "observation_count": 7
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 7
+            },
+            "return_mean": {
+              "value": "0.008788216038227537",
+              "reason": null,
+              "observation_count": 6
+            },
+            "return_stddev": {
+              "value": "0.000189428172347043",
+              "reason": null,
+              "observation_count": 6
+            },
+            "sharpe": {
+              "value": "46.393395076034579628",
+              "reason": null,
+              "observation_count": 6
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-01T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 1,
+            "undefined_volume_windows": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-05",
+      "coverage_case": "ETH gap after valid warmup",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "market_profile",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "ETHUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "ETHUSDT": "ETH"
+          }
+        },
+        "profiles": {
+          "ETHUSDT": {
+            "coverage": {
+              "expected": 8,
+              "observed": 6,
+              "missing": 2,
+              "incomplete_grid": true
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:35:00Z",
+            "first_open": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 6
+            },
+            "last_close": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 6
+            },
+            "high": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 6
+            },
+            "low": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 6
+            },
+            "base_volume": "6.000000000000000000",
+            "quote_volume": "692.000000000000000000",
+            "trade_count": 6,
+            "vwap": {
+              "value": "115.333333333333333333",
+              "reason": null,
+              "observation_count": 6
+            },
+            "close_change": {
+              "value": "0.062500000000000000",
+              "reason": null,
+              "observation_count": 6
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 6
+            },
+            "return_mean": {
+              "value": "0.008815428557722693",
+              "reason": null,
+              "observation_count": 4
+            },
+            "return_stddev": {
+              "value": "0.000236375243904120",
+              "reason": null,
+              "observation_count": 4
+            },
+            "sharpe": {
+              "value": "37.294212423101485743",
+              "reason": null,
+              "observation_count": 4
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-01T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 2,
+            "undefined_volume_windows": 3
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-06",
+      "coverage_case": "positive correlation",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "cross_asset",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          },
+          "ETHUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC",
+            "ETHUSDT": "ETH"
+          }
+        },
+        "profiles": {
+          "BTCUSDT": {
+            "coverage": {
+              "expected": 8,
+              "observed": 8,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:35:00Z",
+            "first_open": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "last_close": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "high": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "low": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "base_volume": "8.000000000000000000",
+            "quote_volume": "924.000000000000000000",
+            "trade_count": 8,
+            "vwap": {
+              "value": "115.500000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "close_change": {
+              "value": "0.062500000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_mean": {
+              "value": "0.008737124303943272",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_stddev": {
+              "value": "0.000186998236330875",
+              "reason": null,
+              "observation_count": 8
+            },
+            "sharpe": {
+              "value": "46.723030523580865251",
+              "reason": null,
+              "observation_count": 8
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-01T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          },
+          "ETHUSDT": {
+            "coverage": {
+              "expected": 8,
+              "observed": 8,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:35:00Z",
+            "first_open": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "last_close": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "high": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "low": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "base_volume": "8.000000000000000000",
+            "quote_volume": "924.000000000000000000",
+            "trade_count": 8,
+            "vwap": {
+              "value": "115.500000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "close_change": {
+              "value": "0.062500000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_mean": {
+              "value": "0.008737124303943272",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_stddev": {
+              "value": "0.000186998236330875",
+              "reason": null,
+              "observation_count": 8
+            },
+            "sharpe": {
+              "value": "46.723030523580865251",
+              "reason": null,
+              "observation_count": 8
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-01T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          }
+        },
+        "cross_asset": {
+          "common_bar_count": 8,
+          "aligned_return_count": 8,
+          "correlation": {
+            "value": "1.000000000000000000",
+            "reason": null,
+            "observation_count": 8
+          },
+          "close_change_difference": {
+            "value": "0.000000000000000000",
+            "reason": null,
+            "observation_count": 8
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-07",
+      "coverage_case": "negative correlation",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "cross_asset",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          },
+          "ETHUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC",
+            "ETHUSDT": "ETH"
+          }
+        },
+        "profiles": {
+          "BTCUSDT": {
+            "coverage": {
+              "expected": 8,
+              "observed": 8,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:35:00Z",
+            "first_open": {
+              "value": "200.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "last_close": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "high": {
+              "value": "200.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "low": {
+              "value": "50.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "base_volume": "8.000000000000000000",
+            "quote_volume": "900.000000000000000000",
+            "trade_count": 8,
+            "vwap": {
+              "value": "112.500000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "close_change": {
+              "value": "-0.500000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "drawdown": {
+              "value": "-0.750000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_mean": {
+              "value": "0.250000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_stddev": {
+              "value": "0.801783725737273154",
+              "reason": null,
+              "observation_count": 8
+            },
+            "sharpe": {
+              "value": "0.311804782231161782",
+              "reason": null,
+              "observation_count": 8
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-01T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          },
+          "ETHUSDT": {
+            "coverage": {
+              "expected": 8,
+              "observed": 8,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:35:00Z",
+            "first_open": {
+              "value": "50.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "last_close": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "high": {
+              "value": "200.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "low": {
+              "value": "50.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "base_volume": "8.000000000000000000",
+            "quote_volume": "900.000000000000000000",
+            "trade_count": 8,
+            "vwap": {
+              "value": "112.500000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "close_change": {
+              "value": "1.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "drawdown": {
+              "value": "-0.750000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_mean": {
+              "value": "0.250000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_stddev": {
+              "value": "0.801783725737273154",
+              "reason": null,
+              "observation_count": 8
+            },
+            "sharpe": {
+              "value": "0.311804782231161782",
+              "reason": null,
+              "observation_count": 8
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-01T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          }
+        },
+        "cross_asset": {
+          "common_bar_count": 8,
+          "aligned_return_count": 8,
+          "correlation": {
+            "value": "-1.000000000000000000",
+            "reason": null,
+            "observation_count": 8
+          },
+          "close_change_difference": {
+            "value": "-1.500000000000000000",
+            "reason": null,
+            "observation_count": 8
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-08",
+      "coverage_case": "exact zero correlation sparse selection",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "cross_asset",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          },
+          "ETHUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC",
+            "ETHUSDT": "ETH"
+          }
+        },
+        "cross_asset": {
+          "common_bar_count": 8,
+          "aligned_return_count": 8,
+          "correlation": {
+            "value": "0.000000000000000000",
+            "reason": null,
+            "observation_count": 8
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-09",
+      "coverage_case": "undefined zero variance correlation",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "cross_asset",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          },
+          "ETHUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC",
+            "ETHUSDT": "ETH"
+          }
+        },
+        "cross_asset": {
+          "common_bar_count": 8,
+          "aligned_return_count": 8,
+          "correlation": {
+            "value": null,
+            "reason": "zero_variance",
+            "observation_count": 8
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-10",
+      "coverage_case": "positive close-change difference only",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "cross_asset",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          },
+          "ETHUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC",
+            "ETHUSDT": "ETH"
+          }
+        },
+        "cross_asset": {
+          "common_bar_count": 8,
+          "aligned_return_count": 8,
+          "close_change_difference": {
+            "value": "0.062500000000000000",
+            "reason": null,
+            "observation_count": 8
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-11",
+      "coverage_case": "negative close-change difference only",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "cross_asset",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          },
+          "ETHUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC",
+            "ETHUSDT": "ETH"
+          }
+        },
+        "cross_asset": {
+          "common_bar_count": 8,
+          "aligned_return_count": 8,
+          "close_change_difference": {
+            "value": "-0.062500000000000000",
+            "reason": null,
+            "observation_count": 8
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-12",
+      "coverage_case": "cross-asset profiles only",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "cross_asset",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          },
+          "ETHUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC",
+            "ETHUSDT": "ETH"
+          }
+        },
+        "profiles": {
+          "BTCUSDT": {
+            "coverage": {
+              "expected": 8,
+              "observed": 8,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:35:00Z",
+            "first_open": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "last_close": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "high": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "low": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "base_volume": "8.000000000000000000",
+            "quote_volume": "924.000000000000000000",
+            "trade_count": 8,
+            "vwap": {
+              "value": "115.500000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "close_change": {
+              "value": "0.062500000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_mean": {
+              "value": "0.008737124303943272",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_stddev": {
+              "value": "0.000186998236330875",
+              "reason": null,
+              "observation_count": 8
+            },
+            "sharpe": {
+              "value": "46.723030523580865251",
+              "reason": null,
+              "observation_count": 8
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-01T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          },
+          "ETHUSDT": {
+            "coverage": {
+              "expected": 8,
+              "observed": 8,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:35:00Z",
+            "first_open": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "last_close": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "high": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "low": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "base_volume": "8.000000000000000000",
+            "quote_volume": "924.000000000000000000",
+            "trade_count": 8,
+            "vwap": {
+              "value": "115.500000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "close_change": {
+              "value": "0.062500000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_mean": {
+              "value": "0.008737124303943272",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_stddev": {
+              "value": "0.000186998236330875",
+              "reason": null,
+              "observation_count": 8
+            },
+            "sharpe": {
+              "value": "46.723030523580865251",
+              "reason": null,
+              "observation_count": 8
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-01T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-01T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          }
+        },
+        "cross_asset": {
+          "common_bar_count": 8,
+          "aligned_return_count": 8
+        }
+      }
+    },
+    {
+      "id": "memo-13",
+      "coverage_case": "BTC cluster counts with no events",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "volatility_cluster",
+        "start": "2025-01-02T01:00:00Z",
+        "end": "2025-01-02T02:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 300,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-02T00:55:00Z",
+            "valid_volatility_observations": 288,
+            "threshold_history_start": "2025-01-01T01:00:00Z"
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC"
+          }
+        },
+        "profiles": {
+          "BTCUSDT": {
+            "coverage": {
+              "expected": 20,
+              "observed": 20,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-02T01:00:00Z",
+            "last_start": "2025-01-02T02:35:00Z",
+            "first_open": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "last_close": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "high": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "low": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "base_volume": "20.000000000000000000",
+            "quote_volume": "2000.000000000000000000",
+            "trade_count": 20,
+            "vwap": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "close_change": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "return_mean": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "return_stddev": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "sharpe": {
+              "value": null,
+              "reason": "zero_variance",
+              "observation_count": 20
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-02T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-02T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-02T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          }
+        },
+        "clusters": [],
+        "cluster_counts": {
+          "qualifying": 0,
+          "ineligible": 0,
+          "clusters": 0
+        }
+      }
+    },
+    {
+      "id": "memo-14",
+      "coverage_case": "ETH cluster counts only",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "volatility_cluster",
+        "start": "2025-01-02T01:00:00Z",
+        "end": "2025-01-02T02:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "ETHUSDT": {
+            "observed_bars": 300,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-02T00:55:00Z",
+            "valid_volatility_observations": 288,
+            "threshold_history_start": "2025-01-01T01:00:00Z"
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "ETHUSDT": "ETH"
+          }
+        },
+        "clusters": [],
+        "cluster_counts": {
+          "qualifying": 0,
+          "ineligible": 0,
+          "clusters": 0
+        }
+      }
+    },
+    {
+      "id": "memo-15",
+      "coverage_case": "cluster gap after valid warmup",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "volatility_cluster",
+        "start": "2025-01-02T01:00:00Z",
+        "end": "2025-01-02T02:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 300,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-02T00:55:00Z",
+            "valid_volatility_observations": 288,
+            "threshold_history_start": "2025-01-01T01:00:00Z"
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC"
+          }
+        },
+        "profiles": {
+          "BTCUSDT": {
+            "coverage": {
+              "expected": 20,
+              "observed": 19,
+              "missing": 1,
+              "incomplete_grid": true
+            },
+            "first_start": "2025-01-02T01:00:00Z",
+            "last_start": "2025-01-02T02:35:00Z",
+            "first_open": {
+              "value": "400.000000000000000000",
+              "reason": null,
+              "observation_count": 19
+            },
+            "last_close": {
+              "value": "419.000000000000000000",
+              "reason": null,
+              "observation_count": 19
+            },
+            "high": {
+              "value": "419.000000000000000000",
+              "reason": null,
+              "observation_count": 19
+            },
+            "low": {
+              "value": "400.000000000000000000",
+              "reason": null,
+              "observation_count": 19
+            },
+            "base_volume": "19.000000000000000000",
+            "quote_volume": "7780.000000000000000000",
+            "trade_count": 19,
+            "vwap": {
+              "value": "409.473684210526315789",
+              "reason": null,
+              "observation_count": 19
+            },
+            "close_change": {
+              "value": "0.047500000000000000",
+              "reason": null,
+              "observation_count": 19
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 19
+            },
+            "return_mean": {
+              "value": "0.002449186391946187",
+              "reason": null,
+              "observation_count": 18
+            },
+            "return_stddev": {
+              "value": "0.000037409759363666",
+              "reason": null,
+              "observation_count": 18
+            },
+            "sharpe": {
+              "value": "65.469183272132365897",
+              "reason": null,
+              "observation_count": 18
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-02T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-02T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-02T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 1,
+            "undefined_volume_windows": 9
+          }
+        },
+        "clusters": [],
+        "cluster_counts": {
+          "qualifying": 0,
+          "ineligible": 10,
+          "clusters": 0
+        }
+      }
+    },
+    {
+      "id": "memo-16",
+      "coverage_case": "cluster workflow profile-only selection",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "volatility_cluster",
+        "start": "2025-01-02T01:00:00Z",
+        "end": "2025-01-02T02:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "ETHUSDT": {
+            "observed_bars": 300,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-02T00:55:00Z",
+            "valid_volatility_observations": 288,
+            "threshold_history_start": "2025-01-01T01:00:00Z"
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "ETHUSDT": "ETH"
+          }
+        },
+        "profiles": {
+          "ETHUSDT": {
+            "coverage": {
+              "expected": 20,
+              "observed": 20,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-02T01:00:00Z",
+            "last_start": "2025-01-02T02:35:00Z",
+            "first_open": {
+              "value": "400.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "last_close": {
+              "value": "419.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "high": {
+              "value": "419.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "low": {
+              "value": "400.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "base_volume": "20.000000000000000000",
+            "quote_volume": "8190.000000000000000000",
+            "trade_count": 20,
+            "vwap": {
+              "value": "409.500000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "close_change": {
+              "value": "0.047500000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "return_mean": {
+              "value": "0.002448468361016820",
+              "reason": null,
+              "observation_count": 20
+            },
+            "return_stddev": {
+              "value": "0.000035468232576594",
+              "reason": null,
+              "observation_count": 20
+            },
+            "sharpe": {
+              "value": "69.032714154260671290",
+              "reason": null,
+              "observation_count": 20
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-02T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-02T01:05:00Z",
+                "multiple": "1.000000000000000000"
+              },
+              {
+                "start": "2025-01-02T01:10:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-17",
+      "coverage_case": "single evaluation observation",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "market_profile",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:05:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC"
+          }
+        },
+        "profiles": {
+          "BTCUSDT": {
+            "coverage": {
+              "expected": 1,
+              "observed": 1,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:00:00Z",
+            "first_open": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 1
+            },
+            "last_close": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 1
+            },
+            "high": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 1
+            },
+            "low": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 1
+            },
+            "base_volume": "1.000000000000000000",
+            "quote_volume": "112.000000000000000000",
+            "trade_count": 1,
+            "vwap": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 1
+            },
+            "close_change": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 1
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 1
+            },
+            "return_mean": {
+              "value": "0.009009009009009009",
+              "reason": null,
+              "observation_count": 1
+            },
+            "return_stddev": {
+              "value": null,
+              "reason": "insufficient_observations",
+              "observation_count": 1
+            },
+            "sharpe": {
+              "value": null,
+              "reason": "insufficient_observations",
+              "observation_count": 1
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-01T01:00:00Z",
+                "multiple": "1.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-18",
+      "coverage_case": "zero denominator VWAP",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "market_profile",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC"
+          }
+        },
+        "profiles": {
+          "BTCUSDT": {
+            "coverage": {
+              "expected": 8,
+              "observed": 8,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-01T01:00:00Z",
+            "last_start": "2025-01-01T01:35:00Z",
+            "first_open": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "last_close": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "high": {
+              "value": "119.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "low": {
+              "value": "112.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "base_volume": "0.000000000000000000",
+            "quote_volume": "0.000000000000000000",
+            "trade_count": 8,
+            "vwap": {
+              "value": null,
+              "reason": "zero_denominator",
+              "observation_count": 8
+            },
+            "close_change": {
+              "value": "0.062500000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "drawdown": {
+              "value": "0.000000000000000000",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_mean": {
+              "value": "0.008737124303943272",
+              "reason": null,
+              "observation_count": 8
+            },
+            "return_stddev": {
+              "value": "0.000186998236330875",
+              "reason": null,
+              "observation_count": 8
+            },
+            "sharpe": {
+              "value": "46.723030523580865251",
+              "reason": null,
+              "observation_count": 8
+            },
+            "volume_spikes": [],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 8
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-19",
+      "coverage_case": "cross-asset evaluation gap",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "cross_asset",
+        "start": "2025-01-01T01:00:00Z",
+        "end": "2025-01-01T01:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          },
+          "ETHUSDT": {
+            "observed_bars": 12,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-01T00:55:00Z",
+            "valid_volatility_observations": 0,
+            "threshold_history_start": null
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC",
+            "ETHUSDT": "ETH"
+          }
+        },
+        "cross_asset": {
+          "common_bar_count": 3,
+          "aligned_return_count": 2,
+          "correlation": {
+            "value": "1.000000000000000000",
+            "reason": null,
+            "observation_count": 2
+          }
+        }
+      }
+    },
+    {
+      "id": "memo-20",
+      "coverage_case": "cluster threshold and evaluation boundaries",
+      "summary": {
+        "schema": "research-summary-v1",
+        "definition": "research-numerics-v1",
+        "workflow": "volatility_cluster",
+        "start": "2025-01-02T01:00:00Z",
+        "end": "2025-01-02T02:40:00Z",
+        "history_start": "2025-01-01T00:00:00Z",
+        "history": {
+          "BTCUSDT": {
+            "observed_bars": 300,
+            "first_observed_start": "2025-01-01T00:00:00Z",
+            "last_observed_start": "2025-01-02T00:55:00Z",
+            "valid_volatility_observations": 288,
+            "threshold_history_start": "2025-01-01T01:00:00Z"
+          }
+        },
+        "interval": "5m",
+        "units": {
+          "price": "USDT",
+          "quote_volume": "USDT",
+          "returns": "ratio",
+          "base_volume": {
+            "BTCUSDT": "BTC"
+          }
+        },
+        "profiles": {
+          "BTCUSDT": {
+            "coverage": {
+              "expected": 20,
+              "observed": 20,
+              "missing": 0,
+              "incomplete_grid": false
+            },
+            "first_start": "2025-01-02T01:00:00Z",
+            "last_start": "2025-01-02T02:35:00Z",
+            "first_open": {
+              "value": "100.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "last_close": {
+              "value": "200.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "high": {
+              "value": "200.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "low": {
+              "value": "10.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "base_volume": "200.000000000000000000",
+            "quote_volume": "21000.000000000000000000",
+            "trade_count": 20,
+            "vwap": {
+              "value": "105.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "close_change": {
+              "value": "1.000000000000000000",
+              "reason": null,
+              "observation_count": 20
+            },
+            "drawdown": {
+              "value": "-0.947368421052631579",
+              "reason": null,
+              "observation_count": 20
+            },
+            "return_mean": {
+              "value": "1.793693020337144115",
+              "reason": null,
+              "observation_count": 20
+            },
+            "return_stddev": {
+              "value": "4.685499096940368338",
+              "reason": null,
+              "observation_count": 20
+            },
+            "sharpe": {
+              "value": "0.382817920402209862",
+              "reason": null,
+              "observation_count": 20
+            },
+            "volume_spikes": [
+              {
+                "start": "2025-01-02T01:00:00Z",
+                "multiple": "10.000000000000000000"
+              },
+              {
+                "start": "2025-01-02T01:05:00Z",
+                "multiple": "5.714285714285714286"
+              },
+              {
+                "start": "2025-01-02T01:10:00Z",
+                "multiple": "4.000000000000000000"
+              }
+            ],
+            "undefined_returns": 0,
+            "undefined_volume_windows": 0
+          }
+        },
+        "clusters": [
+          {
+            "start": "2025-01-02T01:05:00Z",
+            "end": "2025-01-02T01:30:00Z",
+            "bar_count": 5,
+            "base_volume": "50.000000000000000000",
+            "quote_volume": "5300.000000000000000000",
+            "max_volatility": "0.239862033770245572",
+            "max_volatility_start": "2025-01-02T01:25:00Z",
+            "max_volume_multiple": "5.714285714285714286",
+            "max_volume_multiple_start": "2025-01-02T01:05:00Z",
+            "first_threshold": "0.010392953122899584",
+            "touches_start": false,
+            "touches_end": false
+          }
+        ],
+        "cluster_counts": {
+          "qualifying": 5,
+          "ineligible": 0,
+          "clusters": 1
+        }
+      }
+    }
+  ]
+}

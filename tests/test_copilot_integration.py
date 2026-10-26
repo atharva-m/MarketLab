@@ -273,7 +273,9 @@ async def test_inference_admission_and_cancellation_release(copilot_engine, tmp_
         connection.execute(sa.select(sa.func.pg_advisory_lock(INFERENCE_LOCK)))
         connection.commit()
         await service.work(1, identity)
-        assert service.inspect(identity)["state"] == "retry_wait"
+        assert service.inspect(identity)["state"] == "queued"
+        assert service.inspect(identity)["revisions"][0]["attempt_count"] == 0
+        assert service.inspect(identity)["revisions"][0]["model_calls"] == 0
         assert service.model.calls == 0
         connection.execute(sa.select(sa.func.pg_advisory_unlock(INFERENCE_LOCK)))
         connection.commit()
@@ -426,7 +428,7 @@ def test_actual_fresh_populated_migration_and_constraints(copilot_engine):
             assert connection.scalar(sa.text(f'SELECT count(*) FROM "{schema}".trades')) == 1
             assert (
                 connection.scalar(sa.text(f'SELECT version_num FROM "{schema}".alembic_version'))
-                == "0006_copilot"
+                == "0007_memos"
             )
             count = connection.scalar(
                 sa.text("""SELECT count(*) FROM pg_constraint c

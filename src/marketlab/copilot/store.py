@@ -209,6 +209,26 @@ def answer(
         return request_id, revision, False
 
 
+def pending(engine: Engine) -> bool:
+    """Eligible inference/recovery work checked while shared admission is held."""
+    now = sa.func.clock_timestamp()
+    with engine.connect() as connection:
+        return (
+            connection.execute(
+                sa.select(jobs.c.job_id)
+                .where(
+                    sa.or_(
+                        jobs.c.state == "queued",
+                        sa.and_(jobs.c.state == "retry_wait", jobs.c.eligible_at <= now),
+                        sa.and_(jobs.c.state == "running", jobs.c.lease_until <= now),
+                    )
+                )
+                .limit(1)
+            ).first()
+            is not None
+        )
+
+
 def claim(engine: Engine, request_id: str | None = None) -> Claim | None:
     if request_id is not None:
         identity(request_id)

@@ -8,12 +8,14 @@ import re
 import sqlite3
 import stat
 import zipfile
+from collections.abc import Callable
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal, localcontext
 from pathlib import Path
 from typing import Any
 
 import pyarrow as pa  # type: ignore[import-untyped]
+import pyarrow.compute as pc  # type: ignore[import-untyped]
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
 from .source import (
@@ -208,12 +210,88 @@ def _timestamp(microseconds: int) -> str:
     return (_EPOCH + timedelta(microseconds=microseconds)).isoformat().replace("+00:00", "Z")
 
 
+class VerificationCancelled(DatasetError):
+    """A complete verification was canceled without trusting partial results."""
+
+
+def _check_cancelled(cancelled: Callable[[], bool] | None) -> None:
+    if cancelled is not None and cancelled():
+        raise VerificationCancelled("historical artifact verification cancelled")
+
+
+def _checked_hash(path: Path, cancelled: Callable[[], bool] | None) -> str:
+    if cancelled is None:
+        return file_hash(path)
+    result = hashlib.sha256()
+    with path.open("rb") as stream:
+        while True:
+            _check_cancelled(cancelled)
+            block = stream.read(1024 * 1024)
+            if not block:
+                break
+            result.update(block)
+    return result.hexdigest()
+
+
+def _fixed_decimal(column: Any) -> Any:
+    # A direct decimal->string cast uses exponents for tiny values. Reinterpret
+    # the unchanged coefficient as scale-zero, then place exactly 18 digits.
+    coefficient = pc.cast(column.view(pa.decimal128(38, 0)), pa.string())
+    padded = pc.utf8_lpad(coefficient, width=19, padding="0")
+    return pc.binary_join_element_wise(
+        pc.utf8_slice_codeunits(padded, start=0, stop=-18),
+        ".",
+        pc.utf8_slice_codeunits(padded, start=-18),
+        "",
+    )
+
+
+def _canonical_records(batch: Any, symbol: str) -> Any:
+    """Exact legacy logical bytes, constructed with bounded native Arrow kernels."""
+    prefix = json.dumps([VENUE, symbol], separators=(",", ":"))[:-1] + ","
+    return pc.binary_join_element_wise(
+        prefix,
+        pc.cast(batch.column(2), pa.string()),
+        ",",
+        pc.cast(batch.column(3).cast(pa.int64()), pa.string()),
+        ',"',
+        _fixed_decimal(batch.column(4)),
+        '","',
+        _fixed_decimal(batch.column(5)),
+        '","',
+        _fixed_decimal(batch.column(6)),
+        '",',
+        pc.cast(pc.cast(batch.column(7), pa.int8()), pa.string()),
+        ",",
+        pc.cast(pc.cast(batch.column(8), pa.int8()), pa.string()),
+        "]\n",
+        "",
+    )
+
+
+def _record_buffer(records: Any) -> Any:
+    """Exclude unused buffer capacity and respect sliced Arrow array offsets."""
+    _, offsets, data = records.buffers()
+    width = 8 if pa.types.is_large_string(records.type) else 4
+    begin = records.offset * width
+    finish = (records.offset + len(records)) * width
+    first = int.from_bytes(memoryview(offsets)[begin : begin + width], "little", signed=True)
+    last = int.from_bytes(memoryview(offsets)[finish : finish + width], "little", signed=True)
+    return memoryview(data)[first:last]
+
+
 def _verify_parquet_content(
-    path: Path, quality: dict[str, object], *, symbol: str, trade_date: date
+    path: Path,
+    quality: dict[str, object],
+    *,
+    symbol: str,
+    trade_date: date,
+    cancelled: Callable[[], bool] | None = None,
 ) -> None:
+    _check_cancelled(cancelled)
     if (
         not path.is_file()
-        or file_hash(path) != quality["parquet_sha256"]
+        or _checked_hash(path, cancelled) != quality["parquet_sha256"]
         or path.stat().st_size != quality["parquet_bytes"]
     ):
         raise DatasetError("historical artifact integrity failure")
@@ -230,48 +308,43 @@ def _verify_parquet_content(
             (datetime.combine(trade_date, datetime.min.time(), UTC) - _EPOCH).total_seconds()
         )
         day_start *= 1_000_000
-        for batch in parquet.iter_batches(batch_size=16_384):
-            # Cast time/decimal columns in Arrow before Python conversion: avoids millions
-            # of datetime/Decimal objects while preserving exact canonical representations.
-            values = []
-            for index, field in enumerate(SCHEMA):
-                column = batch.column(index)
-                if field.name == "executed_at":
-                    column = column.cast(pa.int64())
-                elif field.name in {"price", "quantity", "quote_quantity"}:
-                    column = column.cast(pa.string())
-                values.append(column.to_pylist())
-            for venue, row_symbol, identifier, micros, price, quantity, quote, maker, best in zip(
-                *values, strict=True
-            ):
-                if (
-                    venue != VENUE
-                    or row_symbol != symbol
-                    or type(identifier) is not int
-                    or identifier <= previous
-                    or type(micros) is not int
-                    or not day_start <= micros < day_start + 86_400_000_000
-                    or type(maker) is not bool
-                    or type(best) is not bool
-                    or any(
-                        value is None or Decimal(value) <= 0 for value in (price, quantity, quote)
-                    )
-                ):
-                    raise DatasetError("historical artifact content mismatch")
-                row = (
-                    identifier,
-                    micros,
-                    format(Decimal(price), ".18f"),
-                    format(Decimal(quantity), ".18f"),
-                    format(Decimal(quote), ".18f"),
-                    int(maker),
-                    int(best),
+        for batch in parquet.iter_batches(batch_size=16_384, use_threads=False):
+            _check_cancelled(cancelled)
+            if any(column.null_count for column in batch.columns):
+                raise DatasetError("historical artifact content mismatch")
+            if batch.num_rows == 0:
+                continue
+            identifiers = batch.column(2)
+            micros = batch.column(3).cast(pa.int64())
+            bounds = pc.min_max(micros).as_py()
+            first_id, last_id = identifiers[0].as_py(), identifiers[-1].as_py()
+            if (
+                not pc.all(pc.equal(batch.column(0), VENUE)).as_py()
+                or not pc.all(pc.equal(batch.column(1), symbol)).as_py()
+                or first_id <= previous
+                or (
+                    batch.num_rows > 1
+                    and not pc.all(
+                        pc.greater(identifiers.slice(1), identifiers.slice(0, batch.num_rows - 1))
+                    ).as_py()
                 )
-                logical.update(_logical_record(row, symbol))
-                previous = identifier
-                count += 1
-                minimum = micros if minimum is None else min(minimum, micros)
-                maximum = micros if maximum is None else max(maximum, micros)
+                or bounds["min"] < day_start
+                or bounds["max"] >= day_start + 86_400_000_000
+                or any(
+                    not pc.all(
+                        pc.greater(batch.column(index), pa.scalar(0, type=SCHEMA[index].type))
+                    ).as_py()
+                    for index in (4, 5, 6)
+                )
+            ):
+                raise DatasetError("historical artifact content mismatch")
+            _check_cancelled(cancelled)
+            logical.update(_record_buffer(_canonical_records(batch, symbol)))
+            _check_cancelled(cancelled)
+            previous = last_id
+            count += batch.num_rows
+            minimum = bounds["min"] if minimum is None else min(minimum, bounds["min"])
+            maximum = bounds["max"] if maximum is None else max(maximum, bounds["max"])
         if (
             count != quality["accepted_rows"]
             or logical.hexdigest() != quality["logical_sha256"]
@@ -284,9 +357,16 @@ def _verify_parquet_content(
 
 
 def verify_parquet(
-    path: Path, quality: dict[str, object], *, symbol: str, trade_date: date
+    path: Path,
+    quality: dict[str, object],
+    *,
+    symbol: str,
+    trade_date: date,
+    cancelled: Callable[[], bool] | None = None,
 ) -> None:
     try:
-        _verify_parquet_content(path, quality, symbol=symbol, trade_date=trade_date)
+        _verify_parquet_content(
+            path, quality, symbol=symbol, trade_date=trade_date, cancelled=cancelled
+        )
     except (OSError, KeyError, TypeError, ValueError, pa.ArrowException) as error:
         raise DatasetError("historical artifact verification failed") from error

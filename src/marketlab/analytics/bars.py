@@ -17,16 +17,22 @@ import sqlalchemy as sa
 from prometheus_client import CollectorRegistry
 from sqlalchemy.engine import Engine
 
+from marketlab.datasets.normalize import VerificationCancelled
 from marketlab.datasets.publication import (
     _safe_path,
     _storage_root,
     dataset_versions,
-    inspect_version,
 )
 from marketlab.datasets.source import DatasetError
 from marketlab.trades.schemas import normalize_timestamp
 
 from .cache import AnalyticsMetrics, CacheStatus, ResponseCache, cache_key
+from .verification import (
+    ComputeBudget,
+    VerificationPool,
+    VerificationRequest,
+    VerificationUnavailable,
+)
 
 DEFINITION = "bars-v1"
 EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
@@ -141,6 +147,8 @@ class VersionReader:
             OrderedDict()
         )
         self.lock = threading.Lock()
+        self.compute = ComputeBudget()
+        self.verifier = VerificationPool(self.compute)
 
     @staticmethod
     def signature(paths: list[Path]) -> tuple[Any, ...]:
@@ -184,11 +192,11 @@ class VersionReader:
                 day += timedelta(days=1)
             if sorted(days) != expected:
                 raise BarError("Dataset coverage mismatch", 409)
-            paths: list[Path] = []
-            versions: list[str] = []
+            entries: list[tuple[Any, Path, Path, tuple[Any, ...], tuple[Any, ...]]] = []
+            missing: list[VerificationRequest] = []
             for row in sorted(rows, key=lambda item: item["trade_date"]):
                 if cancelled.is_set():
-                    raise BarError("Bar request cancelled", 503)
+                    raise VerificationCancelled("bar request cancelled")
                 version = row["dataset_version_id"]
                 manifest_path = _safe_path(self.root, Path(row["manifest_path"]))
                 artifact = _safe_path(
@@ -196,22 +204,79 @@ class VersionReader:
                 )
                 signature = self.signature([manifest_path, artifact])
                 identity = tuple(row.values())
+                entries.append((row, manifest_path, artifact, signature, identity))
                 with self.lock:
                     previous = self.verified.get(version)
                 if previous is None or previous[:2] != (identity, signature):
-                    manifest = inspect_version(self.engine, self.root, version)
-                    if manifest is None:
-                        raise BarError("Dataset version not found", 404)
+                    missing.append(
+                        VerificationRequest(
+                            str(self.root),
+                            row["manifest_path"],
+                            version,
+                            row["manifest_sha256"],
+                            identity,
+                            signature,
+                        )
+                    )
+            manifests = self.verifier.verify_many(missing, cancelled)
+            if cancelled.is_set():
+                raise VerificationCancelled("bar request cancelled")
+            with self.engine.connect() as connection:
+                current = {
+                    r["dataset_version_id"]: tuple(r.values())
+                    for r in connection.execute(
+                        sa.select(dataset_versions).where(
+                            dataset_versions.c.dataset_version_id.in_(request.versions)
+                        )
+                    ).mappings()
+                }
+            paths, versions = [], []
+            installed: list[tuple[str, Any]] = []
+            try:
+                for row, manifest_path, artifact, signature, identity in entries:
+                    version = row["dataset_version_id"]
+                    if current.get(version) != identity:
+                        raise BarError("Dataset catalog changed during verification")
                     if signature != self.signature([manifest_path, artifact]):
                         raise BarError("Dataset changed during verification")
-                    with self.lock:
-                        self.verified[version] = (identity, signature, manifest)
-                        self.verified.move_to_end(version)
-                        while len(self.verified) > 128:
-                            self.verified.popitem(last=False)
-                paths.append(artifact)
-                versions.append(version)
-            return paths, versions
+                    if cancelled.is_set():
+                        raise VerificationCancelled("bar request cancelled")
+                    if version in manifests:
+                        manifest = manifests[version]
+                        if (
+                            row["status"] != "published"
+                            or row["source_sha256"] != manifest["source"]["actual_sha256"]
+                            or row["row_count"] != manifest["quality"]["accepted_rows"]
+                            or row["venue"] != manifest["venue"]
+                            or row["symbol"] != manifest["symbol"]
+                            or row["trade_date"].isoformat() != manifest["trade_date"]
+                        ):
+                            raise BarError("Dataset catalog integrity failure")
+                        with self.lock:
+                            if cancelled.is_set():
+                                raise VerificationCancelled("bar request cancelled")
+                            entry = (identity, signature, manifest)
+                            self.verified[version] = entry
+                            installed.append((version, entry))
+                            self.verified.move_to_end(version)
+                            while len(self.verified) > 128:
+                                self.verified.popitem(last=False)
+                    paths.append(artifact)
+                    versions.append(version)
+                if cancelled.is_set():
+                    raise VerificationCancelled("bar request cancelled")
+                return paths, versions
+            except BaseException:
+                # A cancellation racing the final successful child cannot install
+                # its own cache entries; another valid waiter's entries survive.
+                with self.lock:
+                    for version, entry in installed:
+                        if self.verified.get(version) is entry:
+                            self.verified.pop(version, None)
+                raise
+
+        except (VerificationCancelled, VerificationUnavailable) as error:
+            raise BarError("Dataset verification unavailable", 503) from error
         except sa.exc.SQLAlchemyError as error:
             raise BarError("Dataset catalog unavailable", 503) from error
         except (DatasetError, OSError, ValueError, TypeError) as error:
@@ -332,6 +397,8 @@ class BarService:
         self.capacity = asyncio.Semaphore(2)
         self.flights: dict[str, Flight] = {}
         self.retiring: set[asyncio.Task[tuple[dict[str, Any], CacheStatus]]] = set()
+        self.closed = False
+        self._closing: asyncio.Task[None] | None = None
 
     async def _thread(self, operation: Any, cancelled: threading.Event) -> Any:
         task = asyncio.create_task(asyncio.to_thread(operation))
@@ -352,6 +419,20 @@ class BarService:
             raise
 
     def _query(
+        self,
+        request: BarsRequest,
+        paths: list[Path],
+        versions: list[str],
+        cancelled: threading.Event,
+    ) -> dict[str, Any]:
+        try:
+            with self.reader.compute.query(cancelled, self.admission_timeout):
+                return self._native_query(request, paths, versions, cancelled)
+        except (VerificationUnavailable, VerificationCancelled) as error:
+            self.metrics.overload.inc()
+            raise BarError("Bar query capacity unavailable", 503) from error
+
+    def _native_query(
         self,
         request: BarsRequest,
         paths: list[Path],
@@ -468,6 +549,8 @@ class BarService:
             start=request.start,
             end=request.end,
         )
+        if self.closed:
+            raise BarError("Bar service closed", 503)
         key = cache_key("bars", request.versions, request.parameters())
         flight = self.flights.get(key)
         if flight is None:
@@ -499,8 +582,34 @@ class BarService:
                         pass
 
     async def close(self) -> None:
-        tasks = [flight.task for flight in self.flights.values()] + list(self.retiring)
-        for task in tasks:
-            task.cancel()
-        await asyncio.gather(*tasks, return_exceptions=True)
-        await self.cache.close()
+        self.closed = True
+
+        async def finish() -> None:
+            tasks = [flight.task for flight in self.flights.values()] + list(self.retiring)
+            try:
+                for task in tasks:
+                    task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+            finally:
+                try:
+                    await asyncio.to_thread(self.reader.verifier.close)
+                finally:
+                    await self.cache.close()
+
+        if self._closing is None:
+            self._closing = asyncio.create_task(finish())
+        cancellation = None
+        while not self._closing.done():
+            try:
+                await asyncio.shield(self._closing)
+            except asyncio.CancelledError as error:
+                cancellation = error
+            except Exception:
+                break  # Consume/raise the finished cleanup outcome below.
+        if cancellation is not None:
+            try:
+                self._closing.result()
+            except Exception:
+                pass
+            raise cancellation
+        self._closing.result()

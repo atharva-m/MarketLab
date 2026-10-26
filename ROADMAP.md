@@ -1,10 +1,50 @@
 # MarketLab recovery roadmap
 
-Status: R5 COMPLETE with full local acceptance/review/owned cleanup; verified R5 was published as 19a1363 and hosted CI run 40177491693 passed; R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. Verified R4 and the clock fix were published as 2c0dd0b; hosted CI run 40167912094 passed for that revision. R5 is authorized under docs/r5-copilot.md; R6–R9 remain unauthorized backlog. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
+Status: R6 and its cold-verifier follow-up COMPLETE with full local acceptance/review/owned cleanup; October 26 publication/hosted-CI authority is approved, actual publication/CI outcomes pending; R7-R9 remain unauthorized backlog. R5 COMPLETE with full local acceptance/review/owned cleanup; verified R5 was published as 19a1363 and hosted CI run 40177491693 passed; R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. Verified R4 and the clock fix were published as 2c0dd0b; hosted CI run 40167912094 passed for that revision. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
 ## Authority and approval boundary
+
+Current publication authority (October 26, 2026): the user authorized
+committing/pushing verified R6 and its approved cold-verifier optimization,
+checking hosted CI, fixing actual scope-related CI failures through prescribed
+coder gpt-6.1-sol/high then independent read-only reviewer gpt-6-astra/medium,
+and documenting/publishing observed outcomes. This supersedes earlier
+no-commit/push restrictions only for this verified scope. Preserve all R1-R6
+behavior, immutable artifacts, tested-source distinctions and historical failures
+and limitations. Artifacts/data, archives, credentials, environments and weights
+remain excluded from Git. Exact publication/CI outcomes are pending and will be
+recorded in [R6 verification](docs/r6-verification.md) and the
+[optimization follow-up](docs/verifier-optimization.md); local acceptance is not
+a hosted CI pass. R7-R9 and unrelated feature/deployment/system authority do not
+follow. Earlier authority/closeout records below remain historical.
+
+Current post-R6 follow-up authority: the user authorized exact cold-verifier
+optimization and bounded CPU parallelism under [the pre-code contract](docs/verifier-optimization.md),
+with prescribed coder/reviewer, full cold all-62 numerical-workflow acceptance
+within 1800s, retained R1-R6 checks/hashes and owned cleanup. NO COMMIT/PUSH.
+Historical R6 completion and its cold/ordered evidence remain intact; R7-R9
+remain unauthorized. This scoped authority supersedes verifier/concurrency freeze
+only as specified, not numerical definitions or resource/deployment protections.
+
+Frozen-source cold acceptance passed in 272.814s including cleanup: all 62
+partitions/230,311,900 trades and every original manifest/physical/logical hash
+matched; numerical result/summary payloads matched independent R4 references.
+Two spawned verification workers shared a maximum-two compute budget with DuckDB,
+then were reaped. Full checks passed 811 offline/189 PostgreSQL cases. OS cache
+was uncontrolled. Packaged Linux spawn/read/close, all 257 protected-file hashes
+and ownership-checked resource cleanup passed; original service identities,
+uptime and optional Ollama degradation were preserved. The optimization contract
+records final review and all helper failures. The historical R6 cold failure
+remains explicit. No commit/push or hosted CI was performed for this follow-up.
+
+Current R6 authority (October 25, 2026): the user approved the detailed R6 plan,
+ROADMAP.md/AGENTS.md updates, full [R6 contract](docs/r6-memos.md) before code,
+prescribed coder/reviewer implementation, full acceptance and honest outcome
+documentation. NO COMMIT/PUSH. Preserve R1-R5 and all historical evidence. This
+supersedes earlier R6 exclusions only within that contract; R7-R9 remain backlog.
+Earlier current-authority statements below are retained historical records.
 
 Current authority (October 25, 2026): the user authorized committing/pushing verified R5, checking hosted CI, fixing actual R5-only CI failures through the prescribed coder/reviewer workflow, and documenting/publishing actual outcomes. Preserve R1–R4 and all R5 local evidence. This supersedes the initial R5 no-commit restriction only for this publication scope; R6–R9 remain unauthorized. Verified R5 was published as 19a1363 and hosted CI run 40177491693 passed. See R5 approval, closeout and publication records below.
 
@@ -78,7 +118,7 @@ The order below restores the original dependency chain. Each milestone ends with
 | R3 | Deterministic 1m/5m bars, DuckDB reads and Redis cache-aside with outage/eviction tests | Week 6 and cache portion of week 8 | 25–40 hours |
 | R4 | Versioned typed ResearchSpec, manual submission service, reproducible runs, three workflows and deterministic metrics/summary | Week 7 and prerequisites from weeks 9–10 | 40–60 hours |
 | R5 | Durable copilot interpretation, clarification and automatic validated submission through the same service | Week 9 | 25–40 hours |
-| R6 | Separate memo jobs, grounded three-paragraph output and immutable supplemental manifests | Week 10 | 20–35 hours |
+| R6 | Separate memo jobs, grounded three-paragraph output, shared copilot-priority inference and immutable supplemental manifests | Week 10 | 35–55 hours |
 | R7 | React ingestion/catalog/jobs, structured research form, copilot, charts and memo viewer with browser tests | Weeks 11–12 | 35–55 hours |
 | R8 | Full model evaluations, recovery/failure injection, pipeline/cache/model benchmarks and operational dashboards | Week 13 and remaining platform evidence | 25–40 hours |
 | R9 | Fresh-clone verification, complete documentation and recorded end-to-end demo | Week 14 | 10–20 hours |
@@ -152,7 +192,13 @@ Produce deterministic summary.json here so it is available before memo generatio
 
 Implement the planned `/v1/copilot/requests` creation, retrieval and clarification flow as durable jobs, returning submitted/needs_clarification/unsupported/failed. Use schema-constrained Ollama output plus independent shape, semantic and availability validation. Only a complete validated spec reaches the same manual submission service; persist request-to-run mapping atomically to prevent duplicate runs. The model has no tools or database credentials. Volume versus VWAP, vague dates and undefined thresholds must trigger clarification, never silent reinterpretation. Start the evaluation corpus here; full acceptance is in R8.
 
-### R6: outbound memo and inference lifecycle
+### Approved R6: outbound memo and inference lifecycle
+
+The detailed approved contract is [R6 durable grounded memos](docs/r6-memos.md),
+written before runtime changes. Approval covers implementation, full acceptance,
+independent prescribed review and honest outcomes, excluding commit/push. The
+updated 35-55 hour estimate includes shared admission, crash-safe supplements and
+qualitative grounding; it is not measured velocity. R7-R9 remain unauthorized.
 
 Enqueue memo work separately in the numerical-publication transaction with unique run identity; numerical success is independent. Use host Ollama with `qwen3.5:4b-q8_0`, configurable local/container connectivity and an initial 8K context window; record the installed model digest and measured runtime behavior. One inference worker prioritizes copilot over pending memos without preemption; use 120-second inference timeout and at most one retry, initial temperature zero and recorded settings. Generate exactly three structured paragraphs grounded only in deterministic summaries. Resolve allowlisted numeric placeholders in application code, reject unknown placeholders/unsupported numeric literals, handle nulls, disable raw HTML and label generated content. Formatting does not prove qualitative truth.
 
@@ -475,3 +521,43 @@ original dirty-source fingerprint, all failed v1/v2/harness/orchestration eviden
 model-quality limitations, unmeasured peak memory and known clock discrepancy
 remain unchanged. Exact logs/metadata remain ignored under artifacts/r5-ci/.
 See [R5 verification](docs/r5-verification.md). R6-R9 remain unauthorized.
+
+
+## R6 local closeout (October 25, 2026)
+
+COMPLETE under the approved [R6 contract](docs/r6-memos.md), with independent
+read-only review, full local acceptance and ownership-checked cleanup; see
+[actual verification](docs/r6-verification.md). Separate atomically enqueued memo
+jobs, grounded three-paragraph supplements, immutable manifests, bounded API/CLI
+and shared nonpreemptive copilot-priority inference are implemented. R1-R5 remain
+preserved. NO COMMIT/PUSH; hosted R6 CI is unrun and R7-R9 remain unauthorized.
+
+Final locked checks passed 758 offline/189 real PostgreSQL cases, Ruff lint/format
+and strict mypy. Actual constrained memo evaluation passed 20/20 with independent
+factual/prose audit. R5 rerun passed 18/20 clear correct and zero unsafe among 40
+negatives; 25 expected clarification/refusal and 15 safe failures remain distinct.
+Eight published memos (five retained scenarios plus two fresh profiles and a fresh
+cross-asset run) each used one attempt/one reserved call. All three fresh numerical
+runs matched every retained independent result/summary hash, each numerical
+attempt 1. Each profile read 31 partitions and cross-asset read all 62 January
+partitions, covering the union of 230,311,900 trades.
+
+Successful ordered BTC profile, ETH profile, then cross-asset acceptance took
+2438.450s. Preserve the initial cold combined cross-asset preparation TimeoutError
+at the existing 1800s bound before durable acceptance (1828.554s including earlier
+memo work). The passing sequence uses existing workflows and normal caches; it
+adds no cache-warmer, changes no timeout and is not a cold combined-month pass.
+Ollama model inference used CUDA/all 33 layers; historical integrity/DuckDB/Decimal
+preparation used CPU. Peak memory is unmeasured. Cooperating client admission and
+local cancellation were measured; upstream active-token cancellation is not
+established by closing a client.
+
+Real durability/crash/fencing/budgets/priority, model/Redis failures, populated
+migration/constraints, live API/CLI and packaged readback passed. All 229 original
+protected file hashes and original service identities/start times/restart counts/
+health were preserved. Owned resources were removed; eight native immutable memo
+supplements and replayable database/source snapshots remain ignored evidence.
+Execution used dirty source c9a6c63d1af3299060f211682614d2eba66c680345a3af31a02ab9e5d337aabc;
+all initial test/harness/cold failures and the known system-clock discrepancy
+remain explicit. No dependency/lock/deployment change or original-service restart
+occurred. R6 completion does not authorize publication or R7-R9.

@@ -523,3 +523,76 @@ hosted CI checks, actual R5-only fixes through the prescribed coder/reviewer
 workflow and publication of actual outcomes. Verification records the exact
 published revision and observed hosted results. Local acceptance remains
 separate; artifacts/data, credentials, environments and weights stay outside Git.
+
+## R6 grounded research memos
+
+R6 is complete with full local acceptance, independent review and owned cleanup
+under [the memo contract](docs/r6-memos.md). [Verification](docs/r6-verification.md)
+records the actual source, checks, failures and limitations. Final locked checks
+passed 758 offline/189 PostgreSQL cases; actual bounded memo evaluation passed
+20/20 and eight monthly memos were independently audited. No R6 commit/push is
+authorized or performed; hosted R6 CI is unrun. R7-R9 remain backlog.
+
+Apply the locked `alembic upgrade head` to the intended database before using
+R6; additive migration `0007_memos` preserves existing table definitions.
+New numerical success atomically queues an independent memo job. Read numerical
+results/summary immediately; Ollama or memo failure does not change their success.
+Memo state is separate: pending, running, ready or failed. Memos use only verified
+selected summary metrics and contain exactly three paragraphs covering
+scope/coverage, descriptive findings and limitations. Application code supplies
+the grounded claims and exact numeric placeholders; the installed local model
+chooses bounded wording. This is not unrestricted prose generation or forecasting.
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.inference_cli worker --max-jobs 1
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.memo_cli inspect --run RUN_UUID
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.memo_cli read --run RUN_UUID --markdown
+```
+
+The shared bounded worker gives eligible copilot requests priority over pending
+memos without interrupting an active call. The existing copilot worker stays
+available. Research/ingestion workers remain separate. One cooperating client
+inference call is admitted at a time; a disconnected client does not establish
+that upstream server generation has stopped.
+
+For a completed older run, `memo_cli enqueue --run RUN_UUID` or empty-body
+`POST /v1/research/runs/{run_id}/memo` idempotently ensures memo work exists.
+`GET` on that path returns separate state and verified ready content. Existing
+research/copilot response shapes are preserved. Three execution attempts and two
+reserved model calls bound retries; invoke the worker again when eligible.
+Terminal failed jobs are not reset and ready memos are never overwritten.
+
+The Markdown memo and supplemental manifest live in the run's separate memo
+directory. Numerical manifests/results/summaries remain immutable. Reads verify
+registered artifact hashes and summary lineage; a corrupt supplement leaves
+numerical reads usable. No memo cache, model pull, automatic backfill or scheduler
+is introduced.
+
+
+The full-month acceptance passed through explicit BTC/ETH profile requests then
+cross-asset research using normal verified caches. An earlier cold combined
+cross-asset preparation hit the unchanged thirty-minute bound before acceptance;
+that failure remains documented. Ollama inference used CUDA; historical integrity
+verification, DuckDB and Decimal research preparation used CPU. No GPU data-pipeline
+or cold combined-month performance guarantee follows. The known Docker clock
+issue persists; the application claim workaround is preserved.
+
+The user subsequently authorized a scoped [cold verifier optimization](docs/verifier-optimization.md)
+that preserves exact dataset checks and canonical hashes. Native Arrow encoding
+replaces Python per-row verification work; one lazy two-child spawn pool shares
+two compute permits with DuckDB. Cancellation drains real work before reuse and
+only current verified catalog/file identities enter the existing in-memory cache.
+The actual fresh-process, empty-application-cache all-62-partition
+submit/prepare/execute/readback passed in 272.814s, including cleanup, within the
+unchanged thirty-minute bound. All 230,311,900 trades and original artifact/logical
+hashes reconciled; numerical payloads matched independent R4 references exactly.
+Full checks passed 811 offline/189 PostgreSQL cases. OS filesystem-cache state
+was uncontrolled; simultaneous whole-application peak memory is unmeasured.
+The earlier R6 cold failure remains historical evidence. Source identity,
+packaged Linux and preservation/cleanup outcomes are recorded in the follow-up.
+No commit/push is authorized.
+
+Library callers should reuse one `BarService` per application and await its
+`close()` during shutdown. Scripts using spawned verification must guard startup
+with `if __name__ == "__main__":`; repository CLIs and application entry points
+already do so. Verification workers start lazily when unverified datasets are read.

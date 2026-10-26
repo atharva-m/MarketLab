@@ -131,7 +131,13 @@ def _safe_path(root: Path, relative: Path) -> Path:
     return current
 
 
-def _verify_manifest(path: Path, version: str, expected_hash: str | None = None) -> dict[str, Any]:
+def _verify_manifest(
+    path: Path,
+    version: str,
+    expected_hash: str | None = None,
+    *,
+    cancelled: Callable[[], bool] | None = None,
+) -> dict[str, Any]:
     if not path.is_file() or path.is_symlink() or path.stat().st_size > 1024 * 1024:
         raise DatasetError("dataset manifest integrity failure")
     if expected_hash is not None and file_hash(path) != expected_hash:
@@ -185,7 +191,13 @@ def _verify_manifest(path: Path, version: str, expected_hash: str | None = None)
         ):
             raise DatasetError("dataset manifest content mismatch")
         artifact = _safe_path(path.parent, Path("trades.parquet"))
-        verify_parquet(artifact, manifest["quality"], symbol=symbol, trade_date=trade_date)
+        verify_parquet(
+            artifact,
+            manifest["quality"],
+            symbol=symbol,
+            trade_date=trade_date,
+            cancelled=cancelled,
+        )
         return manifest
     except (KeyError, TypeError, ValueError, OSError) as error:
         raise DatasetError("dataset artifact verification failed") from error
