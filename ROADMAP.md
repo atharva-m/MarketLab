@@ -13,9 +13,20 @@ Preserve all R1-R6 behavior/artifacts and tested-source distinctions, the
 526.987887s cold acceptance, original 33 browser cases and later separate pristine
 Windows Firefox 11/11 physical-cache pass, every failure/probe and all model/
 cancellation/memory/clock limits. Artifacts/data/archives/credentials/environments/
-weights stay out of Git. Publication and hosted CI are pending at this record;
-record exact SHA/run links and observed results in
-[R7 verification](docs/r7-verification.md). Local acceptance is not a hosted pass.
+weights stay out of Git. Publication and hosted CI were pending at this authority
+record; the observed outcome follows. Local acceptance is not a hosted pass.
+
+### R7 publication and hosted CI passed (October 26, 2026)
+
+Verified R7 was committed/pushed as `cb98663eb0edd9726b5336a5933d035c12002c5c`
+with 31 audited scoped files, excluding artifacts/data/credentials/environments/
+weights. [Run 40388784506](https://github.com/atharva-m/MarketLab/actions/runs/40388784506)
+passed that exact revision: 853 offline each on Ubuntu/Windows, 193 PostgreSQL,
+frontend 18 components/33 browser cases plus quality/build/API/Redis-outage/
+cleanup checks. Browser installation took 55m49s and succeeded; no CI fix or
+cause claim follows. No R7 publication/CI blocker remains. Local actual-model/
+month/cold/Windows-cache evidence and all earlier failures remain distinct; see
+[R7 verification](docs/r7-verification.md). R8/R9 remain unauthorized.
 
 ## Current R7: complete (October 26, 2026)
 

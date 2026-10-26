@@ -6,7 +6,7 @@ passed. All 271 protected original hashes and service identities/health were
 preserved. No commit/push or hosted R7 CI had occurred at local closeout. The later
 publication authorization below governs current work; R8/R9 remain unauthorized.
 
-## Publication authorized; observed outcome pending (October 26, 2026)
+## Publication authority and hosted closeout (October 26, 2026)
 
 The user explicitly authorized committing/pushing verified R7 and its scoped
 Windows Firefox follow-up, checking hosted CI, fixing actual R7-related failures
@@ -15,13 +15,29 @@ gpt-6-astra/medium, and documenting/publishing observed results. This supersedes
 earlier R7 no-commit/push restrictions for this verified scope only. No R8/R9,
 unrelated feature/deployment/system change or repair is authorized.
 
-Publication and hosted CI have not yet been observed at this authority update.
-Record the exact published SHA, run links and actual job/test outcomes only after
-they are available. No hosted pass follows from the local acceptance below.
+Publication and hosted CI were unobserved when that authority was recorded.
+The actual later result follows; local acceptance alone is not a hosted pass.
 Preserve the dirty execution fingerprint, actual cold/model/month distinctions,
 original 33 browser cases and later separate pristine Windows Firefox 11/11 pass,
 all failed browser/reinstall/probe/harness/model records and remaining limitations.
 No artifacts/data/archives/credentials/environments/weights belong in Git.
+
+Verified R7 was committed/pushed normally to origin/main as
+`cb98663eb0edd9726b5336a5933d035c12002c5c`, containing 31 audited scoped files
+without artifacts/data/archives/credentials/environments/weights.
+[Hosted run 40388784506](https://github.com/atharva-m/MarketLab/actions/runs/40388784506)
+passed for that exact SHA: 853 offline tests each on Ubuntu and Windows, 193 real
+PostgreSQL cases on Linux, frontend locked install/typecheck/lint/18 components/
+production build and 33 Linux browser cases in 33.2s. Existing quality/image-build/
+API/health/metrics/optional-Redis-outage/cleanup checks also passed. All four jobs
+succeeded; no CI fix was needed and no publication/CI blocker remains.
+
+The browser installation step took 55m49s and ultimately succeeded. No root
+cause or timeout workaround is claimed. Tool/action deprecation warnings were
+non-failing diagnostics. Exact run/job/log evidence remains ignored under
+artifacts/r7/publication/. Hosted checks do not repeat local actual-model,
+retained-month/cold reconciliation or the pristine Windows Firefox physical-cache
+follow-up; those original source identities, failures and limitations remain.
 
 ## Implemented scope and tested identity
 
@@ -82,7 +98,7 @@ charts/gaps, escaped text, key replay/lost response/reload, errors, navigation,
 keyboard/focus/responsive behavior and unexpected browser errors. Intentional
 mocked 4xx/lost-response diagnostics are distinguished from unexpected page and
 console errors. The CI job runs locked frontend checks/all three engines and
-retains actual test-results traces; no hosted R7 run is claimed.
+retains actual test-results traces; its later hosted result is recorded above.
 
 The new backend collection contains 34 offline/four PostgreSQL cases. Coverage
 includes pre-DB strict validation, body/origin limits, filter-bound cursors/tied

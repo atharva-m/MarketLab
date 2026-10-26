@@ -13,9 +13,11 @@ ambiguous model case and initial Windows Firefox startup failures. A later
 [Windows Firefox follow-up](docs/r7-verification.md#windows-firefox-physical-cache-configuration-fix-october-26-2026)
 passed all 11 cases with pristine binaries using Playwright's process-only
 physical-cache path setting; its default logical MSIX path remains affected.
-No R7 commit/push or hosted CI had occurred at local closeout. Verified R7
-publication and hosted CI are now authorized and pending; actual outcomes will
-be recorded in verification. R8/R9 remain backlog.
+No R7 commit/push or hosted CI had occurred at local closeout. Verified R7 was
+later published as `cb98663eb0edd9726b5336a5933d035c12002c5c`;
+[hosted CI 40388784506](https://github.com/atharva-m/MarketLab/actions/runs/40388784506)
+passed for that exact revision. Hosted checks remain separate from local model/
+month/cold/Windows-cache evidence. R8/R9 remain backlog.
 
 The workspace browses catalog versions and durable jobs, submits bounded January
 ingestion/research/copilot requests, displays numerical results and separately

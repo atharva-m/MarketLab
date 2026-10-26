@@ -16,9 +16,22 @@ limits, every failed harness/browser/reinstall/probe and the clock discrepancy.
 The original 33-browser pass and later pristine Windows Firefox 11/11 physical-
 cache invocation are separate evidence; the default logical MSIX path remains
 affected. Never commit artifacts/data/archives/credentials/environments/weights.
-Publication and hosted R7 CI are pending at this authority record. Record the
-exact published SHA, actual run links and outcomes in
-[R7 verification](docs/r7-verification.md); local acceptance is not a hosted pass.
+Publication and hosted R7 CI were pending when this authority was recorded;
+the observed outcome follows. Local acceptance is not a hosted pass.
+
+## R7 publication and hosted CI verified (October 26, 2026)
+
+Verified R7 was committed/pushed normally to origin/main as
+`cb98663eb0edd9726b5336a5933d035c12002c5c`, with 31 audited source/test/tooling/docs
+files and no artifacts/data/archives/credentials/environments/weights.
+[Hosted run 40388784506](https://github.com/atharva-m/MarketLab/actions/runs/40388784506)
+passed for that exact SHA: 853 offline cases each on Ubuntu/Windows, 193 real
+PostgreSQL cases, frontend type/lint/18 components/build/33 browser cases and
+existing build/API/Redis-outage/cleanup checks. No CI fix was needed; the browser
+installation step succeeded after 55m49s without a claimed cause or workaround.
+No R7 publication/CI blocker remains. See [verification](docs/r7-verification.md).
+Hosted coverage remains separate from local model/month/cold and Windows cache-
+path evidence; all historical failures/limitations and R8/R9 exclusion remain.
 
 ## Current R7: complete (October 26, 2026)
 
