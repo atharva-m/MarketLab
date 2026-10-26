@@ -538,9 +538,12 @@ failed Ubuntu quality and integration, and Windows quality was canceled. Recover
 `6084ac58fa49c49015a4b552db68e3be14b6dc2a` then passed Ubuntu quality and Linux
 integration in [run 40271353210](https://github.com/atharva-m/MarketLab/actions/runs/40271353210),
 but Windows failed the worker-crash test again. A stdlib dynamic-spawn startup
-race was confirmed. The reviewed public-API bootstrap correction passed new
-819-offline/189-PostgreSQL checks and fresh cold/Linux acceptance; corrective
-publication and overall hosted verification are pending. R7-R9 remain backlog.
+race was confirmed. The reviewed public-API bootstrap correction was published as
+`0e054bd41d987e85df4cb1dcf75f62e6aa049fb6` and
+[hosted run 40276563068](https://github.com/atharva-m/MarketLab/actions/runs/40276563068)
+passed: 819 offline cases on both Ubuntu and Windows, 189 PostgreSQL cases, and
+build/API/Redis-outage/cleanup checks. Local model/month/cold evidence remains
+separate from hosted coverage. No R6/verifier CI blocker remains; R7-R9 remain backlog.
 
 Apply the locked `alembic upgrade head` to the intended database before using
 R6; additive migration `0007_memos` preserves existing table definitions.

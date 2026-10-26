@@ -562,5 +562,22 @@ Redis containers and anonymous volumes were removed, ports 55440/56382 closed,
 and original IDs/images/start times/restarts/health, HTTP endpoints, Redis PONG
 and the identical optional-Ollama readiness degradation were preserved. Post-cleanup
 source still matched bb4d698. No data, dependency/lock, deployment or clock change
-occurred. A new corrective publication and overall hosted pass remain pending;
-neither earlier failed hosted run is relabeled as successful.
+occurred. Corrective publication/hosted results were pending at that local record;
+their actual outcome follows. Neither earlier failed hosted run is relabeled.
+
+## Corrective publication and hosted pass (October 26, 2026)
+
+Reviewed runtime/test/documentation correction
+`0e054bd41d987e85df4cb1dcf75f62e6aa049fb6` was committed/pushed with ten audited
+scoped files, excluding artifacts/data, archives, credentials, environments and
+weights. [Hosted run 40276563068](https://github.com/atharva-m/MarketLab/actions/runs/40276563068)
+passed for that exact SHA: Ubuntu 819 offline (31.00s), Windows 819 offline
+(39.87s), Linux 189 PostgreSQL (89.94s), quality/build/API health/metrics,
+healthy Redis/actual outage/degraded readiness and cleanup checks.
+
+No publication/CI blocker remains. Local bb4d698 execution on dirty HEAD 6084ac58
+and its 266.692329s cold measurement remain distinct from hosted coverage. Preserve
+the old f12cf32 measurement, both failed hosted attempts, the first failed new
+diagnostic harness, all probe failures and unchanged source/model/clock/cache/
+memory/cancellation limitations. No R7-R9 authority follows. Full hosted records
+are in [R6 verification](r6-verification.md) and ignored `artifacts/r6-ci/`.

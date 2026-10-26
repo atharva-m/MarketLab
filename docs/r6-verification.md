@@ -5,7 +5,8 @@ Implementation, independent source/evidence review, full local acceptance and
 ownership-checked cleanup passed. The initial closeout excluded commit/push;
 later October 26 publication authority superseded that restriction. Verified R6
 and its verifier follow-up were published as `c94ef4bce9dd292730c8884761c787f799bac2d1`.
-The first hosted run failed as recorded below; CI recovery is still in progress.
+The first two hosted runs failed as recorded below; corrective runtime commit
+`0e054bd41d987e85df4cb1dcf75f62e6aa049fb6` subsequently passed hosted CI.
 R7-R9 remain unauthorized. All local failures and limitations below remain part
 of the observed outcome.
 
@@ -441,5 +442,31 @@ resources, failed readiness-only probes and final evidence are in
 [the optimization follow-up](verifier-optimization.md) and ignored
 `artifacts/r6-ci/executor-startup-fix/`. Original c9a6 model/month, f12cf32 cold,
 both hosted failures, clock discrepancy and model/cancellation limits remain
-historical evidence. New corrective publication/hosted verification is pending;
-no overall hosted pass is claimed yet.
+historical evidence. Corrective publication/hosted verification was pending at
+that local record; the actual outcome follows.
+
+## Corrective publication and hosted CI passed (October 26, 2026)
+
+The independently reviewed startup correction was committed/pushed normally as
+`0e054bd41d987e85df4cb1dcf75f62e6aa049fb6`, with ten audited scoped runtime/test/
+documentation files and no artifacts/data, archives, credentials, environments
+or weights. [Hosted run 40276563068](https://github.com/atharva-m/MarketLab/actions/runs/40276563068)
+passed for that exact revision:
+
+| Hosted job | Actual tests | Pytest time |
+| --- | --- | --- |
+| Ubuntu quality | 819 offline passed | 31.00s |
+| Windows quality | 819 offline passed | 39.87s |
+| Linux integration | 189 PostgreSQL passed | 89.94s |
+
+Quality lint/format/mypy and integration build/startup, API health/metrics,
+initially healthy Redis, actual optional-Redis-outage/degraded readiness and
+cleanup checks passed. Exact run/job logs remain ignored under `artifacts/r6-ci/`.
+No R6/verifier publication or CI blocker remains.
+
+This hosted pass does not rerun or relabel the dirty-6084/bb4d698 local 266.692s
+cold execution, original c9a6 model/month acceptance or f12cf32 cold record. Both
+earlier failed hosted runs and the first failed new cold harness remain failures;
+all earlier failed diagnostic attempts remain recorded. Preserved artifacts/services, known clock discrepancy,
+constrained-model limits, upstream cancellation uncertainty, uncontrolled OS cache
+and unmeasured aggregate peak memory remain unchanged. R7-R9 remain unauthorized.

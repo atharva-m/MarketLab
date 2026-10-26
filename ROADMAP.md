@@ -1,6 +1,6 @@
 # MarketLab recovery roadmap
 
-Status: R6 and its cold-verifier follow-up COMPLETE with full local acceptance/review/owned cleanup; published as c94ef4b with recovery 6084ac5; both hosted attempts failed, and the reviewed executor-startup correction passed local 819/189 checks and 266.692s cold acceptance; corrective publication/hosted verification pending; R7-R9 remain unauthorized backlog. R5 COMPLETE with full local acceptance/review/owned cleanup; verified R5 was published as 19a1363 and hosted CI run 40177491693 passed; R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. Verified R4 and the clock fix were published as 2c0dd0b; hosted CI run 40167912094 passed for that revision. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
+Status: R6 and its cold-verifier follow-up COMPLETE with full local acceptance/review/owned cleanup; corrective commit 0e054bd passed hosted run 40276563068 (819 offline on Ubuntu/Windows and 189 PostgreSQL), following the retained failed c94ef4b/6084ac5 attempts; R7-R9 remain unauthorized backlog. R5 COMPLETE with full local acceptance/review/owned cleanup; verified R5 was published as 19a1363 and hosted CI run 40177491693 passed; R1 COMPLETE; R2 COMPLETE — implementation, full local verification, independent review, actual 62-partition January publication/recheck and owned cleanup passed. R3 COMPLETE with full local acceptance/review/cleanup and passing hosted CI for verified implementation commit 54f15d3. R4 COMPLETE with full local acceptance/source review/owned cleanup under docs/r4-research.md; its application clock fix passed fresh verification with the known Docker clock discrepancy. Verified R4 and the clock fix were published as 2c0dd0b; hosted CI run 40167912094 passed for that revision. R2 implementation and documentation fix were committed/pushed; replacement hosted CI passed on both quality platforms and Linux integration after the recorded formatting failure.
 Prepared: October 23, 2026.
 Baseline: `55530ab01e0bc6f522c3c1d3938a51ad48a42e24` on `main`.
 
@@ -14,9 +14,8 @@ and documenting/publishing observed outcomes. This supersedes earlier
 no-commit/push restrictions only for this verified scope. Preserve all R1-R6
 behavior, immutable artifacts, tested-source distinctions and historical failures
 and limitations. Artifacts/data, archives, credentials, environments and weights
-remain excluded from Git. Verified publication is c94ef4b with recovery 6084ac5;
-both hosted attempts failed. The reviewed executor-startup correction passed new
-local checks/acceptance and awaits corrective publication/hosted verification. Exact
+remain excluded from Git. Corrective publication 0e054bd passed hosted run
+40276563068 after failed c94ef4b/6084ac5 attempts, which remain history. Exact
 outcomes are recorded in [R6 verification](docs/r6-verification.md) and the
 [optimization follow-up](docs/verifier-optimization.md); local acceptance is not
 a hosted CI pass. R7-R9 and unrelated feature/deployment/system authority do not
@@ -626,3 +625,18 @@ Independent read-only review accepted final source/tests/docs/evidence. Correcti
 publication/hosted verification remain pending;
 see [R6 verification](docs/r6-verification.md) and the
 [follow-up](docs/verifier-optimization.md). R7-R9 remain unauthorized.
+
+## Corrective publication and hosted CI passed (October 26, 2026)
+
+Reviewed public-API bootstrap correction
+`0e054bd41d987e85df4cb1dcf75f62e6aa049fb6` was committed/pushed with ten audited
+scoped runtime/test/docs files and no artifacts/data, archives, credentials,
+environments or weights. [Hosted run 40276563068](https://github.com/atharva-m/MarketLab/actions/runs/40276563068)
+passed that exact SHA: 819 offline each on Ubuntu/Windows, 189 PostgreSQL on
+Linux, quality/build/API health/metrics/Redis healthy/outage/degraded/cleanup.
+No R6/verifier publication or CI blocker remains.
+
+The dirty-6084/bb4d698 local 266.692s cold pass remains separate from hosted smoke;
+old c9a6/f12cf32 evidence, both failed CI runs and the failed first new harness are
+preserved. Original services/artifacts and all clock/model/cancellation/cache/
+memory limits remain unchanged. R7-R9 remain unauthorized.

@@ -412,8 +412,8 @@ cleanup, with all 230,311,900 rows/physical/logical/manifest hashes and independ
 numerical hashes exact, attempt one and autoqueued memo with zero calls. Two
 distinct readiness results preceded observed file work; all workers were reaped.
 Sequential owned Linux startup/read/close smoke passed. Independent read-only
-review accepted final source/tests/docs/evidence. New corrective publication and
-hosted results remain pending.
+review accepted final source/tests/docs/evidence. Corrective publication/hosted
+results were pending at that local record; the actual later outcome follows.
 
 Preserve the first new harness outcome as FAILED: numerics were correct but its
 ignored observer wrongly expected readiness Futures after close. A reviewed
@@ -424,3 +424,18 @@ and optional-Ollama degradation stayed unchanged. Old c9a6 model/month and f12cf
 cold records, both hosted failures, all diagnostic failures and clock/model/
 memory/cancellation limits remain intact. See verification/follow-up; no overall
 hosted pass or R7-R9 authority follows from local acceptance.
+
+## R6/verifier corrective publication and CI passed (October 26, 2026)
+
+Reviewed correction 0e054bd41d987e85df4cb1dcf75f62e6aa049fb6 was committed/pushed
+with ten audited scoped files, excluding artifacts/data, archives, credentials,
+environments and weights. [Hosted run 40276563068](https://github.com/atharva-m/MarketLab/actions/runs/40276563068)
+passed for that SHA: 819 offline on Ubuntu and Windows, 189 PostgreSQL on Linux,
+quality/build/API health/metrics/healthy Redis/actual outage/degraded readiness/
+cleanup. No R6/verifier publication or CI blocker remains.
+
+Preserve both earlier failed hosted runs and all local failures, especially the
+first failed new cold harness. Dirty-6084/bb4d698 local 266.692s cold acceptance
+is separate from hosted coverage and from earlier c9a6/f12cf32 evidence. Artifact/
+service preservation and clock/model/cancellation/cache/memory limitations remain
+unchanged. See verification and optimization records. R7-R9 remain unauthorized.
