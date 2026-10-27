@@ -1,0 +1,138 @@
+{
+  "schema": "marketlab-demo-v1",
+  "reviewed": false,
+  "sourceFingerprint": "REPLACE_WITH_FROZEN_SOURCE_SHA256",
+  "shots": [
+    {
+      "from": 360,
+      "disclosure": "REPLACE_WITH_ACTUAL_CAPTURE_CONTEXT",
+      "captions": [
+        {
+          "endMs": 9000,
+          "confidence": null,
+          "timestampMs": null,
+          "startMs": 1000,
+          "text": "Select explicit January dataset versions and inspect their source provenance."
+        }
+      ],
+      "sourceState": "retained",
+      "trimBefore": 0,
+      "evidence": [
+        {
+          "sha256": "REPLACE_WITH_ACTUAL_SHA256",
+          "path": "REPLACE_WITH_GATE_RECEIPT.json"
+        }
+      ],
+      "file": "catalog.webm",
+      "title": "Choose the exact data",
+      "id": "catalog",
+      "duration": 690,
+      "sha256": "REPLACE_WITH_ACTUAL_SHA256"
+    },
+    {
+      "from": 1050,
+      "disclosure": "REPLACE_WITH_ACTUAL_CAPTURE_CONTEXT",
+      "captions": [
+        {
+          "endMs": 9000,
+          "confidence": null,
+          "timestampMs": null,
+          "startMs": 1000,
+          "text": "Submit a structured request, follow its durable job, and inspect exact numerical results."
+        }
+      ],
+      "sourceState": "retained",
+      "trimBefore": 0,
+      "evidence": [
+        {
+          "sha256": "REPLACE_WITH_ACTUAL_SHA256",
+          "path": "REPLACE_WITH_GATE_RECEIPT.json"
+        }
+      ],
+      "file": "manual.webm",
+      "title": "Run deterministic research",
+      "id": "manual",
+      "duration": 1050,
+      "sha256": "REPLACE_WITH_ACTUAL_SHA256"
+    },
+    {
+      "from": 2100,
+      "disclosure": "REPLACE_WITH_ACTUAL_CAPTURE_CONTEXT",
+      "captions": [
+        {
+          "endMs": 9000,
+          "confidence": null,
+          "timestampMs": null,
+          "startMs": 1000,
+          "text": "A natural-language request reaches the same validated research workflow."
+        }
+      ],
+      "sourceState": "retained",
+      "trimBefore": 0,
+      "evidence": [
+        {
+          "sha256": "REPLACE_WITH_ACTUAL_SHA256",
+          "path": "REPLACE_WITH_GATE_RECEIPT.json"
+        }
+      ],
+      "file": "copilot.webm",
+      "title": "Clarify before execution",
+      "id": "copilot",
+      "duration": 1200,
+      "sha256": "REPLACE_WITH_ACTUAL_SHA256"
+    },
+    {
+      "from": 3300,
+      "disclosure": "REPLACE_WITH_ACTUAL_CAPTURE_CONTEXT",
+      "captions": [
+        {
+          "endMs": 9000,
+          "confidence": null,
+          "timestampMs": null,
+          "startMs": 1000,
+          "text": "The memo is separate from numerical success and uses verified summary facts."
+        }
+      ],
+      "sourceState": "retained",
+      "trimBefore": 0,
+      "evidence": [
+        {
+          "sha256": "REPLACE_WITH_ACTUAL_SHA256",
+          "path": "REPLACE_WITH_GATE_RECEIPT.json"
+        }
+      ],
+      "file": "memo.webm",
+      "title": "Keep commentary grounded",
+      "id": "memo",
+      "duration": 900,
+      "sha256": "REPLACE_WITH_ACTUAL_SHA256"
+    },
+    {
+      "from": 4200,
+      "disclosure": "REPLACE_WITH_ACTUAL_CAPTURE_CONTEXT",
+      "captions": [
+        {
+          "endMs": 9000,
+          "confidence": null,
+          "timestampMs": null,
+          "startMs": 1000,
+          "text": "Review pinned inputs, immutable results and independent worker telemetry."
+        }
+      ],
+      "sourceState": "retained",
+      "trimBefore": 0,
+      "evidence": [
+        {
+          "sha256": "REPLACE_WITH_ACTUAL_SHA256",
+          "path": "REPLACE_WITH_GATE_RECEIPT.json"
+        }
+      ],
+      "file": "monitoring.webm",
+      "title": "Inspect provenance and operations",
+      "id": "monitoring",
+      "duration": 750,
+      "sha256": "REPLACE_WITH_ACTUAL_SHA256"
+    }
+  ],
+  "capturedAfterTimedAcceptance": true
+}

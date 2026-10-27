@@ -1,0 +1,43 @@
+{
+  "name": "marketlab-r9-demo",
+  "version": "1.0.0",
+  "description": "Local evidence-backed MarketLab R9 demonstration",
+  "repository": {},
+  "license": "UNLICENSED",
+  "engines": {
+    "node": "^20.19.0 || ^22.13.0 || >=24"
+  },
+  "private": true,
+  "dependencies": {
+    "@remotion/cli": "4.0.539",
+    "@remotion/bundler": "4.0.539",
+    "@remotion/media": "4.0.539",
+    "@remotion/renderer": "4.0.539",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.539"
+  },
+  "devDependencies": {
+    "@remotion/eslint-config-flat": "4.0.539",
+    "@types/react": "19.2.7",
+    "@types/web": "0.0.166",
+    "eslint": "10.12.0",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "dev": "node --require ./scripts/local-only.cjs ./node_modules/@remotion/cli/remotion-cli.js studio --no-open --port=59130 --ipv4",
+    "build": "node --require ./scripts/local-only.cjs ./node_modules/@remotion/cli/remotion-cli.js bundle",
+    "lint": "eslint src && tsc",
+    "test": "node --test scripts/manifest.test.mjs scripts/review-session.test.mjs",
+    "prepare:media": "node scripts/prepare.mjs",
+    "render:local": "node --require ./scripts/local-only.cjs scripts/render.mjs",
+    "review:local": "node --require ./scripts/local-only.cjs scripts/review.mjs"
+  },
+  "overrides": {
+    "zod": "4.6.6"
+  },
+  "allowScripts": {
+    "esbuild": false
+  }
+}

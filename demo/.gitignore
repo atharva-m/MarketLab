@@ -1,0 +1,12 @@
+node_modules
+dist
+.DS_Store
+.env
+
+out
+public/media/
+src/manifest.generated.json
+*.mp4
+*.webm
+*.wav
+*.mp3

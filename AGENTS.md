@@ -1,5 +1,76 @@
 # MarketLab contributor instructions
 
+## Current R9 publication authority (October 27, 2026)
+
+After verified local R9 closeout, the user explicitly authorized committing and
+pushing the verified R9 changes, checking hosted CI for the exact published SHA,
+fixing actual R9-related failures through coder gpt-6.1-sol/high followed by
+independent read-only reviewer gpt-6-astra/medium, and documenting/publishing
+observed outcomes. This supersedes earlier no-commit/push restrictions only for
+this R9 publication scope. Preserve all R1–R8 contracts, historical failures,
+local-versus-hosted evidence distinctions and the original services.
+Never include artifacts/data/archives/credentials/environments/weights or generated
+media in Git. No unrelated repairs, new deployment or system changes are authorized.
+Publication and hosted CI are pending at this entry; actual outcomes belong in
+[R9 verification](docs/r9-verification.md). Earlier authority/status entries remain
+historical and are superseded only within this explicit publication approval.
+
+## R9 local acceptance complete (October 27, 2026)
+
+R9 was implemented under the approved pre-code [contract](docs/r9-handoff.md),
+through the prescribed coder and independent read-only reviewer. Final technical
+review found no unresolved blocking finding. See [actual verification](docs/r9-verification.md).
+No application runtime, schema, model/prompt, application lock or original-service
+configuration changed. Historical failures and authority records remain preserved
+in docs/project-history.md and milestone verification reports.
+
+Final checks passed 1013 offline cases and 196 real PostgreSQL cases with four
+explicit historical-input skips; the separate six-case source-compatibility gate
+passed. Actual clean-start, retained/fresh research, model/clarification/memo,
+browser, outage, CLI telemetry, legacy and packaged checks passed. Fresh cold all62
+passed in 262.699996 seconds with 230,311,900 trades, exact hashes, one numerical
+attempt, memo queued with zero calls and drained workers. Failed harness/browser/
+cleanup/video invocations remain failed and retained, not replaced by later passes.
+
+The final 180-second 1080p/30fps Remotion video used the RTX 4070 and required NVENC
+GPU 0 encoding locally. Full playback and native 5400-frame decoding passed, with
+192 native samples, sixteen contact sheets and chapter close-ups reviewed. This
+is automated playback plus sampled visual QA, not continuous human viewing.
+GPU export took 284.411343 seconds; no controlled speedup is claimed. No connected
+video service, driver/global GPU setting change or media publication occurred.
+
+All 287 protected hashes matched after acceptance, cleanup and GPU export.
+Original service IDs/images/mounts/start times/restart counts/health/endpoints and
+original images remained exact. Owned application/media cleanup and database dump
+verification passed; evidence, both dumps and failed invocations remain retained.
+The historical uptime gap, clock discrepancy and R1–R8 limits remain unresolved
+history, not repaired by R9. NO COMMIT OR PUSH occurred or is authorized; no hosted
+R9 CI or original-service rollout is claimed.
+
+## Current R9 authority (October 27, 2026)
+
+The user approved the detailed R9 plan and authorized ROADMAP.md/AGENTS.md updates,
+the full [R9 contract](docs/r9-handoff.md) BEFORE code, implementation through coder
+gpt-6.1-sol/high then independent read-only reviewer gpt-6-astra/medium, and full
+actual acceptance. NO COMMIT OR PUSH. This supersedes earlier R9 exclusions only
+within that contract. Preserve R1–R8 contracts, artifacts, failed invocation
+identities and historical limits; original services remain untouched.
+
+Deliver fresh-checkout clean-start and explicit retained-evidence verification,
+current setup/user/operator documentation, and a 120–180s local Remotion demo
+with real UI footage, editable source, captions and shot/evidence mapping.
+Separate video dependencies are permitted; existing application locks, model,
+prompts, numerical/schema/API behavior and deployment remain unchanged.
+No accounts/cloud media services/uploads, original rollout or system changes.
+Runtime defects require a scoped amendment before repair. Use owned resources,
+protected/service snapshots, honest dirty-source overlay identities, actual
+full/model/month/cold/browser/monitoring gates and exact ownership cleanup.
+Historical failures/approvals belong in docs/project-history.md and verification
+reports, not the README usage guide. All missing prerequisites/failing mandatory
+gates keep R9 incomplete. Record outcomes in docs/r9-verification.md.
+Earlier authority/status entries below remain historical.
+
+
 ## Current R8 publication authority (October 27, 2026)
 
 After the verified local R8 closeout, the user explicitly authorized committing

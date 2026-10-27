@@ -1,0 +1,63 @@
+{
+  "network": "Local media/preview/render; no account, external asset URL or cloud service.",
+  "repository": "https://github.com/remotion-dev/skills",
+  "revision": "30d4553ecd46fbc5212fd0ff006ae43af522158b",
+  "reviewedSkills": [
+    {
+      "gitBlob": "1aac6dbbf9941672c70e910290dfc1afef0a2bac",
+      "path": "skills/remotion-best-practices/SKILL.md"
+    },
+    {
+      "gitBlob": "583a240165e8da7066fc12d4d9e5551b06be79af",
+      "path": "skills/remotion-best-practices/remotion-create/REFERENCE.md"
+    },
+    {
+      "gitBlob": "3e6bc435ef83df62516c5a7a033809b8539445eb",
+      "path": "skills/remotion-best-practices/remotion-create/video-layout.md"
+    },
+    {
+      "gitBlob": "f8cf5e3387df2454d7802442e27b6a0a4555576c",
+      "path": "skills/remotion-best-practices/remotion-markup/REFERENCE.md"
+    },
+    {
+      "gitBlob": "e042330a43a04ce83ea9a9dae643f19c7e70325f",
+      "path": "skills/remotion-best-practices/remotion-markup/compositions.md"
+    },
+    {
+      "gitBlob": "d6b631d903fd70bee152975c0531e1a2903d4d9a",
+      "path": "skills/remotion-best-practices/remotion-markup/multi-scene-video.md"
+    },
+    {
+      "gitBlob": "468362310bd51650644693004d9420d05011fe5b",
+      "path": "skills/remotion-best-practices/remotion-markup/video-editing.md"
+    },
+    {
+      "gitBlob": "31e30a67d58114376d1596aae1da39ed3c318eb4",
+      "path": "skills/remotion-best-practices/remotion-interactivity/timeline-structure.md"
+    },
+    {
+      "gitBlob": "bca280135c2afef45eb9a68637a1e9f1341b10d5",
+      "path": "skills/remotion-best-practices/remotion-captions/REFERENCE.md"
+    },
+    {
+      "gitBlob": "f698d42ad2788485abb1a1be462934d2decf3dcb",
+      "path": "skills/remotion-best-practices/remotion-captions/display-captions.md"
+    },
+    {
+      "gitBlob": "2ebc96f48841560f3050d18b23c4a8112bb1b28c",
+      "path": "skills/remotion-best-practices/remotion-render/REFERENCE.md"
+    },
+    {
+      "gitBlob": "59c27eaaa167114c04b2195cb3ab43fad3fc78b8",
+      "path": "skills/remotion-best-practices/remotion-studio/REFERENCE.md"
+    }
+  ],
+  "licenseScope": "Individual or evaluation eligibility; no blanket claim for larger commercial organizations.",
+  "dependencyOverride": {
+    "reason": "Remotion scaffold resolved vulnerable4.5.4; GHSA-mrhx-c7xc-m3w5. Isolated4.6.6 override yielded0 audit findings; Remotion warns its expected version is4.5.4.",
+    "zod": "4.6.6"
+  },
+  "remotionVersion": "4.0.539",
+  "licenseSource": "https://github.com/remotion-dev/remotion/blob/v4.0.539/LICENSE.md",
+  "schema": "marketlab-remotion-provenance-v1"
+}
