@@ -9,6 +9,7 @@ from collections.abc import Sequence
 from datetime import date
 from typing import Never
 
+from prometheus_client import CollectorRegistry
 from sqlalchemy import create_engine
 
 from marketlab.config import Settings
@@ -16,6 +17,7 @@ from marketlab.datasets import DatasetError, ingest_day, inspect_version
 from marketlab.datasets.jobs import inspect_submission, submit, validate_request, work
 from marketlab.datasets.publication import run_claim
 from marketlab.datasets.source import validate_scope
+from marketlab.monitoring import export_metrics
 
 
 class _Parser(argparse.ArgumentParser):
@@ -92,14 +94,15 @@ def main(argv: Sequence[str] | None = None) -> int:
                 for number in previous:
                     signal.signal(number, lambda signum, frame: stop.set())
                 try:
-                    attempted = work(
-                        engine,
-                        lambda current: run_claim(engine, settings.storage_path, current),
-                        max_jobs=args.max_jobs,
-                        submission_id=args.submission,
-                        wait_seconds=args.wait_seconds,
-                        stop_event=stop,
-                    )
+                    with export_metrics(settings, CollectorRegistry()):
+                        attempted = work(
+                            engine,
+                            lambda current: run_claim(engine, settings.storage_path, current),
+                            max_jobs=args.max_jobs,
+                            submission_id=args.submission,
+                            wait_seconds=args.wait_seconds,
+                            stop_event=stop,
+                        )
                 finally:
                     for number, handler in previous.items():
                         signal.signal(number, handler)

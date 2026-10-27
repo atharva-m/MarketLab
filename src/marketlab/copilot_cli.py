@@ -7,12 +7,14 @@ import sys
 from pathlib import Path
 
 from fastapi.encoders import jsonable_encoder
+from prometheus_client import CollectorRegistry
 from sqlalchemy import create_engine
 
 from marketlab.analytics.bars import BarService
 from marketlab.config import Settings
 from marketlab.copilot.model import Ollama
 from marketlab.copilot.service import CopilotService
+from marketlab.monitoring import export_metrics
 from marketlab.research.service import ResearchService
 from marketlab.research.spec import parse_json
 
@@ -41,10 +43,15 @@ async def invoke(args: argparse.Namespace) -> object:
         pool_timeout=settings.database_connect_timeout_seconds,
         connect_args=settings.database_connect_args,
     )
-    bars = BarService(engine, settings.storage_path, settings.redis_url.get_secret_value())
+    registry = CollectorRegistry()
+    bars = BarService(
+        engine, settings.storage_path, settings.redis_url.get_secret_value(), registry=registry
+    )
     research = ResearchService(bars)
     service = CopilotService(
-        research, Ollama(settings.ollama_url, settings.copilot_model, settings.copilot_model_digest)
+        research,
+        Ollama(settings.ollama_url, settings.copilot_model, settings.copilot_model_digest),
+        registry=registry,
     )
     try:
         if args.command in {"create", "answer"}:
@@ -58,7 +65,8 @@ async def invoke(args: argparse.Namespace) -> object:
             )
             return {"request_id": request_id, "revision": revision, "replayed": replayed}
         if args.command == "worker":
-            return {"attempted_jobs": await service.work(args.max_jobs, args.request)}
+            with export_metrics(settings, registry):
+                return {"attempted_jobs": await service.work(args.max_jobs, args.request)}
         return await asyncio.to_thread(service.inspect, args.request)
     finally:
         await research.close()

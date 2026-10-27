@@ -1,0 +1,36 @@
+{
+  "schema": "r8-clarification-rubric-v1",
+  "description": "Frozen before R8 clarification audit/campaigns. Required question field alternatives reflect explicit missing/conflicting information; safe failures and unsupported outcomes do not count as targeted clarification. Corpus remains unchanged.",
+  "question_fields_any_of": {
+    "ambiguous-01": ["workflow", "start", "end", "history_start", "metrics", "meaning"],
+    "ambiguous-02": ["start", "end", "history_start", "metrics", "meaning"],
+    "ambiguous-03": ["start", "end", "history_start", "metrics", "meaning"],
+    "ambiguous-04": ["metrics", "meaning", "workflow"],
+    "ambiguous-05": ["start", "end", "history_start", "metrics", "meaning"],
+    "ambiguous-06": ["start", "end", "history_start", "metrics", "meaning"],
+    "ambiguous-07": ["start", "end", "meaning"],
+    "ambiguous-08": ["start", "end", "meaning"],
+    "ambiguous-09": ["history_start"],
+    "ambiguous-10": ["metrics"],
+    "ambiguous-11": ["symbols"],
+    "ambiguous-12": ["workflow", "meaning"],
+    "ambiguous-13": ["interval"],
+    "ambiguous-14": ["symbols", "meaning"],
+    "ambiguous-15": ["symbols", "meaning"],
+    "ambiguous-16": ["coverage", "history_start", "meaning"],
+    "ambiguous-17": ["start", "meaning"],
+    "ambiguous-18": ["start", "end", "meaning"],
+    "ambiguous-19": ["history_start", "meaning"],
+    "ambiguous-20": ["coverage", "history_start", "meaning"]
+  },
+  "continuations": [
+    {"id":"complete-answer", "kind":"valid", "answer_text":"Use BTCUSDT.", "answer_context":{"symbols":["BTCUSDT"]}, "expected_outcomes":["submitted"]},
+    {"id":"remaining-ambiguity", "kind":"ambiguous", "answer_text":"Choose whichever asset seems appropriate.", "answer_context":{}, "expected_outcomes":["needs_clarification","failed"]},
+    {"id":"conflicting-answer", "kind":"conflict", "answer_text":"Use BTCUSDT or ETHUSDT; do not choose one silently.", "answer_context":{}, "expected_outcomes":["needs_clarification","failed"]},
+    {"id":"five-round-bound", "kind":"round_limit", "answer_text":"I still have not chosen an asset.", "answer_context":{}, "expected_outcomes":["needs_clarification","failed"]}
+  ],
+  "initial": {
+    "text":"Run descriptive OHLCV market_profile using 5m bars and profile metrics.",
+    "context":{"workflow":"market_profile","interval":"5m","metrics":["profile"],"start":"2025-01-03T01:00:00Z","end":"2025-01-03T02:00:00Z","history_start":"2025-01-01T00:00:00Z"}
+  }
+}

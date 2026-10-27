@@ -1,0 +1,23 @@
+global:
+  scrape_interval: 5s
+  scrape_timeout: 2s
+  evaluation_interval: 5s
+scrape_configs:
+  - job_name: marketlab-monitoring-prometheus
+    static_configs:
+      - targets: [prometheus:9090]
+  - job_name: marketlab-api
+    static_configs:
+      - targets: [host.docker.internal:58009]
+  - job_name: marketlab-inference-worker
+    static_configs:
+      - targets: [host.docker.internal:59110]
+  - job_name: marketlab-research-worker
+    static_configs:
+      - targets: [host.docker.internal:59111]
+  - job_name: marketlab-ingestion-worker
+    static_configs:
+      - targets: [host.docker.internal:59112]
+  - job_name: marketlab-durable
+    static_configs:
+      - targets: [host.docker.internal:59109]

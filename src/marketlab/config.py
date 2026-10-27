@@ -15,11 +15,22 @@ class Settings(BaseSettings):
     redis_url: SecretStr = SecretStr("redis://127.0.0.1:6379/0")
     database_password: SecretStr | None = None
     ollama_url: str = "http://127.0.0.1:11434"
-    copilot_model: str = "qwen3.5:4b-q8_0"
-    copilot_model_digest: str | None = None
+    copilot_model: str = "qwen3.5:9b-q4_K_M"
+    copilot_model_digest: str | None = (
+        "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90"
+    )
     storage_path: Path = Path("./data")
     dependency_timeout_seconds: float = Field(default=3.0, gt=0, le=30)
     database_connect_timeout_seconds: int = Field(default=5, ge=2, le=30)
+    metrics_port: int = Field(default=0, ge=0, le=65535)
+    metrics_bind: str = "127.0.0.1"
+
+    @field_validator("metrics_bind")
+    @classmethod
+    def require_metrics_bind(cls, value: str) -> str:
+        if value not in {"127.0.0.1", "0.0.0.0"}:
+            raise ValueError("metrics bind must be loopback or explicit container bind")
+        return value
 
     @property
     def database_connect_args(self) -> dict[str, int]:

@@ -5,6 +5,7 @@ import asyncio
 import json
 import sys
 
+from prometheus_client import CollectorRegistry
 from sqlalchemy import create_engine
 
 from marketlab.analytics.bars import BarService
@@ -16,6 +17,7 @@ from marketlab.inference import admission
 from marketlab.memos import store as memo_store
 from marketlab.memos.model import MemoModel
 from marketlab.memos.service import MemoService
+from marketlab.monitoring import export_metrics
 from marketlab.research.service import ResearchService
 from marketlab.research.spec import ResearchError
 
@@ -54,17 +56,24 @@ async def invoke(maximum: int) -> dict[str, int]:
         pool_timeout=settings.database_connect_timeout_seconds,
         connect_args=settings.database_connect_args,
     )
-    bars = BarService(engine, settings.storage_path, settings.redis_url.get_secret_value())
+    registry = CollectorRegistry()
+    bars = BarService(
+        engine, settings.storage_path, settings.redis_url.get_secret_value(), registry=registry
+    )
     research = ResearchService(bars)
     copilot = CopilotService(
-        research, Ollama(settings.ollama_url, settings.copilot_model, settings.copilot_model_digest)
+        research,
+        Ollama(settings.ollama_url, settings.copilot_model, settings.copilot_model_digest),
+        registry=registry,
     )
     memo = MemoService(
         research,
         MemoModel(settings.ollama_url, settings.copilot_model, settings.copilot_model_digest),
+        registry=registry,
     )
     try:
-        return {"attempted_jobs": await work(copilot, memo, maximum)}
+        with export_metrics(settings, registry):
+            return {"attempted_jobs": await work(copilot, memo, maximum)}
     finally:
         await research.close()
         await bars.close()

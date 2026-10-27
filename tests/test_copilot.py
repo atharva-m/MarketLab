@@ -2,6 +2,7 @@
 
 import asyncio
 import copy
+import hashlib
 import json
 from unittest.mock import AsyncMock
 
@@ -9,7 +10,7 @@ import httpx
 import pytest
 
 from marketlab.app import create_app
-from marketlab.copilot.model import Ollama
+from marketlab.copilot.model import PROMPT, Ollama
 from marketlab.copilot.spec import FIELDS, decide, extract, interpretation, model_schema, turn
 from marketlab.research.spec import ResearchError, parse_json
 
@@ -203,11 +204,14 @@ async def test_http_adapter_body_limits_and_no_invalid_service_call():
 
 @pytest.mark.asyncio
 async def test_model_transport_digest_provenance_and_oversize(monkeypatch):
+    observed = []
+
     async def handler(req):
         if req.url.path == "/api/tags":
             return httpx.Response(200, json={"models": [{"name": "test", "digest": "digest"}]})
         if req.url.path == "/api/version":
             return httpx.Response(200, json={"version": "test-version"})
+        observed.append(json.loads(req.content))
         return httpx.Response(
             200, json={"done": True, "message": {"content": json.dumps(candidate())}}
         )
@@ -217,7 +221,12 @@ async def test_model_transport_digest_provenance_and_oversize(monkeypatch):
     assert await model.identify() == "digest"
     value, provenance = await model.infer([request()], "digest")
     assert value == candidate() and provenance["model_digest"] == "digest"
-    assert provenance["settings"]["temperature"] == 0
+    assert provenance["settings"] == {"temperature": 0, "num_ctx": 8192, "num_predict": -1}
+    assert provenance["prompt_version"] == "copilot-prompt-v4"
+    assert provenance["prompt_sha256"] == hashlib.sha256(PROMPT.encode()).hexdigest()
+    assert observed[0]["messages"][0]["content"] == PROMPT
+    assert observed[0]["options"] == provenance["settings"]
+    assert observed[0]["think"] is False
     with pytest.raises(ResearchError, match="mismatch"):
         await model.infer([request()], "wrong")
     with pytest.raises(ResearchError, match="context"):
@@ -287,6 +296,9 @@ async def test_malformed_completion_retains_bounded_failure_provenance(monkeypat
     assert evidence["response"] == '{"incomplete":'
     assert evidence["done_reason"] == "length" and evidence["model_digest"] == "digest"
     assert len(evidence["response_sha256"]) == 64
+    assert evidence["prompt_version"] == "copilot-prompt-v4"
+    assert evidence["prompt_sha256"] == hashlib.sha256(PROMPT.encode()).hexdigest()
+    assert evidence["settings"]["num_predict"] == -1
 
 
 def test_nonfinite_json_number_rejected_as_safe_validation_error():
@@ -418,3 +430,32 @@ def test_unrelated_valid_quote_cannot_support_grounded_field():
     model["evidence"]["metrics"] = "Bitcoin"
     with pytest.raises(ResearchError, match="conflicts"):
         decide([request("Bitcoin")], model)
+
+
+def test_production_prompt_is_exact_approved_null_guard_bytes():
+    assert (
+        hashlib.sha256(PROMPT.encode()).hexdigest()
+        == "b5b297d29febdcc29e0dde8e845b52bb46568e6843be6a8004ffa39a6c2596c7"
+    )
+    assert PROMPT.startswith("\nYou are a strict research-request interpreter.\n")
+    assert PROMPT.endswith("Return JSON only.\n")
+
+
+def test_default_shared_model_and_digest_are_the_approved_pair(monkeypatch):
+    from marketlab.config import Settings
+
+    monkeypatch.delenv("MARKETLAB_COPILOT_MODEL", raising=False)
+    monkeypatch.delenv("MARKETLAB_COPILOT_MODEL_DIGEST", raising=False)
+    settings = Settings(_env_file=None)
+    assert settings.copilot_model == "qwen3.5:9b-q4_K_M"
+    assert (
+        settings.copilot_model_digest
+        == "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90"
+    )
+    explicit = Settings(
+        _env_file=None, copilot_model="operator-model", copilot_model_digest="operator-digest"
+    )
+    assert (explicit.copilot_model, explicit.copilot_model_digest) == (
+        "operator-model",
+        "operator-digest",
+    )

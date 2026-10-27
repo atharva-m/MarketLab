@@ -1,0 +1,9 @@
+apiVersion: 1
+datasources:
+  - name: MarketLab R8 Prometheus
+    uid: marketlab-r8-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false

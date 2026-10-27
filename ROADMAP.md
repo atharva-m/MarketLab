@@ -1,5 +1,122 @@
 # MarketLab recovery roadmap
 
+## Current R8 publication approval (October 27, 2026)
+
+The user authorized committing/pushing the verified R8 changes, checking hosted
+CI, fixing actual R8-only CI failures through the prescribed coder/reviewer
+workflow, and documenting/publishing actual outcomes. This narrowly supersedes
+earlier no-commit/push restrictions for R8 publication only. R1-R7 contracts,
+all acceptance evidence/failures/limits and original services remain preserved;
+R9, unrelated work and system/deployment changes remain excluded. Keep raw
+artifacts, data, credentials, environments and model weights out of Git.
+Publication and hosted CI are pending; record exact published SHA and observed
+results in [verification](docs/r8-verification.md). Local acceptance is distinct
+from hosted validation. Earlier restrictions below remain historical.
+
+## Current R8 completion amendment: approved 9B adoption (October 27, 2026)
+
+The user authorized adopting qwen3.5:9b-q4_K_M with the tested latest null-guard
+prompt and think=false in production code, then completing remaining R8 acceptance
+through the prescribed coder/reviewer workflow. The [full adoption contract](docs/r8-adoption.md)
+was written before code. It fixes exact prompt/model identities and decoding,
+unchanged native safety bounds, shared-model memo preservation, fresh campaigns
+and applicable completion gates. No commit or push; R9 remains unauthorized.
+
+R8 completed under this amendment and the prospectively reviewed single technical
+resource supplement. Both fixed copilot cohorts scored 19/20 clear and zero
+unsafe handoffs; the second invocation remains FAILED for incomplete resource
+coverage (512/513), while the unchanged technical repeat passed 521/521. Each
+cohort has 60 reservations/59 native responses. Both memo cohorts passed 20/20;
+production clarification completed the fifth answer and rejected further work
+without mutation. Final checks passed 990 offline/200 real PostgreSQL, 18 components/
+33 browser cases and current live/package/monitoring/recovery/model/crash/source
+preservation gates. Fresh all 62 cold passed in 265.429132 s with exact retained
+hashes. Dump, 279 protected hashes, current-interval service preservation and exact
+owned cleanup passed; [verification](docs/r8-verification.md) records scope and
+limitations. No commit/push or hosted R8 pass is claimed.
+
+New 9B/prompt-v4 source identities must be honest; preserve older completed artifacts and reject
+incompatible queued sources. The failed frozen 4B campaigns and dated experiments
+remain distinct, including native sixth-answer 422 versus the legacy 409 expectation.
+Use fresh adoption evidence/resources, compare protected hashes and current original
+service identities, and verify owned cleanup. Current-interval preservation cannot
+restore the earlier uptime gap. Historical unaffected benchmark evidence remains
+versioned; affected model/cold/full/live/package/monitoring gates were rerun.
+No original-service restart, system/dependency/lock/schema/analytics change or
+unrelated work follows. All earlier R8 exclusions below are historical and are
+superseded only by this scoped adoption approval.
+
+
+## Current authorized milestone: R8 (October 26, 2026)
+
+The user approved the detailed R8 evaluation/recovery/benchmark/operational-view
+plan, ROADMAP.md/AGENTS.md updates, full [R8 contract](docs/r8-evaluation.md) BEFORE
+code, prescribed coder gpt-6.1-sol/high then independent read-only reviewer
+gpt-6-astra/medium, implementation/full acceptance and honest actual outcomes.
+NO COMMIT OR PUSH. R9 and unrelated features remain unauthorized. This supersedes
+historical R8 exclusions only within the contract; preserve all R1-R7 evidence.
+
+Scope: two frozen 60-case copilot campaigns and separate clarification
+continuations; two frozen 20-summary memo campaigns and adversarial grounding;
+real crash/lease/handoff/publication/model/cache recovery; three fresh 1M/10M
+pipeline repetitions, cache/model/queue/memory measurements; new cold all-62
+<1800s exact-hash acceptance; real isolated Prometheus/Grafana including separate
+CLI-worker telemetry. The full contract fixes scoring, sample counts, resource
+accounting, preservation, cleanup and completion gates. Estimate 50-80 engineering
+hours plus execution time replaces the earlier 25-40 for this detailed scope;
+it is not measured velocity.
+
+No numerical/model/prompt/schema/dependency/lock/system changes, new research,
+scheduling/GC or public hosting. The explicit deployment exception permits only
+separate opt-in local monitoring configuration, pinned monitoring images and
+owned storage, without original-service restarts or existing Compose changes.
+Snapshot original files/services before acceptance and verify after exact owned
+cleanup. Preserve all failures and source identities, historical cold/model/
+Windows-browser/cancellation/memory limits and the unresolved Docker clock issue.
+
+Run full retained quality/database/frontend/browser/live/package checks and all
+actual-model/benchmark/dashboard gates. Historical 853 offline/193 PostgreSQL/
+18 components/33 browser counts and R7's 526.987887s cold pass are baselines, not
+R8 results. Missing prerequisites/failing gates leave R8 incomplete. Actual evidence
+and review/cleanup belong in docs/r8-verification.md, README and roadmap. Raw
+artifacts/data/archives/credentials/environments/weights remain out of Git.
+No commit/push, hosted-pass claim or R9 authority follows from this approval.
+
+### R8 observed outcomes: INCOMPLETE; final environment blocked
+
+Implementation and observed acceptance are recorded in
+[verification](docs/r8-verification.md); they do not establish R8 completion.
+Two fully measured 60-case copilot campaigns each scored 18/20 clear, zero unsafe
+submissions among 40 negatives, 24 expected negative outcomes and 16 safe failures.
+Both actual 20-summary memo campaigns passed 20/20. The mandatory actual-model
+five-round continuation failed safely at revision 3 initially and revision 4 in
+the one predeclared supplement; neither reached the fifth-answer/sixth-round
+boundary. No prompt/model tuning or forced state was used to change that result.
+
+Three fresh 1M and three fresh 10M pipelines, corrected cache/model benchmarks,
+actual cache faults, native-time recovery and process-boundary checks passed.
+The corrected boundary run passed in 94.0449324s; its first 16.911s harness failure
+remains retained. Fresh cold all-62 acceptance matched every retained hash over
+230,311,900 trades in 266.5237983s including its cleanup. The isolated 19-panel
+dashboard was rendered/queried and normal CLI-worker visibility was observed.
+These passes retain their resource, cancellation and model-quality scope limits.
+
+Final available checks passed 939 offline cases with 196 PostgreSQL cases
+deselected, Ruff lint/format over 161 files, strict mypy over 50 sources and all
+279 protected hashes. Earlier 195 real PostgreSQL, 18 component and 33 browser
+passes remain distinct. The final 196-case PostgreSQL suite, database dump,
+service identity/continuity comparison and ownership-checked cleanup are BLOCKED:
+the Docker engine pipe and original/owned process listeners were absent at final
+inspection for an unknown reason. No restart or final resource cleanup was
+performed in response to this final outage;
+absent processes do not establish verified cleanup or original-service continuity.
+Independent final source/documentation review found no blocking finding;
+acceptance closeout remains incomplete. Preserve all failed/incomplete
+invocations and R1-R7 history. No commit/push, hosted R8 pass or R9 authority.
+
+All older current-authority/exclusion statements below are historical and are
+superseded for R8 only by this scoped approval. R1-R7 contracts and history remain.
+
 ## Current R7 publication authority (October 26, 2026)
 
 The user explicitly authorized committing/pushing verified R7, checking hosted
@@ -194,7 +311,7 @@ The order below restores the original dependency chain. Each milestone ends with
 | R5 | Durable copilot interpretation, clarification and automatic validated submission through the same service | Week 9 | 25–40 hours |
 | R6 | Separate memo jobs, grounded three-paragraph output, shared copilot-priority inference and immutable supplemental manifests | Week 10 | 35–55 hours |
 | R7 | React ingestion/catalog/jobs, structured research form, copilot, charts and memo viewer with browser tests | Weeks 11–12 | 35–55 hours |
-| R8 | Full model evaluations, recovery/failure injection, pipeline/cache/model benchmarks and operational dashboards | Week 13 and remaining platform evidence | 25–40 hours |
+| R8 | [Completed under October 27 adoption amendment](docs/r8-adoption.md); historical failed invocations/uptime gap retained | Week 13 and remaining platform evidence | 50–80 hours plus execution |
 | R9 | Fresh-clone verification, complete documentation and recorded end-to-end demo | Week 14 | 10–20 hours |
 
 These are planning estimates, not commitments or measured velocity: 230–370 remaining engineering hours, approximately 16–31 working weeks at 12–15 hours/week, excluding external delays. Re-estimate after R1 and R2 using actual time and blockers. Do not claim completion percentages from milestone numbering or test counts.

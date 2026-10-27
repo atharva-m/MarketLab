@@ -1,0 +1,819 @@
+{
+  "uid": "marketlab-r8",
+  "title": "MarketLab R8 operations",
+  "schemaVersion": 41,
+  "version": 2,
+  "editable": false,
+  "refresh": "5s",
+  "timezone": "browser",
+  "time": {
+    "from": "now-15m",
+    "to": "now"
+  },
+  "tags": [
+    "marketlab",
+    "r8"
+  ],
+  "description": "Process metrics reset at exit/restart. Missing/stale state is unavailable. Durable aggregates are gauges. Model/child memory needs the independent benchmark sampler.",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Telemetry targets",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "up{job=~\"marketlab-.*\"}",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "title": "Durable snapshot available (0 means unavailable)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "marketlab_durable_available",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "title": "Durable jobs by state",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "marketlab_durable_jobs and on(instance) (marketlab_durable_available == 1)",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 4,
+      "title": "Oldest queued/retry job",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "marketlab_durable_oldest_wait_seconds and on(instance) (marketlab_durable_available == 1)",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Jobs with retries (current DB gauge)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 16
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "marketlab_durable_retried_jobs and on(instance) (marketlab_durable_available == 1)",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "title": "HTTP requests per second",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 16
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by(route,status) (rate(marketlab_http_requests_total[1m]))",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "HTTP p95 latency",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum by(le,route) (rate(marketlab_http_request_duration_seconds_bucket[1m])))",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Cache outcomes per second",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by(job,outcome) (rate(marketlab_cache_requests_total[1m]))",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 9,
+      "title": "Redis circuit (1=open)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "marketlab_cache_circuit_open",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "title": "Active expensive reads (process scope)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 32
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "marketlab_bar_active",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "title": "Analytical overload/timeouts per second",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 40
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(marketlab_bar_overload_total[1m])",
+          "legendFormat": "1 {{job}} {{kind}} {{outcome}} {{__name__}}"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(marketlab_bar_timeouts_total[1m])",
+          "legendFormat": "2 {{job}} {{kind}} {{outcome}} {{__name__}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "title": "Inference outcomes per second",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 40
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by(job,outcome) (rate(marketlab_copilot_outcomes_total[1m]))",
+          "legendFormat": "1 {{job}} {{kind}} {{outcome}} {{__name__}}"
+        },
+        {
+          "refId": "B",
+          "expr": "sum by(job,outcome) (rate(marketlab_memo_outcomes_total[1m]))",
+          "legendFormat": "2 {{job}} {{kind}} {{outcome}} {{__name__}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "title": "Inference mean duration",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 48
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(marketlab_copilot_inference_seconds_sum[1m])/rate(marketlab_copilot_inference_seconds_count[1m])",
+          "legendFormat": "1 {{job}} {{kind}} {{outcome}} {{__name__}}"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(marketlab_memo_inference_seconds_sum[1m])/rate(marketlab_memo_inference_seconds_count[1m])",
+          "legendFormat": "2 {{job}} {{kind}} {{outcome}} {{__name__}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 14,
+      "title": "Inference mean queue delay",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 48
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(marketlab_copilot_queue_seconds_sum[1m])/rate(marketlab_copilot_queue_seconds_count[1m])",
+          "legendFormat": "1 {{job}} {{kind}} {{outcome}} {{__name__}}"
+        },
+        {
+          "refId": "B",
+          "expr": "rate(marketlab_memo_queue_seconds_sum[1m])/rate(marketlab_memo_queue_seconds_count[1m])",
+          "legendFormat": "2 {{job}} {{kind}} {{outcome}} {{__name__}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 15,
+      "title": "Memo failures per second",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 56
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum by(kind,job) (rate(marketlab_memo_failures_total[1m]))",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 16,
+      "title": "Memo publication mean duration",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 56
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(marketlab_memo_publication_seconds_sum[1m])/rate(marketlab_memo_publication_seconds_count[1m])",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 17,
+      "title": "Worker/collector process RSS (OS dependent; excludes children/model)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 64
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_resident_memory_bytes{job=~\"marketlab-(api|inference-worker|research-worker|ingestion-worker|durable)\"}",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 18,
+      "title": "Durable snapshot age",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 64
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "marketlab_durable_snapshot_age_seconds",
+          "legendFormat": "{{job}} {{kind}} {{state}} {{outcome}} {{route}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 19,
+      "title": "Monitoring-service process RSS (Prometheus only)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "marketlab-r8-prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 72
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "process_resident_memory_bytes{job=\"marketlab-monitoring-prometheus\"}",
+          "legendFormat": "Prometheus monitoring process only"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "noValue": "Unavailable",
+          "custom": {
+            "spanNulls": false
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    }
+  ]
+}

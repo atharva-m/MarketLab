@@ -1,5 +1,105 @@
 # MarketLab
 
+The user has authorized publication of verified R8: commit/push, hosted CI
+verification, and fixes only for actual R8-related CI failures through the
+prescribed coder/reviewer workflow. Publication and hosted results are pending;
+[verification](docs/r8-verification.md) will record the exact SHA and run outcomes.
+This supersedes earlier no-commit/push wording only for R8 publication. Original
+services remain untouched; R9 and unrelated work remain excluded. Raw artifacts,
+data, credentials, environments and weights stay outside Git.
+
+The October 27 [R8 adoption amendment](docs/r8-adoption.md) authorizes the tested
+9B Q4_K_M/null-guard interpreter in production code and fresh remaining acceptance.
+R8 completed under that amendment and its reviewed technical resource supplement.
+Both fixed copilot quality cohorts scored 19/20 clear and zero unsafe handoffs;
+the second invocation remains FAILED for resource coverage, and the separate
+unchanged technical repeat passed. Both memo cohorts passed 20/20; production
+clarification reached the fifth answer and rejected further work without mutation.
+Final checks passed 990 offline/200 PostgreSQL, 18 components/33 browsers, current recovery,
+monitoring/live/package and exact cleanup/preservation gates. Fresh cold all 62
+passed in 265.429132 s with all retained hashes exact. See the
+[actual verification](docs/r8-verification.md) for complete evidence and limits.
+The historical unknown-cause service-uptime gap remains unresolved.
+
+The source default is now qwen3.5:9b-q4_K_M with the pinned approved digest; the
+shared selection also feeds memo workers. Explicit model overrides must carry the
+matching MARKETLAB_COPILOT_MODEL_DIGEST; mismatched name/digest pairs fail
+identity verification safely. There is no
+automatic model fallback or pull. The copilot uses prompt-v4 with num_predict=-1 under the existing 120-second
+limit; memos retain prompt-v1
+and their 2048-token prediction budget. Older
+4B failures and experimental results remain separate evidence, and no commit or
+push is authorized.
+
+
+## Original October 26 R8 acceptance: historical incomplete closeout
+
+The approved [R8 contract](docs/r8-evaluation.md) covers repeated actual-model
+evaluations, owned recovery tests, pipeline/cache/model/queue/resource benchmarks
+and local operational dashboards. R1-R7 behavior and historical evidence remain
+preserved in the exercised checks; final service continuity is unverified. R8
+remains INCOMPLETE: the required actual-model five-round clarification case failed
+safely at revision 3 initially and revision 4 in the one predeclared supplemental
+invocation. Neither reached the fifth-answer/sixth-round boundary. No model/prompt
+change or forced state was used. See [actual R8 verification](docs/r8-verification.md).
+No commit/push is authorized, and R9 remains backlog.
+
+Two fully measured frozen copilot campaigns each scored 18/20 clear requests,
+zero unsafe submissions among 40 negatives, 24 expected negative outcomes and
+16 safe failures. Two actual memo campaigns each passed 20/20 under the retained
+application grounding rules. Three fresh 1M and three fresh 10M pipelines matched
+exact reference hashes; corrected cache/model benchmarks and actual cache faults,
+native-time recovery and process-boundary checks passed. The corrected boundary
+run passed in 94.0449324s after a retained first harness failure of 16.911s.
+Fresh cold all-62 acceptance reconciled 230,311,900 trades and every retained hash
+in 266.5237983s including its cleanup. The isolated 19-panel dashboard was rendered
+and queried, with actual CLI-worker visibility verified separately.
+
+Final checks passed 939 offline cases (196 PostgreSQL cases deselected), Ruff
+lint/format over 161 files, strict mypy over 50 sources and all 279 protected file
+hashes. Earlier full acceptance passed 195 real PostgreSQL cases, 18 frontend
+components and 33 browser cases; that earlier pass does not replace the final
+196-case PostgreSQL suite, which could not run. At final inspection the Docker
+engine pipe and original/owned process listeners were absent for an unknown reason.
+No restart or final resource cleanup was performed in response to this final
+outage. Final database dump, service identity/continuity verification and ownership-checked cleanup are BLOCKED and unverified.
+Independent final source/documentation review found no blocking finding;
+acceptance closeout remains incomplete. No overall R8 pass, completed cleanup or
+hosted R8 result is claimed. All failed
+and incomplete invocations and historical limitations remain in verification.
+
+The optional [monitoring stack](monitoring/README.md) runs separately from the
+existing services. Its provisioned dashboard distinguishes separate API/worker
+registries from read-only durable job aggregates. Missing/stale telemetry is
+unavailable. The monitoring-service memory panel measures Prometheus only;
+Windows worker memory and full process-tree/model measurements use the separate
+resource sampler with recorded collection skew and explicit scope limits.
+
+For an explicitly configured worker, opt in with a distinct loopback export port:
+
+```powershell
+$env:MARKETLAB_METRICS_PORT = '59110'
+.\.venv\Scripts\python.exe -m marketlab.inference_cli worker --max-jobs 1
+Remove-Item Env:MARKETLAB_METRICS_PORT
+```
+
+`MARKETLAB_METRICS_PORT=0` disables worker export. The separate durable collector
+uses its own bounded read-only connections and cached snapshots:
+
+```powershell
+.\.venv\Scripts\python.exe -m marketlab.monitoring --port 59109
+```
+
+Acceptance tooling is explicit and restricted to inventoried owned services:
+`scripts/r8_acceptance.py`, `scripts/r8_clarification.py`,
+`scripts/r8_benchmark.py`, `scripts/r8_cache_faults.py`, `scripts/r8_recovery.py`,
+`scripts/r8_boundaries.py` and `scripts/r8_cold.py`. Each invocation needs a fresh `r8-` evidence prefix; inspect
+`--help` and the contract before running. Generated fixtures, private connection
+manifests, source snapshots and results stay ignored under `artifacts/r8`.
+Run model evaluations and timed benchmarks sequentially. The first 1M diagnostic
+retains a successful numerical result but receives no acceptance credit because
+mandatory memory coverage was incomplete and scheduling was concurrent.
+
 ## R7 local research workspace
 
 The approved [R7 contract](docs/r7-ui.md) adds a local React workspace over the
@@ -17,7 +117,8 @@ No R7 commit/push or hosted CI had occurred at local closeout. Verified R7 was
 later published as `cb98663eb0edd9726b5336a5933d035c12002c5c`;
 [hosted CI 40388784506](https://github.com/atharva-m/MarketLab/actions/runs/40388784506)
 passed for that exact revision. Hosted checks remain separate from local model/
-month/cold/Windows-cache evidence. R8/R9 remain backlog.
+month/cold/Windows-cache evidence. R8 was backlog at that publication; its current
+authority is above. R9 remains backlog.
 
 The workspace browses catalog versions and durable jobs, submits bounded January
 ingestion/research/copilot requests, displays numerical results and separately

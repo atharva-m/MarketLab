@@ -7,10 +7,12 @@ import sys
 from pathlib import Path
 
 from fastapi.encoders import jsonable_encoder
+from prometheus_client import CollectorRegistry
 from sqlalchemy import create_engine
 
 from marketlab.analytics.bars import BarService
 from marketlab.config import Settings
+from marketlab.monitoring import export_metrics
 from marketlab.research.service import ResearchService
 from marketlab.research.spec import ResearchSpec, parse_json
 
@@ -36,7 +38,10 @@ async def invoke(arguments: argparse.Namespace) -> object:
         pool_timeout=settings.database_connect_timeout_seconds,
         connect_args=settings.database_connect_args,
     )
-    bars = BarService(engine, settings.storage_path, settings.redis_url.get_secret_value())
+    registry = CollectorRegistry()
+    bars = BarService(
+        engine, settings.storage_path, settings.redis_url.get_secret_value(), registry=registry
+    )
     research = ResearchService(bars)
     try:
         if arguments.command == "submit":
@@ -45,7 +50,8 @@ async def invoke(arguments: argparse.Namespace) -> object:
             run, replayed = await research.submit(spec, arguments.key)
             return {"run_id": run, "replayed": replayed}
         if arguments.command == "worker":
-            return {"attempted_runs": await research.work(arguments.max_runs, arguments.run)}
+            with export_metrics(settings, registry):
+                return {"attempted_runs": await research.work(arguments.max_runs, arguments.run)}
         if arguments.command == "inspect":
             return await asyncio.to_thread(research.inspect, arguments.run)
         if arguments.command == "summary":

@@ -1,5 +1,153 @@
 # MarketLab contributor instructions
 
+## Current R8 publication authority (October 27, 2026)
+
+After the verified local R8 closeout, the user explicitly authorized committing
+and pushing verified R8, checking hosted CI, fixing actual R8-related CI failures
+through coder gpt-6.1-sol/high followed by independent read-only reviewer
+gpt-6-astra/medium, and documenting/publishing observed outcomes. This supersedes
+earlier no-commit/push restrictions only for this R8 publication scope. Preserve
+all R1-R7 contracts, protected artifacts, failed invocation identities, the second
+copilot resource failure, historical unknown-cause uptime gap and other limits.
+Never include artifacts/data/archives/credentials/environments/weights in Git.
+Original services remain untouched. R9, unrelated repairs and new deployment or
+system changes remain unauthorized. Commit/push and hosted CI outcomes are pending
+at this authority update; local acceptance is not a hosted pass. Record the exact
+published SHA and actual run results in [verification](docs/r8-verification.md).
+
+All no-commit/push statements below describe earlier acceptance authority and are
+superseded only by this explicit publication approval.
+
+## Current R8 completion authority: 9B adoption (October 27, 2026)
+
+The user explicitly authorized adopting the tested 9B Q4_K_M latest null-guard
+prompt with think=false in production code and completing remaining R8 acceptance,
+through coder gpt-6.1-sol/high then independent read-only reviewer
+gpt-6-astra/medium. The [scoped adoption contract](docs/r8-adoption.md) is written
+BEFORE adoption code. This supersedes earlier R8 prompt/model exclusions only for
+that contract. No commit or push; R9 and unrelated repairs remain unauthorized.
+
+Pin qwen3.5:9b-q4_K_M digest 56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90
+and exact null-guard prompt SHA b5b297d29febdcc29e0dde8e845b52bb46568e6843be6a8004ffa39a6c2596c7.
+Copilot uses prompt-v4/temperature 0/context 8192/num_predict=-1/think=false, while
+native 120s/32KiB/context-budget/admission/lease/attempt/call/fencing/semantic rules
+remain intact. Shared model selection also feeds memos; preserve memo-prompt-v1
+and its 2048-token budget/claims/renderer, and rerun actual memo gates on 9B.
+No .env/Compose/dependency/lock/schema/analytics or original-service change.
+
+Use fresh artifacts/r8-adoption-20261027 evidence and owned 55444/56386/11443
+resources. Run fixed 2x60 copilot/2x20 memo/native durable clarification/model 26,
+affected recovery, fresh cold 62 and current-source full/live/frontend/browser/
+package/monitoring checks, with unchanged thresholds and honest outcomes. Prior
+unchanged pipeline/cache/analytics benchmarks remain distinct versioned evidence.
+Old queued incompatible sources stay rejected; completed artifacts stay readable.
+Preserve all original failed 4B gates, experiments, native sixth 422 versus legacy
+409 expectation mismatch and earlier unknown-cause service-uptime gap.
+
+R8 is completed under the October 27 adoption amendment and independently reviewed
+technical resource supplement. Adopted source SHA is
+66069d6a6238e214e9a6cda7b664dcce2445175bb5a729c5f38450699c8fbe53.
+Both fixed copilot cohorts scored 19/20 clear with zero unsafe negative handoffs;
+the second invocation remains FAILED for 512/513 resource coverage. The one
+prospectively approved technical supplement passed unchanged scoring and 521/521
+coverage. Each cohort reserved 60 calls but completed 59 native responses; the
+invalid-timestamp case failed before POST. Both memo cohorts passed 20/20, and
+production durable clarification reached revision 5 with six actual responses,
+then rejected the sixth answer natively with 422; a valid-shaped stale
+expected_revision=4 returned 409. Neither created more work.
+
+Final checks passed 990 offline/200 real PostgreSQL, lint/format/mypy, current
+frontend 18 components/33 browsers/live/package/monitoring, affected recovery,
+model 26, five actual process-crash boundaries and old-source rejection/readback.
+Fresh cold all 62 passed in 265.429132 s including verifier/service cleanup with
+230,311,900 trades and exact retained hashes; memo remained queued with zero calls.
+Unchanged pipeline/cache evidence retains earlier fingerprints. The dump was
+retained; all 279 protected hashes and current-interval original service identities/
+health/endpoints stayed exact. Exact owned process/container/volume/network/image
+cleanup passed, with original images and installed weights retained. See
+[actual verification](docs/r8-verification.md) for gate mapping and every failure.
+
+Completion does not erase the earlier unknown-cause original-service uptime gap,
+failed frozen 4B continuation, failed Cp2 resource invocation, raw model candidate/
+null violations, cancellation/memory limits, Firefox logical-cache issue or clock
+discrepancy. No original restart or Docker/WSL/initd/clock/GPU change; no commit,
+push, hosted R8 result, deployment of original services or R9 authority follows.
+All older R8 exclusions/status below remain historical evidence and are superseded
+only within the new scoped approval; R1-R7 contracts and history remain intact.
+
+
+## Current authorized milestone: R8 (October 26, 2026)
+
+The user approved the detailed R8 plan, ROADMAP.md/AGENTS.md updates, the full
+[R8 contract](docs/r8-evaluation.md) BEFORE code, implementation through coder
+gpt-6.1-sol/high then independent read-only reviewer gpt-6-astra/medium, full
+acceptance and honest actual outcomes. NO COMMIT OR PUSH. This supersedes all
+historical R8 exclusions only within this contract. R9 remains unauthorized.
+Preserve R1-R7 contracts, immutable artifacts and all historical evidence.
+
+Deliver repeated frozen actual-model copilot/memo evaluations and clarification
+continuations; real recovery/failure injection; deterministic 1M/10M pipelines,
+cache/model/queue/resource benchmarks; fresh cold all-62 <1800s with exact retained
+hashes; working isolated opt-in Prometheus/Grafana and actual CLI-worker visibility.
+The contract fixes repetitions, scoring and mandatory gates before implementation.
+No prompt/model/analytics/schema/lock/dependency changes, scheduling/GC, public
+hosting or unrelated repairs. The sole scoped deployment exception is separate
+local monitoring configuration and pinned monitoring images with owned storage;
+identify/acquire only those missing images. Original Compose services are unchanged.
+
+Use owned disposable resources, snapshot all protected hashes and original service
+IDs/images/start/restart/health/endpoints before operations, inspect exact ownership
+before cleanup, and preserve all originals. No original restarts or Docker/WSL/
+initd/clock/GPU changes. Record every failed/incomplete invocation/source identity,
+actual memory sampling limits and client-versus-upstream cancellation distinction.
+Keep raw artifacts/data/archives/credentials/environments/weights out of Git.
+R7's 526.987887s cold pass, original 33-browser evidence and separate pristine
+Windows Firefox 11/11 physical-cache pass remain distinct; the logical MSIX path
+and unresolved clock discrepancy persist. Old results remain readable and queued
+incompatible source identities remain rejected. New source fingerprints are honest.
+
+Run full retained locked/offline/PostgreSQL/frontend/browser/live/package checks,
+actual-model campaigns and benchmarks/dashboard runtime proof. Historical counts
+are baselines. Missing prerequisites/failing gates leave R8 incomplete; mocks and
+old passes cannot replace actual acceptance. Document outcomes/blockers/review and
+cleanup in docs/r8-verification.md, README, roadmap and these instructions. R8 is
+not complete merely because tooling exists. No commit/push or R9 authority follows.
+
+### R8 observed status: INCOMPLETE; final environment blocked
+
+See [actual verification](docs/r8-verification.md). Two fully measured frozen
+copilot campaigns each passed the scoped quality gate (18/20 clear, zero unsafe
+among 40 negatives, 24 expected negative outcomes and 16 safe failures), and two
+actual memo campaigns each passed 20/20. The mandatory actual-model five-round
+continuation failed safely at revision 3 initially and revision 4 in the one
+predeclared supplement. Neither reached the fifth-answer/sixth-round boundary.
+Do not substitute mocked protocol tests for that missing actual-model gate, force
+state, reset terminal work or tune prompts/models within this acceptance scope.
+
+Six fresh 1M/10M pipeline repetitions, corrected cache/model benchmarks, actual
+cache faults, native-time recovery and process-boundary checks passed. The second
+boundary invocation passed in 94.0449324s after a retained 16.911s harness failure.
+Fresh cold all-62 passed in 266.5237983s including its cleanup, with 230,311,900
+trades and every retained hash exact. The isolated 19-panel dashboard and normal
+CLI-worker visibility were exercised. Keep all prior failed/incomplete invocation
+identities and the documented memory/cancellation/model/clock limitations.
+
+Final available checks passed 939 offline cases (196 PostgreSQL deselected),
+Ruff lint/format over 161 files, strict mypy over 50 sources and all 279 protected
+hashes. Earlier 195 real PostgreSQL, 18 component and 33 browser passes remain
+separate evidence. The final 196-case PostgreSQL suite, database dump, original
+service identity/continuity verification and ownership-checked cleanup are BLOCKED:
+the Docker engine pipe and original/owned process listeners were absent at final
+inspection for an unknown reason. No restart or final resource cleanup was
+performed in response to this final outage.
+Absent processes are not verified cleanup or service preservation. Independent
+final source/documentation review found no blocking finding; acceptance closeout
+remains incomplete. Do not claim R8 complete, final services preserved, hosted
+R8 success or cleanup complete. No commit/push or R9 authority is granted.
+
+All older current-authority/exclusion statements below are historical and are
+superseded for R8 only by this scoped approval; R1-R7 evidence remains intact.
+
 ## Current R7 publication authority (October 26, 2026)
 
 After verified R7 local closeout and the scoped Windows Firefox follow-up, the
