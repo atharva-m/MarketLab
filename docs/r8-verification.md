@@ -12,13 +12,60 @@ artifacts/data/archives/credentials/environments/weights in Git. Original servic
 stay untouched. R9, unrelated repairs and new deployment/system changes remain
 unauthorized.
 
-No commit, push or hosted result is yet claimed at this authority update. Record
-the exact published revision, scoped file audit and observed hosted run results
-below once available. Local acceptance and its reviewed technical supplement do
-not by themselves establish a hosted pass. Earlier no-publication statements in
-this report remain the historical authority at their dated observations.
+At that authority update, commit/push and hosted results were pending. The actual
+outcome follows. Local acceptance and its reviewed technical supplement do not
+by themselves establish a hosted pass. Earlier no-publication statements in this
+report remain the historical authority at their dated observations.
 
-## Current October 27 closeout
+## Published R8 and observed hosted CI (October 27, 2026)
+
+Verified R8 was committed/pushed normally to origin/main as
+`3fc858464e4929c3b66c91ba057a6da86e89308b`. The precommit audit covered exactly 47
+source, test, tooling, monitoring and documentation files. It excluded raw market
+artifacts/data, archives, credentials, environments and model weights, with the scoped
+credential-pattern scan clear. Existing original services were not operated on
+for publication. No R8 CI repair was needed.
+
+[Hosted CI run 40548949738](https://github.com/atharva-m/MarketLab/actions/runs/40548949738) completed successfully for that exact SHA on its
+first attempt, with all four jobs successful. Raw final run/job API responses and
+all four job logs are retained under the ignored publication evidence directory.
+The jobs observed:
+
+- Ubuntu quality: 990 offline cases passed, 200 integration cases deselected, with
+  Ruff lint/format and strict mypy successful.
+- Windows quality: 990 offline cases passed, 200 integration cases deselected, with
+  Ruff lint/format and strict mypy successful.
+- Integration: 196 real PostgreSQL cases passed, four skipped, 990 deselected;
+  Docker configuration/build/health, API smoke, optional Redis outage and cleanup
+  steps also succeeded.
+- Frontend: locked installation, type/lint, 18 component tests, build, installation of
+  Chromium/Firefox/WebKit and 33 browser cases passed.
+
+The four skips are deliberate source-compatibility cases requiring the ignored
+original R8 runtime-freeze snapshot. All four ran successfully locally as part of
+the full 200 PostgreSQL cases; the fresh hosted checkout lacks that local evidence
+by design. Hosted 196 plus 4 skipped is not claimed as 200 hosted PostgreSQL passes.
+The hosted workflow does not pull the model, ingest/recompute the retained month,
+repeat actual-model quality/continuation campaigns, or substitute for current
+local resource/monitoring/cold/ownership evidence at dirty source 66069d6a.
+
+The browser installation step ran from 17:16:32Z to 18:21:54Z (65m22s) and succeeded;
+the browser test step ran 18:21:54Z to 18:22:47Z, with 33 cases passing in 51.2 s. These
+are actual hosted step/log timings, not tool-wait measurements. No cause,
+workaround or performance guarantee is inferred from the installation duration.
+
+Local failed invocation identities remain failed, including the original 4B
+continuation, fixture-setup error and second copilot resource campaign. The
+unknown-cause historical uptime gap, Docker clock issue, logical Windows Firefox
+cache-path issue and model/memory/client-versus-upstream cancellation limits remain
+explicit. Hosted success does not alter those historical findings.
+
+At this entry, publication of the documentation-only outcome update is pending.
+Its exact revision and hosted CI will be checked separately and reported in the
+session. This entry does not claim that later result in advance or require
+recursive outcome-only commits. No R9, unrelated repairs or original-service rollout follows.
+
+## Local October 27 closeout before publication
 
 R8 completed under the [October 27 adoption amendment](r8-adoption.md) and the
 prospectively reviewed single technical resource supplement. The adopted source

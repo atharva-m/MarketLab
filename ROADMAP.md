@@ -9,9 +9,24 @@ earlier no-commit/push restrictions for R8 publication only. R1-R7 contracts,
 all acceptance evidence/failures/limits and original services remain preserved;
 R9, unrelated work and system/deployment changes remain excluded. Keep raw
 artifacts, data, credentials, environments and model weights out of Git.
-Publication and hosted CI are pending; record exact published SHA and observed
-results in [verification](docs/r8-verification.md). Local acceptance is distinct
-from hosted validation. Earlier restrictions below remain historical.
+Publication and hosted CI were pending at that authority update; the observed
+outcome follows. Local acceptance is distinct from hosted validation. Earlier
+restrictions below remain historical.
+
+## R8 publication verified (October 27, 2026)
+
+Verified R8 was committed/pushed as `3fc858464e4929c3b66c91ba057a6da86e89308b` with 47 audited
+source/test/tooling/monitoring/documentation files, excluding raw evidence/data,
+credentials, environments and weights. [Hosted run 40548949738](https://github.com/atharva-m/MarketLab/actions/runs/40548949738) passed all
+four jobs: 990 offline each on Ubuntu/Windows, 196 PostgreSQL plus four expected
+local-snapshot skips, 18 frontend components/build/33 browser cases and existing
+Docker/API/Redis-outage/cleanup checks. No CI repair was needed. The local
+200 PostgreSQL pass includes those four historical-source cases; hosted smoke does
+not replace actual local model/cold/resource evidence or erase failed invocations
+and the historical unknown-cause uptime gap. Browser installation succeeded after
+65m22s without an established cause/workaround. Publication of this documentation
+update is pending at this entry and its CI will be checked separately. No R9 or
+original-service rollout is authorized.
 
 ## Current R8 completion amendment: approved 9B adoption (October 27, 2026)
 

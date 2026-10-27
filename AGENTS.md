@@ -11,12 +11,33 @@ all R1-R7 contracts, protected artifacts, failed invocation identities, the seco
 copilot resource failure, historical unknown-cause uptime gap and other limits.
 Never include artifacts/data/archives/credentials/environments/weights in Git.
 Original services remain untouched. R9, unrelated repairs and new deployment or
-system changes remain unauthorized. Commit/push and hosted CI outcomes are pending
-at this authority update; local acceptance is not a hosted pass. Record the exact
-published SHA and actual run results in [verification](docs/r8-verification.md).
+system changes remain unauthorized. Publication was pending at that authority
+update; the actual outcome follows. Local acceptance remains distinct from hosted
+validation; see [verification](docs/r8-verification.md).
 
 All no-commit/push statements below describe earlier acceptance authority and are
 superseded only by this explicit publication approval.
+
+## R8 publication and hosted CI verified (October 27, 2026)
+
+Verified R8 was committed and pushed normally to origin/main as
+`3fc858464e4929c3b66c91ba057a6da86e89308b`, with 47 audited source/test/tooling/monitoring/
+documentation files and no raw artifacts/data/archives/credentials/environments/
+weights. [Hosted CI run 40548949738](https://github.com/atharva-m/MarketLab/actions/runs/40548949738) passed for that exact SHA:
+990 offline cases on each Ubuntu and Windows, 196 real PostgreSQL cases plus four
+expected local-evidence skips, frontend 18 components/build/33 browser cases, and
+existing Docker build/API/Redis-outage/cleanup checks. No CI fix was needed.
+The four source-compatibility cases depend on the ignored historical snapshot;
+they passed locally in the full 200-case suite and were explicitly skipped in the
+fresh hosted checkout. Do not describe hosted coverage as 200 PostgreSQL passes.
+
+Hosted smoke remains separate from dirty-source 66069d6a local model/month/cold/
+resource/monitoring evidence. All failed invocations, model/cancellation/memory/
+clock limits and the unknown-cause historical uptime gap remain explicit.
+The successful browser installation step took 65m22s; no cause or workaround is
+claimed. The subsequent documentation-only publication is pending at this entry;
+its CI will be checked separately and reported in the session.
+No R9, original-service rollout or unrelated authority follows.
 
 ## Current R8 completion authority: 9B adoption (October 27, 2026)
 

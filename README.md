@@ -1,12 +1,16 @@
 # MarketLab
 
-The user has authorized publication of verified R8: commit/push, hosted CI
-verification, and fixes only for actual R8-related CI failures through the
-prescribed coder/reviewer workflow. Publication and hosted results are pending;
-[verification](docs/r8-verification.md) will record the exact SHA and run outcomes.
-This supersedes earlier no-commit/push wording only for R8 publication. Original
-services remain untouched; R9 and unrelated work remain excluded. Raw artifacts,
-data, credentials, environments and weights stay outside Git.
+Verified R8 was committed and pushed as
+`3fc858464e4929c3b66c91ba057a6da86e89308b` (47 audited files; raw evidence/data,
+credentials, environments and weights excluded). [Hosted CI run 40548949738](https://github.com/atharva-m/MarketLab/actions/runs/40548949738)
+passed for that exact revision: 990 offline tests on both Ubuntu and Windows,
+196 PostgreSQL tests with four expected local-evidence skips, 18 components and 33
+browser cases, plus existing build/API/Redis-outage/cleanup checks. No CI fix was
+needed. The four skipped source-compatibility cases passed locally in the 200-case
+suite and require the ignored historical snapshot absent from a fresh checkout.
+See [verification](docs/r8-verification.md) for the distinct local acceptance and
+hosted scopes. The following documentation-only publication is pending at this
+entry. Original services remain untouched; R9 and unrelated work remain excluded.
 
 The October 27 [R8 adoption amendment](docs/r8-adoption.md) authorizes the tested
 9B Q4_K_M/null-guard interpreter in production code and fresh remaining acceptance.
