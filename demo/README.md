@@ -132,6 +132,44 @@ playback, terminal state, clean closure and hash are checked before reuse. The
 new receipt links that immutable playback receipt and pins its own QA source;
 the original render-time source pins remain separate.
 
+## README hero and highlight
+
+The ReadmeHero (looping GIF) and ReadmeHighlight (short MP4) compositions are
+built from one scripted recording of the real workspace. Run the API, UI on
+127.0.0.1:5173 and Ollama against an owned database/storage pair, then record:
+
+```powershell
+npm run capture:readme -- ../artifacts/rd/connection-private.json ../artifacts/rd/capture-2
+```
+
+The capture drives Chrome at 2x density through Playwright and records the
+page with Chrome's screencast. It logs every pointer position, click, typing
+burst, scroll and the bounded CLI worker commands it runs, with timestamps.
+No cursor is drawn into the page. The compositions draw the cursor, click
+ripples and click-driven zooms from that log, so each on-screen interaction is
+an actual input. Worker commands appear as toasts while they run, and segments
+that a cut list speeds up carry a visible speed badge.
+
+A cut list (`cuts/hero.json`, `cuts/highlight.json`) chooses capture segments in
+seconds since the first frame, optional speeds, chapter captions, per-click
+zoom overrides and extra reading zooms (`focus`). Prepare, render and encode:
+
+```powershell
+npm run prepare:readme -- ../artifacts/rd/capture-2 cuts/hero.json ../artifacts/rd/hero-props.json
+npm run render:readme -- ../artifacts/rd/hero-props.json ../artifacts/rd/out/hero-master.mp4 ReadmeHero
+npm run encode:readme -- gif ../artifacts/rd/out/hero-master.mp4 ../docs/assets/marketlab-demo.gif --no-limit
+npm run prepare:readme -- ../artifacts/rd/capture-2 cuts/highlight.json ../artifacts/rd/highlight-props.json
+npm run render:readme -- ../artifacts/rd/highlight-props.json ../artifacts/rd/out/highlight-master.mp4 ReadmeHighlight
+npm run encode:readme -- mp4 ../artifacts/rd/out/highlight-master.mp4 ../artifacts/rd/out/marketlab-highlight.mp4
+```
+
+Preparation and encoding need a full FFmpeg build on PATH (or `FFMPEG_PATH`); the
+Remotion compositor build lacks the fps/setpts filters. The README embeds the
+repository GIF (`--no-limit`: 1200 px, 15 fps). Without that flag the GIF steps
+down until it fits GitHub's 10 MB attachment upload. The highlight MP4 is sized for
+that upload too; GitHub plays a video inline only from a user-attachments URL.
+Captures, masters and prepared media stay in ignored folders.
+
 ## Versions and provenance
 
 provenance.json pins the official skill commit and reviewed file blobs. Skills

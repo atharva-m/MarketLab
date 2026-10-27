@@ -1,6 +1,12 @@
-import { Composition } from "remotion";
+import { Composition, type CalculateMetadataFunction } from "remotion";
 import { MarketLabDemo, SetupPreview, MediaSetupCheck } from "./MarketLabDemo";
+import { ReadmeDemo } from "./ReadmeDemo";
+import type { ReadmeProps } from "./readmeTypes";
 import type { DemoManifest } from "./types";
+
+const readmeLength: CalculateMetadataFunction<ReadmeProps> = ({ props }) => ({
+  durationInFrames: props.timeline?.durationInFrames ?? 150,
+});
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -31,6 +37,19 @@ export const RemotionRoot: React.FC = () => {
         height={1080}
         defaultProps={{ setupFile: null as string | null }}
       />
+      {["ReadmeHero", "ReadmeHighlight"].map((id) => (
+        <Composition
+          key={id}
+          id={id}
+          component={ReadmeDemo}
+          durationInFrames={150}
+          fps={30}
+          width={1920}
+          height={1080}
+          defaultProps={{ timeline: null } as ReadmeProps}
+          calculateMetadata={readmeLength}
+        />
+      ))}
     </>
   );
 };

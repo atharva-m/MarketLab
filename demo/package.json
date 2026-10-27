@@ -32,7 +32,11 @@
     "test": "node --test scripts/manifest.test.mjs scripts/review-session.test.mjs",
     "prepare:media": "node scripts/prepare.mjs",
     "render:local": "node --require ./scripts/local-only.cjs scripts/render.mjs",
-    "review:local": "node --require ./scripts/local-only.cjs scripts/review.mjs"
+    "review:local": "node --require ./scripts/local-only.cjs scripts/review.mjs",
+    "capture:readme": "node scripts/capture-workflow.mjs",
+    "prepare:readme": "node scripts/prepare-readme.mjs",
+    "render:readme": "node --require ./scripts/local-only.cjs scripts/render-readme.mjs",
+    "encode:readme": "node scripts/encode-readme.mjs"
   },
   "overrides": {
     "zod": "4.6.6"

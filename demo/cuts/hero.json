@@ -1,0 +1,26 @@
+{
+  "id": "hero",
+  "loop": true,
+  "zoom": 1.6,
+  "badgeFrom": 2,
+  "clickZoom": { "7": 1.5 },
+  "focus": [{ "from": 56.2, "to": 58.4, "x": 727, "y": 486, "zoom": 1.7 }],
+  "segments": [
+    { "from": 0.5, "to": 6.6, "speed": 1.4 },
+    { "from": 6.6, "to": 10.7, "speed": 1.7 },
+    { "from": 10.7, "to": 15.5, "speed": 3 },
+    { "from": 15.5, "to": 16.6 },
+    { "from": 16.6, "to": 36.4, "speed": 12 },
+    { "from": 36.4, "to": 38.9, "speed": 1.5 },
+    { "from": 38.9, "to": 45.3, "speed": 1.8 },
+    { "from": 45.3, "to": 56.6, "speed": 8 },
+    { "from": 56.6, "to": 60.0, "speed": 1.5 }
+  ],
+  "chapters": [
+    { "at": 0.5, "label": "Pin exact dataset versions" },
+    { "at": 6.6, "label": "Describe a deterministic research run" },
+    { "at": 15.5, "label": "Execute it with a local worker" },
+    { "at": 36.4, "label": "Inspect exact results and charts" },
+    { "at": 45.3, "label": "Read the grounded research memo", "until": 59.5 }
+  ]
+}
