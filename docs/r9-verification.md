@@ -1,6 +1,39 @@
 # R9 verification and actual outcomes
 
-## Current status
+## Publication and hosted CI (October 27, 2026)
+
+Verified R9 was committed and pushed normally to origin/main as
+`46a5896f4410ca0a5cff63e0009ad46a15dd8a09`, with 39 audited source/test/tooling/docs
+files. No raw artifacts, data, archives, credentials, environments, weights or
+generated media were included. Independent publication review found no blocker.
+The initial sandbox staging command was denied index-lock access; the authorized
+escalated staging succeeded. A staged EOF blank line in project-history.md was
+removed by the coder and independently reviewed without changing historical text.
+
+[Hosted run 40586299234](https://github.com/atharva-m/MarketLab/actions/runs/40586299234)
+passed for that exact SHA. Actual logs record:
+
+- Ubuntu: 1012 offline passes, one explicit Windows classic-path preflight skip,
+  200 integration cases deselected (44.46 seconds).
+- Windows: 1013 offline passes, 200 integration cases deselected (67.46 seconds).
+- PostgreSQL: 196 passes and four explicit retained historical-source input skips,
+  1013 cases deselected (74.63 seconds). This is not 200 hosted PostgreSQL passes.
+- Frontend: type/lint/build, 18 component tests and 33 Chromium/Firefox/WebKit cases
+  passed; the browser suite took 50.7 seconds.
+- Existing Docker config/build/start, API smoke, optional Redis outage and owned
+  hosted cleanup steps passed. No R9-related CI failure or repair was needed.
+
+Run/job metadata and completed logs are retained locally under
+artifacts/r9-20261027/r9-publication-first-final-*. Hosted CI does not execute the
+isolated demo project's tests/render or local model/month/cold/GPU/video acceptance.
+The local six-case historical-source gate and every local failed invocation remain
+separate evidence. Original services were not changed during publication.
+
+This observed-outcome documentation is being published separately; its hosted CI
+will be checked for its exact SHA and reported in the session without treating the
+first run as proof for the later commit.
+
+## Local closeout and publication-approval checkpoint (historical)
 
 The user subsequently authorized publication on October 27, 2026: commit/push the
 verified R9 changes, check exact-SHA hosted CI, fix actual R9-related failures
@@ -295,4 +328,5 @@ prescribed coder/reviewer workflow reviewed source, actual acceptance, model/mem
 facts, video mapping, GPU/crop corrections and ownership cleanup. All R1–R8 runtime
 code, application locks, schemas, model/prompt settings and protected artifacts
 remain unchanged. All historical limits and failed invocation identities remain
-explicit. The deliverable remains uncommitted and unpushed.
+explicit. The deliverable was uncommitted and unpushed at local closeout; the later
+authorized publication and exact-SHA hosted results are recorded above.

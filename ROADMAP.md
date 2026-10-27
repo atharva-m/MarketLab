@@ -15,6 +15,24 @@ Publication and hosted CI are pending at this entry; actual outcomes belong in
 [R9 verification](docs/r9-verification.md). Earlier authority/status entries remain
 historical and are superseded only within this explicit publication approval.
 
+## R9 publication and hosted CI verified (October 27, 2026)
+
+Verified R9 was committed and pushed normally to origin/main as
+`46a5896f4410ca0a5cff63e0009ad46a15dd8a09`, containing 39 audited source/test/tooling/
+documentation files and no artifacts/data/archives/credentials/environments/weights
+or generated media. [Hosted CI run 40586299234](https://github.com/atharva-m/MarketLab/actions/runs/40586299234)
+passed for that exact SHA: 1012 offline cases plus one Windows-only skip on Ubuntu,
+1013 offline cases on Windows, 196 real PostgreSQL cases plus four expected
+historical-input skips, frontend 18 component/33 browser cases and type/lint/build,
+and existing Docker build/API/Redis-outage/cleanup checks. No CI fix was needed.
+
+Hosted validation does not rerun local model/month/cold/GPU/video acceptance or
+the isolated demo project checks. Those remain distinct source-linked local
+evidence. All historical failures, QA limits and original-service preservation
+records remain intact. The follow-up documentation-only publication is pending
+at this entry; its exact-SHA CI will be checked separately and reported in the
+session. No original-service deployment or unrelated authority follows.
+
 ## R9 local acceptance complete (October 27, 2026)
 
 R9 was implemented under the approved pre-code [contract](docs/r9-handoff.md),
