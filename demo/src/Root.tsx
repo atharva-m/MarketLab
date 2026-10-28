@@ -1,11 +1,13 @@
 import { Composition, type CalculateMetadataFunction } from "remotion";
 import { MarketLabDemo, SetupPreview, MediaSetupCheck } from "./MarketLabDemo";
-import { ReadmeDemo } from "./ReadmeDemo";
+import { END_FRAMES, ReadmeDemo } from "./ReadmeDemo";
 import type { ReadmeProps } from "./readmeTypes";
 import type { DemoManifest } from "./types";
 
 const readmeLength: CalculateMetadataFunction<ReadmeProps> = ({ props }) => ({
-  durationInFrames: props.timeline?.durationInFrames ?? 150,
+  durationInFrames: props.timeline
+    ? props.timeline.durationInFrames + (props.timeline.loop ? END_FRAMES : 0)
+    : 150,
 });
 
 export const RemotionRoot: React.FC = () => {

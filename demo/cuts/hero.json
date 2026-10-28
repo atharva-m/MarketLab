@@ -1,6 +1,7 @@
 {
   "id": "hero",
   "loop": true,
+  "captionSeconds": 2.5,
   "zoom": 1.6,
   "clickZoom": { "6": 1.5 },
   "focus": [
@@ -25,12 +26,8 @@
   "chapters": [
     { "at": 0.6, "label": "Pin exact dataset versions" },
     { "at": 5.2, "label": "Describe a deterministic research run" },
-    { "at": 15.7, "label": "Execute it with a local worker" },
+    { "at": 16.3, "label": "Execute it with a local worker" },
     { "at": 59.1, "label": "Inspect exact results and charts" },
-    {
-      "at": 69.3,
-      "label": "Read the grounded research memo",
-      "until": 95.4
-    }
+    { "at": 91.6, "label": "Read the grounded research memo" }
   ]
 }

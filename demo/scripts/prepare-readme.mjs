@@ -185,17 +185,21 @@ const focus = (cut.focus ?? []).map((f) => ({
   y: f.y,
   zoom: f.zoom ?? 1.5,
 }));
-const chapters = (cut.chapters ?? []).map((chapter, i, all) => ({
-  from: Math.round(mapClamp(chapter.at)),
-  to: Math.round(
+// A caption ends at the next chapter, its `until`, or after captionSeconds.
+const chapters = (cut.chapters ?? []).map((chapter, i, all) => {
+  const from = Math.round(mapClamp(chapter.at));
+  const to = Math.round(
     chapter.until !== undefined
       ? mapClamp(chapter.until)
       : i + 1 < all.length
         ? mapClamp(all[i + 1].at) - 4
         : durationInFrames - 2,
-  ),
-  label: chapter.label,
-}));
+  );
+  const cap = cut.captionSeconds
+    ? from + Math.round(cut.captionSeconds * fps)
+    : to;
+  return { from, to: Math.min(to, cap), label: chapter.label };
+});
 const navs = events.filter((e) => e.type === "nav");
 const urls = [];
 const opening = navs.filter((e) => e.c <= segments[0].from).pop() ?? navs[0];

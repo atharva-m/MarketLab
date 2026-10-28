@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import {
   AbsoluteFill,
   Easing,
-  Freeze,
   interpolate,
   OffthreadVideo,
   staticFile,
@@ -21,31 +20,21 @@ import {
 import type { ReadmeProps, ReadmeTimeline } from "./readmeTypes";
 
 const font = '"Segoe UI", "Inter", system-ui, sans-serif';
-const accent = "#5fd4ad";
-const LOOP_FRAMES = 14;
+// Colors follow frontend/src/styles.css: black canvas, titanium accents.
+const accent = "#e0eaf4";
+// A looping cut ends on a black card with the UI wordmark, so the restart reads
+// as a new pass rather than a jump.
+export const END_FRAMES = 60;
+const WORDMARK = [
+  "█▀▄▀█ ▄▀█ █▀█ █▄▀ █▀▀ ▀█▀ █   ▄▀█ █▄▄",
+  "█ ▀ █ █▀█ █▀▄ █ █ ██▄  █  █▄▄ █▀█ █▄█",
+].join("\n");
 
 const fade = (frame: number, from: number, to: number, edge = 8) =>
   interpolate(frame, [from, from + edge, to - edge, to], [0, 1, 1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
-
-const loopProgress = (timeline: ReadmeTimeline, frame: number) =>
-  timeline.loop
-    ? interpolate(
-        frame,
-        [
-          timeline.durationInFrames - LOOP_FRAMES,
-          timeline.durationInFrames - 1,
-        ],
-        [0, 1],
-        {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-          easing: Easing.inOut(Easing.cubic),
-        },
-      )
-    : 0;
 
 const Screen = ({ timeline }: { timeline: ReadmeTimeline }) => (
   <OffthreadVideo
@@ -57,10 +46,8 @@ const Screen = ({ timeline }: { timeline: ReadmeTimeline }) => (
 
 const BrowserWindow = ({ timeline }: { timeline: ReadmeTimeline }) => {
   const frame = useCurrentFrame();
-  const loop = loopProgress(timeline, frame);
   let url = timeline.urls.length ? timeline.urls[0].url : "";
-  if (loop < 0.5)
-    for (const entry of timeline.urls) if (entry.f <= frame) url = entry.url;
+  for (const entry of timeline.urls) if (entry.f <= frame) url = entry.url;
   const height = windowHeight(timeline);
   return (
     <div
@@ -72,7 +59,7 @@ const BrowserWindow = ({ timeline }: { timeline: ReadmeTimeline }) => {
         height,
         borderRadius: 14,
         overflow: "hidden",
-        background: "#f3f5f0",
+        background: "#050506",
         boxShadow:
           "0 0 0 1px rgba(255,255,255,0.08), 0 30px 80px rgba(0,0,0,0.45), 0 8px 24px rgba(0,0,0,0.25)",
       }}
@@ -80,8 +67,8 @@ const BrowserWindow = ({ timeline }: { timeline: ReadmeTimeline }) => {
       <div
         style={{
           height: WINDOW.bar,
-          background: "#e4e9e3",
-          borderBottom: "1px solid #d3dad2",
+          background: "#0c0d0f",
+          borderBottom: "1px solid #1d1f24",
           display: "flex",
           alignItems: "center",
           padding: "0 16px",
@@ -105,8 +92,8 @@ const BrowserWindow = ({ timeline }: { timeline: ReadmeTimeline }) => {
             width: 560,
             height: 26,
             borderRadius: 7,
-            background: "#f7f9f6",
-            color: "#55645c",
+            background: "#18191d",
+            color: "#b3b8bf",
             fontFamily: font,
             fontSize: 14,
             display: "flex",
@@ -121,13 +108,6 @@ const BrowserWindow = ({ timeline }: { timeline: ReadmeTimeline }) => {
       </div>
       <div style={{ position: "relative", height: height - WINDOW.bar }}>
         <Screen timeline={timeline} />
-        {loop > 0 && (
-          <div style={{ position: "absolute", inset: 0, opacity: loop }}>
-            <Freeze frame={0}>
-              <Screen timeline={timeline} />
-            </Freeze>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -135,13 +115,7 @@ const BrowserWindow = ({ timeline }: { timeline: ReadmeTimeline }) => {
 
 const Cursor = ({ timeline }: { timeline: ReadmeTimeline }) => {
   const frame = useCurrentFrame();
-  const loop = loopProgress(timeline, frame);
-  const now = pointerAt(timeline.pointer, frame);
-  const first = pointerAt(timeline.pointer, 0);
-  const css = {
-    x: now.x + (first.x - now.x) * loop,
-    y: now.y + (first.y - now.y) * loop,
-  };
+  const css = pointerAt(timeline.pointer, frame);
   const at = toStage(timeline, css.x, css.y);
   const k = contentScale(timeline);
   let press = 1;
@@ -169,8 +143,8 @@ const Cursor = ({ timeline }: { timeline: ReadmeTimeline }) => {
             height: 2,
             borderRadius: "50%",
             transform: `translate(-50%, -50%) scale(${(10 + 26 * Easing.out(Easing.cubic)(p)) * k})`,
-            background: `rgba(95, 212, 173, ${0.28 * (1 - p)})`,
-            boxShadow: `0 0 0 0.12px rgba(47, 143, 111, ${0.9 * (1 - p)})`,
+            background: `rgba(141, 169, 196, ${0.28 * (1 - p)})`,
+            boxShadow: `0 0 0 0.12px rgba(224, 234, 244, ${0.9 * (1 - p)})`,
           }}
         />,
       );
@@ -233,10 +207,10 @@ const Caption = ({ timeline }: { timeline: ReadmeTimeline }) => {
                 gap: 16,
                 padding: "13px 28px 13px 14px",
                 borderRadius: 999,
-                background: "rgba(8, 26, 21, 0.86)",
-                border: "1px solid rgba(95, 212, 173, 0.35)",
+                background: "rgba(12, 13, 15, 0.9)",
+                border: "1px solid #2a2d33",
                 boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
-                color: "#eef5f0",
+                color: "#f5f6f7",
                 fontFamily: font,
                 fontSize: 30,
                 fontWeight: 600,
@@ -249,7 +223,7 @@ const Caption = ({ timeline }: { timeline: ReadmeTimeline }) => {
                   height: 38,
                   borderRadius: 19,
                   background: accent,
-                  color: "#08201a",
+                  color: "#050506",
                   fontSize: 21,
                   fontWeight: 700,
                   display: "flex",
@@ -268,6 +242,38 @@ const Caption = ({ timeline }: { timeline: ReadmeTimeline }) => {
   );
 };
 
+const EndCard = ({ frame }: { frame: number }) => {
+  const opacity = fade(frame, 6, END_FRAMES - 4, 14);
+  return (
+    <AbsoluteFill
+      style={{
+        background: "#050506",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <pre
+        style={{
+          margin: 0,
+          opacity,
+          transform: `scale(${0.96 + 0.04 * opacity})`,
+          fontFamily: '"Geist Mono", Consolas, ui-monospace, monospace',
+          fontSize: 44,
+          lineHeight: 1.05,
+          whiteSpace: "pre",
+          background:
+            "linear-gradient(100deg, #f5f6f7 0%, #bdeeff 18%, #e3d5ff 36%, #ffe3cc 54%, #c7f5e2 72%, #f5f6f7 90%)",
+          WebkitBackgroundClip: "text",
+          backgroundClip: "text",
+          color: "transparent",
+        }}
+      >
+        {WORDMARK}
+      </pre>
+    </AbsoluteFill>
+  );
+};
+
 export const ReadmeDemo = ({ timeline }: ReadmeProps) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -276,19 +282,14 @@ export const ReadmeDemo = ({ timeline }: ReadmeProps) => {
       "Prepare a README timeline with scripts/prepare-readme.mjs",
     );
   const track = useMemo(() => cameraTrack(timeline, fps), [timeline, fps]);
-  // A looping cut eases the camera back to rest so the last frame meets the first.
-  const shot = track[Math.min(frame, track.length - 1)];
-  const loop = loopProgress(timeline, frame);
-  const camera = {
-    s: shot.s + (1 - shot.s) * loop,
-    x: shot.x + (STAGE.width / 2 - shot.x) * loop,
-    y: shot.y + (STAGE.height / 2 - shot.y) * loop,
-  };
+  const end = frame - timeline.durationInFrames;
+  if (end >= 0) return <EndCard frame={end} />;
+  const camera = track[Math.min(frame, track.length - 1)];
   return (
     <AbsoluteFill
       style={{
         background:
-          "radial-gradient(ellipse 80% 70% at 30% 20%, #1d5444 0%, transparent 60%), radial-gradient(ellipse 70% 60% at 85% 90%, #164336 0%, transparent 65%), linear-gradient(140deg, #0b231d 0%, #0f2f27 55%, #081a15 100%)",
+          "radial-gradient(ellipse 80% 70% at 30% 20%, #1b222c 0%, transparent 60%), radial-gradient(ellipse 70% 60% at 85% 90%, #18191d 0%, transparent 65%), linear-gradient(140deg, #0c0d0f 0%, #121316 55%, #050506 100%)",
         overflow: "hidden",
       }}
     >
@@ -305,6 +306,17 @@ export const ReadmeDemo = ({ timeline }: ReadmeProps) => {
         <Cursor timeline={timeline} />
       </div>
       <Caption timeline={timeline} />
+      {timeline.loop && (
+        <AbsoluteFill
+          style={{
+            background: "#050506",
+            opacity: interpolate(end, [-12, -1], [0, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            }),
+          }}
+        />
+      )}
     </AbsoluteFill>
   );
 };
