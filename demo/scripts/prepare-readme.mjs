@@ -1,5 +1,5 @@
 // Turns a capture from capture-workflow.mjs into an edited screen video plus a
-// frame-accurate timeline (pointer, clicks, typing, commands, speed-ups) for
+// frame-accurate timeline (pointer, clicks, typing, scrolls, chapters) for
 // the ReadmeHero/ReadmeHighlight compositions.
 //
 // Usage: node scripts/prepare-readme.mjs <capture dir> <cut.json> <props.json>
@@ -178,13 +178,6 @@ const scrolls = pairs("scroll-start", "scroll-end").map(({ from, to }) => ({
   from,
   to,
 }));
-const commands = pairs("command-start", "command-end").map(
-  ({ from, to, event }) => ({
-    from,
-    to,
-    display: event.display.replace(/([0-9a-f]{8})-[0-9a-f-]{27}/g, "$1…"),
-  }),
-);
 const focus = (cut.focus ?? []).map((f) => ({
   from: mapClamp(f.from),
   to: mapClamp(f.to),
@@ -192,11 +185,6 @@ const focus = (cut.focus ?? []).map((f) => ({
   y: f.y,
   zoom: f.zoom ?? 1.5,
 }));
-// Compressed waits always carry a visible badge; mild pacing of cursor work
-// below the cut's threshold does not.
-const speeds = segments
-  .filter((s) => s.speed >= (cut.badgeFrom ?? 1.05))
-  .map((s) => ({ from: s.start, to: s.start + s.frames, speed: s.speed }));
 const chapters = (cut.chapters ?? []).map((chapter, i, all) => ({
   from: Math.round(mapClamp(chapter.at)),
   to: Math.round(
@@ -228,8 +216,6 @@ const timeline = {
   focus,
   typing,
   scrolls,
-  commands,
-  speeds,
   chapters,
   urls,
 };
@@ -240,7 +226,6 @@ console.log(
     seconds: durationInFrames / fps,
     frames: durationInFrames,
     clicks: clicks.length,
-    commands: commands.length,
     video: timeline.video,
   }),
 );

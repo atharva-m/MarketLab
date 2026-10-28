@@ -1,7 +1,0 @@
-[agents.coder]
-description = "Implement the authorized milestone and address review findings."
-config_file = "agents/coder.toml"
-
-[agents.reviewer]
-description = "Review correctness, security, maintainability and meaningful test coverage without editing files."
-config_file = "agents/reviewer.toml"

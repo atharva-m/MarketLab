@@ -14,8 +14,6 @@ export type ReadmeTimeline = {
   focus: { from: number; to: number; x: number; y: number; zoom: number }[];
   typing: { from: number; to: number }[];
   scrolls: { from: number; to: number }[];
-  commands: { from: number; to: number; display: string }[];
-  speeds: { from: number; to: number; speed: number }[];
   chapters: { from: number; to: number; label: string }[];
   urls: { f: number; url: string }[];
 };

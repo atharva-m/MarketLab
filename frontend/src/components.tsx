@@ -91,6 +91,8 @@ export function useMutation(
   const [saved, setSaved] = useState<Operation | undefined>(() =>
     storedOperation(slot),
   );
+  // A first attempt still in flight shows as validating, not as unconfirmed.
+  const [first, setFirst] = useState("");
   const gate = useRef(false);
   const mounted = useRef(true);
   useEffect(() => {
@@ -125,13 +127,17 @@ export function useMutation(
         window.dispatchEvent(new Event("marketlab-conflict"));
     } finally {
       gate.current = false;
-      if (mounted.current) setBusy(false);
+      if (mounted.current) {
+        setBusy(false);
+        setFirst("");
+      }
     }
   };
   const submit = (body: string) => {
     if (gate.current) return;
     try {
       const op = prepareOperation(slot, path, body);
+      setFirst(op.id);
       void dispatch(op);
     } catch (e) {
       setError((e as Error).message);
@@ -140,7 +146,7 @@ export function useMutation(
   const panel = (
     <>
       <ErrorBox>{error}</ErrorBox>
-      {saved?.state === "uncertain" && (
+      {saved?.state === "uncertain" && saved.id !== first && (
         <section className="notice">
           <strong>The last request has no confirmed outcome</strong>
           <p>

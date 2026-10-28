@@ -30,3 +30,10 @@ frontend/dist/
 frontend/test-results/
 frontend/playwright-report/
 frontend/.vite/
+
+# Local agent configuration, skills and their outputs
+.claude/
+.codex/
+.impeccable/
+.taste-skill/
+skills-lock.json

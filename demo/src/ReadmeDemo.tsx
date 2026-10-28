@@ -21,7 +21,6 @@ import {
 import type { ReadmeProps, ReadmeTimeline } from "./readmeTypes";
 
 const font = '"Segoe UI", "Inter", system-ui, sans-serif';
-const mono = '"Cascadia Code", Consolas, monospace';
 const accent = "#5fd4ad";
 const LOOP_FRAMES = 14;
 
@@ -269,112 +268,6 @@ const Caption = ({ timeline }: { timeline: ReadmeTimeline }) => {
   );
 };
 
-const SpeedBadge = ({ timeline }: { timeline: ReadmeTimeline }) => {
-  const frame = useCurrentFrame();
-  const active = timeline.speeds.find((s) => frame >= s.from && frame < s.to);
-  if (!active) return null;
-  const opacity = fade(frame, active.from, active.to, 5);
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: 40,
-        bottom: 46,
-        opacity,
-        display: "flex",
-        alignItems: "center",
-        gap: 10,
-        padding: "9px 18px",
-        borderRadius: 999,
-        background: "rgba(8, 26, 21, 0.86)",
-        color: "#eef5f0",
-        fontFamily: font,
-        fontSize: 24,
-        fontWeight: 600,
-      }}
-    >
-      <svg width={26} height={18} viewBox="0 0 26 18">
-        <path d="M1 1 L12 9 L1 17 Z M13 1 L24 9 L13 17 Z" fill={accent} />
-      </svg>
-      {active.speed >= 9.5
-        ? Math.round(active.speed)
-        : Math.round(active.speed * 10) / 10}
-      × speed
-    </div>
-  );
-};
-
-const CommandToast = ({ timeline }: { timeline: ReadmeTimeline }) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  return (
-    <>
-      {timeline.commands.map((command) => {
-        const until = command.to + Math.round(0.9 * fps);
-        const opacity = fade(frame, command.from, until, 6);
-        if (opacity <= 0) return null;
-        const done = frame >= command.to;
-        const spin = (frame * 12) % 360;
-        return (
-          <div
-            key={command.from}
-            style={{
-              position: "absolute",
-              right: 40,
-              bottom: 40,
-              width: 580,
-              opacity,
-              transform: `translateY(${(1 - opacity) * 12}px)`,
-              borderRadius: 14,
-              background: "rgba(10, 16, 14, 0.92)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              boxShadow: "0 14px 40px rgba(0,0,0,0.45)",
-              padding: "14px 18px",
-              fontFamily: mono,
-              fontSize: 17,
-              color: "#d7e4dc",
-            }}
-          >
-            <div style={{ lineHeight: 1.45, overflowWrap: "anywhere" }}>
-              <span style={{ color: accent }}>$ </span>
-              {command.display}
-            </div>
-            <div
-              style={{
-                marginTop: 8,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                color: done ? accent : "#9fb3a8",
-                fontFamily: font,
-                fontSize: 17,
-              }}
-            >
-              {done ? (
-                "✓ worker finished"
-              ) : (
-                <>
-                  <span
-                    style={{
-                      width: 14,
-                      height: 14,
-                      borderRadius: 7,
-                      border: "2px solid #44584e",
-                      borderTopColor: accent,
-                      transform: `rotate(${spin}deg)`,
-                    }}
-                  />
-                  local worker running
-                </>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </>
-  );
-};
-
 export const ReadmeDemo = ({ timeline }: ReadmeProps) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -412,8 +305,6 @@ export const ReadmeDemo = ({ timeline }: ReadmeProps) => {
         <Cursor timeline={timeline} />
       </div>
       <Caption timeline={timeline} />
-      <SpeedBadge timeline={timeline} />
-      <CommandToast timeline={timeline} />
     </AbsoluteFill>
   );
 };

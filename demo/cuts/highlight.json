@@ -2,7 +2,6 @@
   "id": "highlight",
   "loop": false,
   "zoom": 1.6,
-  "badgeFrom": 2,
   "clickZoom": { "7": 1.5, "9": 1.4 },
   "focus": [
     { "from": 56.4, "to": 59.8, "x": 727, "y": 486, "zoom": 1.7 },

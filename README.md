@@ -8,11 +8,7 @@ results in your browser, and optionally use a local copilot and grounded researc
 
 ![MarketLab workflow: pin January BTCUSDT dataset versions, submit a deterministic research run, execute it with a local worker, then inspect exact results, a candle chart and the generated memo](docs/assets/marketlab-demo.gif)
 
-Recorded from the real local workspace; waits for local workers are sped up and labelled.
-
-**[Watch or download the full walkthrough · 3 minutes · 1080p](https://github.com/atharva-m/MarketLab/releases/download/marketlab-demo/marketlab-demo.mp4)**
-
-GitHub repository access is required to download the recording.
+Recorded from the real local workspace; waits for local workers are sped up.
 
 ## What you can do
 
