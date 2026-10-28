@@ -55,7 +55,8 @@ const PAGES: Item[] = [
   },
 ];
 const OPEN = "marketlab-command-menu";
-export const openCommandMenu = () => window.dispatchEvent(new Event(OPEN));
+export const openCommandMenu = (opener?: HTMLElement) =>
+  window.dispatchEvent(new CustomEvent(OPEN, { detail: opener }));
 const typing = (target: EventTarget | null) =>
   target instanceof HTMLElement &&
   (target.isContentEditable ||
@@ -115,6 +116,8 @@ export function CommandMenu() {
         e.key.toLowerCase() === "k"
       ) {
         e.preventDefault();
+        if (!document.querySelector(".command"))
+          restore.current = document.activeElement;
         setOpen((v) => !v);
         return;
       }
@@ -134,7 +137,13 @@ export function CommandMenu() {
       } else if (k === "g") leader = Date.now();
       else if (k === "n") navigate("/research/new");
     };
-    const show = () => setOpen(true);
+    const show = (event: Event) => {
+      restore.current =
+        event instanceof CustomEvent && event.detail instanceof HTMLElement
+          ? event.detail
+          : document.activeElement;
+      setOpen(true);
+    };
     window.addEventListener("keydown", key);
     window.addEventListener(OPEN, show);
     return () => {
@@ -144,7 +153,6 @@ export function CommandMenu() {
   }, []);
   useEffect(() => {
     if (!open) return;
-    restore.current = document.activeElement;
     setQuery("");
     setIndex(0);
     const controller = new AbortController();

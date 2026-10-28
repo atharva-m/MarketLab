@@ -770,7 +770,11 @@ export function ResearchDetail({ id }: { id: string }) {
       : null,
   );
   const rows =
-    spec && pinned.rows
+    spec &&
+    pinned.rows &&
+    spec.dataset_versions.every((id: string) =>
+      pinned.rows!.some((row) => row.dataset_version_id === id),
+    )
       ? pinned.rows.filter((v) =>
           spec.dataset_versions.includes(v.dataset_version_id),
         )
@@ -833,6 +837,28 @@ export function ResearchDetail({ id }: { id: string }) {
           {done && (
             <>
               <ErrorBox>{summary.error}</ErrorBox>
+              <ErrorBox>{pinned.error}</ErrorBox>
+              {pinned.error && (
+                <button className="secondary" onClick={pinned.refresh}>
+                  Retry pinned version lookup
+                </button>
+              )}
+              {pinned.truncated && !rows && (
+                <section className="notice">
+                  <p>
+                    More catalog metadata is needed to locate every pinned
+                    version.
+                  </p>
+                  <button disabled={pinned.busy} onClick={pinned.loadMore}>
+                    Load more pinned version metadata
+                  </button>
+                </section>
+              )}
+              {pinned.rows && !pinned.truncated && !rows && !pinned.error && (
+                <ErrorBox>
+                  Some pinned versions are missing from the registered catalog.
+                </ErrorBox>
+              )}
               <CloseChart spec={spec} rows={rows} />
               <BarsChart spec={spec} results={results.data} />
               <ErrorBox>{results.error}</ErrorBox>

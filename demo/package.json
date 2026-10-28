@@ -29,7 +29,7 @@
     "dev": "node --require ./scripts/local-only.cjs ./node_modules/@remotion/cli/remotion-cli.js studio --no-open --port=59130 --ipv4",
     "build": "node --require ./scripts/local-only.cjs ./node_modules/@remotion/cli/remotion-cli.js bundle",
     "lint": "eslint src && tsc",
-    "test": "node --test scripts/manifest.test.mjs scripts/review-session.test.mjs",
+    "test": "node --test scripts/manifest.test.mjs scripts/review-session.test.mjs scripts/readme-camera.test.mjs",
     "prepare:media": "node scripts/prepare.mjs",
     "render:local": "node --require ./scripts/local-only.cjs scripts/render.mjs",
     "review:local": "node --require ./scripts/local-only.cjs scripts/review.mjs",

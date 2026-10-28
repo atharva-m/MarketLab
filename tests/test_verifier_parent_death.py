@@ -1,6 +1,7 @@
 """Production spawned-worker watchdog exits after active or idle parent death."""
 
 import ctypes
+import errno
 import json
 import os
 import signal
@@ -51,27 +52,30 @@ class OwnedProcess:
             if hasattr(os, "pidfd_open"):
                 self.pidfd = os.pidfd_open(pid)
 
-    def _linux_identity(self):
+    def _linux_stat(self):
         try:
-            fields = Path(f"/proc/{self.pid}/stat").read_text().rsplit(")", 1)[1].split()
-            return fields[19]
-        except FileNotFoundError:
-            return None
+            return Path(f"/proc/{self.pid}/stat").read_text().rsplit(")", 1)[1].split()
+        except OSError as error:
+            # A process may exit after /proc/stat opens but before its read.
+            # Linux reports that race as ESRCH rather than a missing path.
+            if error.errno in (errno.ENOENT, errno.ESRCH):
+                return None
+            raise
+
+    def _linux_identity(self):
+        fields = self._linux_stat()
+        return fields[19] if fields is not None else None
 
     def running(self):
         if self.handle is not None:
             code = ctypes.c_uint32()
             assert self.kernel.GetExitCodeProcess(self.handle, ctypes.byref(code))
             return code.value == 259
-        if self._linux_identity() != self.started:
-            return False
-        try:
-            # An exited zombie has no running compute; distinguish it from live
-            # orphan work without promising grandchild reaping by every PID 1.
-            state = Path(f"/proc/{self.pid}/stat").read_text().rsplit(")", 1)[1].split()[0]
-            return state != "Z"
-        except FileNotFoundError:
-            return False
+        # Check identity and state from the same read, including disappearance
+        # while reading. An exited zombie has no running compute; this does not
+        # promise grandchild reaping by every PID 1.
+        fields = self._linux_stat()
+        return fields is not None and fields[19] == self.started and fields[0] != "Z"
 
     def terminate(self):
         if not self.running():
@@ -96,6 +100,63 @@ class OwnedProcess:
             if self.pidfd is not None:
                 os.close(self.pidfd)
                 self.pidfd = None
+
+
+def _linux_process_probe():
+    """Exercise Linux inspection on either CI platform without owning a real PID."""
+    process = object.__new__(OwnedProcess)
+    process.pid = 123
+    process.handle = None
+    process.started = "42"
+    return process
+
+
+@pytest.mark.parametrize("error_number", [errno.ENOENT, errno.ESRCH])
+def test_owned_linux_process_disappearance_during_stat_read(monkeypatch, error_number):
+    error = OSError(error_number, "Owned process exited during stat read")
+
+    def vanished(path):
+        assert path == Path("/proc/123/stat")
+        raise error
+
+    monkeypatch.setattr(Path, "read_text", vanished)
+    process = _linux_process_probe()
+    assert process._linux_identity() is None
+    assert not process.running()
+
+
+@pytest.mark.parametrize("error_number", [errno.EACCES, errno.EPERM, errno.EIO])
+def test_owned_linux_process_inspection_errors_propagate(monkeypatch, error_number):
+    error = OSError(error_number, "Cannot inspect owned process")
+
+    def unreadable(path):
+        assert path == Path("/proc/123/stat")
+        raise error
+
+    monkeypatch.setattr(Path, "read_text", unreadable)
+    process = _linux_process_probe()
+    for inspect in [process._linux_identity, process.running]:
+        with pytest.raises(OSError) as caught:
+            inspect()
+        assert caught.value is error
+
+
+@pytest.mark.parametrize(
+    ("state", "started", "running"), [("S", "42", True), ("Z", "42", False), ("S", "43", False)]
+)
+def test_owned_linux_process_uses_one_identity_and_state_snapshot(
+    monkeypatch, state, started, running
+):
+    reads = []
+
+    def stat(path):
+        reads.append(path)
+        # /proc's comm may itself contain parentheses; starttime is field 22.
+        return "123 (owned (worker)) " + " ".join([state, *(["0"] * 18), started])
+
+    monkeypatch.setattr(Path, "read_text", stat)
+    assert _linux_process_probe().running() is running
+    assert reads == [Path("/proc/123/stat")]
 
 
 @pytest.mark.parametrize("mode", ["active", "idle"])

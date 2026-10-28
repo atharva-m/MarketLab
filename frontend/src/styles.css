@@ -588,6 +588,7 @@ main:focus {
 
 /* Tables */
 .table-wrap {
+  position: relative;
   overflow-x: auto;
   border: 1px solid var(--line);
   border-radius: var(--radius);

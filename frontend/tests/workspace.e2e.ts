@@ -127,11 +127,15 @@ test("research submits pinned spec once and retains responsive validation state"
 }) => {
   let posts = 0;
   let received: any;
+  let accept!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    accept = resolve;
+  });
   await page.route("**/v1/research/runs", async (route) => {
     if (route.request().method() === "POST") {
       posts++;
       received = route.request().postDataJSON();
-      await new Promise((resolve) => setTimeout(resolve, 150));
+      await pending;
       return json(route, { run_id: run, replayed: false }, 201);
     }
     return json(route, { items: [], next_cursor: null });
@@ -145,12 +149,446 @@ test("research submits pinned spec once and retains responsive validation state"
   await expect(
     page.getByText("Validation can take several minutes", { exact: false }),
   ).toBeVisible();
+  await expect(page.getByTestId("submit-research")).toBeDisabled();
+  await expect(
+    page.getByText("The last request has no confirmed outcome"),
+  ).toHaveCount(0);
+  expect(posts).toBe(1);
+  accept();
   await expect(page.getByTestId("run-id")).toHaveText(run);
   expect(posts).toBe(1);
   expect(received.symbols).toEqual(["BTCUSDT", "ETHUSDT"]);
   expect(received.dataset_versions).toEqual([version]);
   expect(received.history_start).toBe("2025-01-01T00:00:00Z");
 });
+
+test("matrix click, shift range, drag and table share exact persisted versions", async ({
+  page,
+}) => {
+  const ids = ["a", "b", "c"].map((c) => c.repeat(64));
+  await page.route("**/v1/datasets?**", (route) =>
+    json(route, {
+      items: ids.map((id, i) => ({
+        dataset_version_id: id,
+        symbol: "BTCUSDT",
+        trade_date: `2025-01-0${i + 1}`,
+        row_count: String(i + 1),
+      })),
+      next_cursor: null,
+    }),
+  );
+  await page.goto("/#/catalog");
+  const cells = page.locator(".matrix button");
+  await expect(cells).toHaveCount(3);
+  await cells.nth(0).click();
+  await cells.nth(2).click({ modifiers: ["Shift"] });
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(3);
+  await expect(
+    page.getByRole("link", { name: "Research with 3 selected" }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(3);
+  await page.getByRole("button", { name: "Clear", exact: true }).click();
+  const start = await cells.nth(0).boundingBox();
+  const end = await cells.nth(2).boundingBox();
+  await page.mouse.move(
+    start!.x + start!.width / 2,
+    start!.y + start!.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(end!.x + end!.width / 2, end!.y + end!.height / 2, {
+    steps: 20,
+  });
+  await page.mouse.up();
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(3);
+  await page.getByRole("link", { name: "Research with 3 selected" }).click();
+  await expect(page.getByTestId("dataset-version-ids")).toHaveValue(
+    ids.join("\n"),
+  );
+});
+
+test("matrix with multiple versions requires explicit table choice", async ({
+  page,
+}) => {
+  const ids = ["a", "b"].map((c) => c.repeat(64));
+  await page.route("**/v1/datasets?**", (route) =>
+    json(route, {
+      items: ids.map((id) => ({
+        dataset_version_id: id,
+        symbol: "BTCUSDT",
+        trade_date: "2025-01-01",
+        row_count: "10",
+      })),
+      next_cursor: null,
+    }),
+  );
+  await page.goto("/#/catalog");
+  await page.getByRole("button", { name: /trades, 2 versions/ }).click();
+  await expect(page.getByRole("checkbox", { checked: true })).toHaveCount(0);
+  await expect(page.getByLabel("Asset", { exact: true })).toHaveValue(
+    "BTCUSDT",
+  );
+  await page.getByRole("checkbox").nth(1).check();
+  await page.getByRole("link", { name: "Research with 1 selected" }).click();
+  await expect(page.getByTestId("dataset-version-ids")).toHaveValue(ids[1]);
+});
+
+test("command menu supports keyboard selection, ID navigation, focus restore and empty search", async ({
+  page,
+}) => {
+  await page.goto("/#/catalog");
+  const jump = page.getByRole("button", { name: "Jump to…" });
+  await jump.click();
+  const input = page.getByRole("combobox", { name: "Search commands" });
+  await expect(input).toBeFocused();
+  await input.fill("nothing-matches");
+  await expect(page.getByText("No matches", { exact: true })).toBeVisible();
+  await input.press("Enter");
+  await expect(
+    page.getByRole("dialog", { name: "Command menu" }),
+  ).toBeVisible();
+  await input.press("Escape");
+  await expect(jump).toBeFocused();
+  await page.keyboard.press("Control+k");
+  await input.fill(run.toUpperCase());
+  await expect(page.getByRole("dialog").getByRole("option")).toHaveCount(3);
+  await input.press("Enter");
+  await expect(page.getByTestId("run-id")).toHaveText(run);
+  await page.keyboard.press("Control+k");
+  await input.fill(version);
+  await input.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Dataset verification" }),
+  ).toBeVisible();
+  await page.keyboard.press("Control+k");
+  await input.fill("new research");
+  await input.press("ArrowDown");
+  await input.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "New research run" }),
+  ).toBeVisible();
+  await page.getByTestId("dataset-version-ids").fill("n");
+  await page.keyboard.press("Control+k");
+  await input.press("Escape");
+  await expect(page.getByTestId("dataset-version-ids")).toBeFocused();
+  await page.keyboard.press("g");
+  await page.keyboard.press("d");
+  expect(page.url()).toContain("#/research/new");
+});
+
+test("catalog continuation exposes versions and assets beyond the first thousand", async ({
+  page,
+}) => {
+  let reads = 0;
+  await page.route("**/v1/datasets?**", (route) => {
+    reads++;
+    const offset = Number(
+      new URL(route.request().url()).searchParams.get("cursor") ?? 0,
+    );
+    const items = Array.from({ length: offset < 1000 ? 100 : 1 }, (_, i) => ({
+      dataset_version_id: (offset + i + 1).toString(16).padStart(64, "0"),
+      symbol: offset < 1000 ? "BTCUSDT" : "ETHUSDT",
+      trade_date: "2025-01-01",
+      row_count: "1",
+    }));
+    return json(route, {
+      items,
+      next_cursor: offset < 1000 ? String(offset + 100) : null,
+    });
+  });
+  await page.goto("/#/catalog");
+  const more = page.getByRole("button", {
+    name: "Load more versions",
+    exact: true,
+  });
+  await expect(more).toBeEnabled();
+  const initialReads = reads;
+  expect(initialReads).toBeGreaterThanOrEqual(10);
+  expect(initialReads).toBeLessThanOrEqual(11); // StrictMode may abort the first page once.
+  await more.click();
+  await expect(more).toHaveCount(0);
+  expect(reads).toBe(initialReads + 1);
+  await page.getByLabel("Asset", { exact: true }).selectOption("ETHUSDT");
+  await expect(page.getByRole("checkbox")).toHaveCount(1);
+  await page.getByRole("checkbox").check();
+  await page.getByRole("link", { name: "Research with 1 selected" }).click();
+  await expect(page.getByTestId("dataset-version-ids")).toHaveValue(
+    (1001).toString(16).padStart(64, "0"),
+  );
+});
+
+test("run retries metadata errors and requires complete pinned metadata before close reads", async ({
+  page,
+}) => {
+  const pinned = "f".repeat(64);
+  let fail = true;
+  let barReads = 0;
+  await page.route(`**/v1/research/runs/${run}`, (route) =>
+    json(route, {
+      run_id: run,
+      state: "succeeded",
+      spec: { ...spec, dataset_versions: [pinned] },
+    }),
+  );
+  await page.route("**/v1/datasets?**", (route) => {
+    if (fail) return json(route, { detail: "Metadata unavailable" }, 422);
+    const offset = Number(
+      new URL(route.request().url()).searchParams.get("cursor") ?? 0,
+    );
+    return json(route, {
+      items: Array.from({ length: offset < 1000 ? 100 : 1 }, (_, i) => ({
+        dataset_version_id:
+          offset < 1000
+            ? (offset + i + 1).toString(16).padStart(64, "0")
+            : pinned,
+        symbol: "BTCUSDT",
+        trade_date: "2025-01-01",
+        row_count: "1",
+      })),
+      next_cursor: offset < 1000 ? String(offset + 100) : null,
+    });
+  });
+  await page.route("**/v1/bars?**", (route) => {
+    barReads++;
+    return json(route, {
+      bars: [],
+      returned_buckets: 0,
+      expected_buckets: 276,
+    });
+  });
+  await page.goto(`/#/runs/${run}`);
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Metadata unavailable" }),
+  ).toBeVisible();
+  fail = false;
+  await page
+    .getByRole("button", { name: "Retry pinned version lookup" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Load more pinned version metadata" }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Load close price" }),
+  ).toBeDisabled();
+  expect(barReads).toBe(0);
+  await page
+    .getByRole("button", { name: "Load more pinned version metadata" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Load close price" }),
+  ).toBeEnabled();
+  await page.getByRole("button", { name: "Load close price" }).click();
+  await expect(page.locator("section.graphite").getByRole("img")).toBeVisible();
+  expect(barReads).toBe(1);
+});
+
+test("queued run only describes and copies a scoped worker command", async ({
+  page,
+}) => {
+  let posts = 0;
+  page.on("request", (request) => {
+    if (request.method() === "POST") posts++;
+  });
+  await page.route(`**/v1/research/runs/${run}`, (route) =>
+    json(route, { run_id: run, state: "queued", spec }),
+  );
+  await page.goto(`/#/runs/${run}`);
+  await expect(
+    page.getByRole("heading", { name: "Waiting for a research worker" }),
+  ).toBeVisible();
+  await expect(page.locator(".worker code")).toContainText(
+    `python -m marketlab.research_cli worker --max-runs 1 --run ${run}`,
+  );
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value: string) => {
+          (window as any).copied = value;
+        },
+      },
+    });
+  });
+  await page.getByRole("button", { name: "Copy command" }).click();
+  expect(await page.evaluate(() => (window as any).copied)).toBe(
+    `python -m marketlab.research_cli worker --max-runs 1 --run ${run}`,
+  );
+  expect(posts).toBe(0);
+});
+
+test("close chart loads only on request and pages bounded pinned windows without bridging gaps", async ({
+  page,
+}) => {
+  const ids = Array.from({ length: 7 }, (_, i) =>
+    (i + 1).toString(16).repeat(64),
+  );
+  const reads: URL[] = [];
+  await page.route(`**/v1/research/runs/${run}`, (route) =>
+    json(route, {
+      run_id: run,
+      state: "succeeded",
+      spec: { ...spec, end: "2025-01-08T00:00:00Z", dataset_versions: ids },
+    }),
+  );
+  await page.route("**/v1/datasets?**", (route) =>
+    json(route, {
+      items: ids.map((id, i) => ({
+        dataset_version_id: id,
+        symbol: "BTCUSDT",
+        trade_date: `2025-01-0${i + 1}`,
+        row_count: "100",
+      })),
+      next_cursor: null,
+    }),
+  );
+  await page.route("**/v1/bars?**", (route) => {
+    const url = new URL(route.request().url());
+    reads.push(url);
+    const start = url.searchParams.get("start")!;
+    const end = url.searchParams.get("end")!;
+    return json(route, {
+      start,
+      end,
+      returned_buckets: 2,
+      expected_buckets: (Date.parse(end) - Date.parse(start)) / 300000,
+      bars: [
+        { start, close: "10.000000000000000001" },
+        {
+          start: new Date(Date.parse(start) + 600000).toISOString(),
+          close: "11.000000000000000001",
+        },
+      ],
+    });
+  });
+  await page.goto(`/#/runs/${run}`);
+  const chart = page.locator("section.graphite");
+  await expect(
+    chart.getByRole("button", { name: "Load close price" }),
+  ).toBeEnabled();
+  expect(reads).toHaveLength(0);
+  await chart.getByRole("button", { name: "Load close price" }).click();
+  await expect(chart.getByRole("img")).toBeVisible();
+  expect(reads).toHaveLength(1);
+  expect(reads[0].searchParams.getAll("version")).toEqual(ids.slice(0, 5));
+  expect(reads[0].searchParams.get("end")).toBe("2025-01-06T00:00:00Z");
+  expect(await chart.locator("path.draw").getAttribute("d")).toMatch(
+    /^M[^LM]+M/,
+  );
+  await chart.getByRole("button", { name: "Next 5 days" }).click();
+  await expect(chart.getByRole("img")).toHaveAttribute("aria-label", /6 Jan/);
+  expect(reads).toHaveLength(2);
+  expect(reads[1].searchParams.getAll("version")).toEqual(ids.slice(5));
+  expect(reads[1].searchParams.get("start")).toBe("2025-01-06T00:00:00Z");
+  await expect(
+    chart.getByRole("button", { name: "Next 5 days" }),
+  ).toBeDisabled();
+});
+
+test("cross-asset closes read sequential pinned assets and preserve exact profile values", async ({
+  page,
+}) => {
+  const ethVersion = "b".repeat(64);
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const symbols: string[] = [];
+  await page.route(`**/v1/research/runs/${run}`, (route) =>
+    json(route, {
+      run_id: run,
+      state: "succeeded",
+      spec: {
+        ...spec,
+        workflow: "cross_asset",
+        symbols: ["BTCUSDT", "ETHUSDT"],
+        dataset_versions: [version, ethVersion],
+      },
+    }),
+  );
+  await page.route("**/v1/datasets?**", (route) =>
+    json(route, {
+      items: [version, ethVersion].map((id, i) => ({
+        dataset_version_id: id,
+        symbol: ["BTCUSDT", "ETHUSDT"][i],
+        trade_date: "2025-01-01",
+        row_count: "1",
+      })),
+      next_cursor: null,
+    }),
+  );
+  await page.route(`**/v1/research/runs/${run}/summary`, (route) =>
+    json(route, {
+      profiles: {
+        BTCUSDT: {
+          vwap: { value: "12345.123456789012345678", observation_count: 2 },
+          trade_count: "9223372036854775807",
+        },
+        ETHUSDT: {
+          vwap: { value: "2345.123456789012345678", observation_count: 2 },
+          trade_count: "9223372036854775806",
+        },
+      },
+    }),
+  );
+  await page.route("**/v1/bars?**", async (route) => {
+    const q = new URL(route.request().url()).searchParams;
+    const symbol = q.get("symbol")!;
+    symbols.push(symbol);
+    expect(q.getAll("version")).toEqual([
+      symbol === "BTCUSDT" ? version : ethVersion,
+    ]);
+    if (symbol === "BTCUSDT") await pending;
+    return json(route, {
+      returned_buckets: 2,
+      expected_buckets: 276,
+      bars: [
+        { start: spec.start, close: "10.000000000000000001" },
+        { start: "2025-01-01T01:05:00Z", close: "11.000000000000000001" },
+      ],
+    });
+  });
+  await page.goto(`/#/runs/${run}`);
+  const numerical = page.getByTestId("numerical-summary");
+  await expect(numerical).toContainText("12345.123456789012345678");
+  await expect(numerical).toContainText("2345.123456789012345678");
+  await expect(numerical).toContainText("9223372036854775806");
+  expect(symbols).toEqual([]);
+  await page.getByRole("button", { name: "Load closes" }).click();
+  await expect.poll(() => symbols).toEqual(["BTCUSDT"]);
+  release();
+  const chart = page.locator("section.graphite");
+  await expect(chart.getByRole("img")).toBeVisible();
+  expect(symbols).toEqual(["BTCUSDT", "ETHUSDT"]);
+  await expect(chart.locator("path.draw")).toHaveCount(2);
+  for (const path of await chart.locator("path.draw").all())
+    expect(await path.getAttribute("d")).not.toMatch(/NaN|Infinity/);
+});
+
+for (const width of [1440, 768, 390]) {
+  test(`redesigned catalog and run fit ${width}px without document overflow`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of ["/catalog", `/runs/${run}`]) {
+      await page.goto(`/#${route}`);
+      await expect(page.locator("main h1")).toBeVisible();
+      if (route === "/catalog")
+        await expect(page.locator(".matrix button")).toBeVisible();
+      else await expect(page.getByTestId("numerical-summary")).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      await expect
+        .poll(() =>
+          page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        )
+        .toBe(true);
+      await expect(
+        page.getByRole("button", { name: "Jump to…" }),
+      ).toBeVisible();
+    }
+  });
+}
 test("lost response survives reload without automatic POST and retries exact key/body", async ({
   page,
 }) => {

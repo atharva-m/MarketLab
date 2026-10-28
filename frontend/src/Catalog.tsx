@@ -55,14 +55,23 @@ export function useCatalogRows(filters: Record<string, string> | null) {
     rows: Data[] | null;
     error: string;
     truncated: boolean;
-  }>({ key: null, rows: null, error: "", truncated: false });
+    cursor: string;
+  }>({ key: null, rows: null, error: "", truncated: false, cursor: "" });
   const [epoch, setEpoch] = useState(0);
+  const [continuation, setContinuation] = useState<{
+    key: string;
+    rows: Data[];
+    cursor: string;
+  } | null>(null);
+  const [busy, setBusy] = useState(false);
   useEffect(() => {
     if (key === null) return;
     const controller = new AbortController();
+    setBusy(true);
     void (async () => {
-      const rows: Data[] = [];
-      let cursor = "";
+      const previous = continuation?.key === key ? continuation : null;
+      const rows: Data[] = [...(previous?.rows ?? [])];
+      let cursor = previous?.cursor ?? "";
       let pages = 0;
       try {
         do {
@@ -76,7 +85,14 @@ export function useCatalogRows(filters: Record<string, string> | null) {
           cursor = data.next_cursor ?? "";
           pages++;
         } while (cursor && pages < 10);
-        setState({ key, rows, error: "", truncated: Boolean(cursor) });
+        if (!controller.signal.aborted)
+          setState({
+            key,
+            rows,
+            error: "",
+            truncated: Boolean(cursor),
+            cursor,
+          });
       } catch (e) {
         if (!controller.signal.aborted)
           setState({
@@ -84,17 +100,28 @@ export function useCatalogRows(filters: Record<string, string> | null) {
             rows: null,
             error: e instanceof Error ? e.message : "Request failed",
             truncated: false,
+            cursor: "",
           });
+      } finally {
+        if (!controller.signal.aborted) setBusy(false);
       }
     })();
     return () => controller.abort();
-  }, [key, epoch]);
+  }, [key, epoch, continuation]);
   const current = state.key === key;
   return {
     rows: current ? state.rows : null,
     error: current ? state.error : "",
     truncated: current && state.truncated,
-    refresh: () => setEpoch((v) => v + 1),
+    busy,
+    loadMore: () => {
+      if (key !== null && current && state.rows && state.cursor && !busy)
+        setContinuation({ key, rows: state.rows, cursor: state.cursor });
+    },
+    refresh: () => {
+      setContinuation(null);
+      setEpoch((v) => v + 1);
+    },
   };
 }
 /** Five equal-count tiers of daily trades; equal counts share a tier. */
@@ -284,9 +311,19 @@ export function Catalog({ inspect = "" }: { inspect?: string }) {
             )}
           </dl>
           {catalog.truncated && (
-            <p className="muted">
-              Showing the first 1,000 versions. Filter by asset to see the rest.
-            </p>
+            <div className="actions">
+              <p className="muted">
+                Showing {rows!.length} versions. More registered versions are
+                available.
+              </p>
+              <button
+                className="secondary"
+                disabled={catalog.busy}
+                onClick={catalog.loadMore}
+              >
+                {catalog.busy ? "Loading more versions…" : "Load more versions"}
+              </button>
+            </div>
           )}
           <section className="section" aria-labelledby="matrix-title">
             <div className="section-head">

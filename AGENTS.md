@@ -1,5 +1,18 @@
 # MarketLab contributor instructions
 
+## UI regression publication authority (October 28, 2026)
+
+The user authorized publishing the independently reviewed UI regression fixes
+and tests described in [verification](docs/ui-regression-verification.md), then
+checking exact-SHA hosted CI and fixing actual failures through coder
+gpt-6.1-sol/high followed by independent read-only reviewer gpt-6-astra/medium.
+Use `740b485` as the known-working baseline for the tested subsequent UI changes.
+The existing README GIF is allowed in Git; other artifacts, data, credentials,
+environments and weights remain excluded. Preserve historical evidence and
+original services. No unrelated deployment or system change is authorized.
+Publication and hosted outcomes are pending at this entry; record observed
+outcomes in the verification report and distinguish them from local acceptance.
+
 ## Current R9 publication authority (October 27, 2026)
 
 After verified local R9 closeout, the user explicitly authorized committing and

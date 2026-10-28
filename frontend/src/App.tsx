@@ -143,7 +143,12 @@ export default function App() {
               </Fragment>
             ))}
           </nav>
-          <button type="button" className="jump" onClick={openCommandMenu}>
+          <button
+            type="button"
+            className="jump"
+            aria-label="Jump to…"
+            onClick={(event) => openCommandMenu(event.currentTarget)}
+          >
             <Icon name="search" size={14} />
             <span>Jump to…</span>
           </button>
