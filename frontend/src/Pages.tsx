@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 import {
-  request,
   researchSpec,
   selectedVersions,
   versionIDs,
@@ -18,9 +17,8 @@ import {
   Tag,
   useMutation,
   VersionInput,
-  WorkerNotice,
 } from "./components";
-import { BarsChart } from "./Chart";
+import { ShortId, WorkerHint } from "./ui";
 export function ResearchForm() {
   const [versions, setVersions] = useState(() =>
     selectedVersions()
@@ -58,11 +56,10 @@ export function ResearchForm() {
   };
   return (
     <>
-      <PageTitle eyebrow="DETERMINISTIC ANALYSIS" title="New research run" />
+      <PageTitle title="New research run" />
       <p className="intro">
-        Pin the data and describe the evaluation. Numerical execution is
-        independent of Ollama; the server verifies coverage and warm-up before
-        accepting a run.
+        Pin exact versions and an evaluation window. The server checks coverage
+        and warm-up before it accepts the run.
       </p>
       <form className="panel form-grid" onSubmit={submit}>
         <label>
@@ -83,10 +80,8 @@ export function ResearchForm() {
               })
             }
           >
-            <option value="market_profile">
-              Market profile · descriptive OHLCV
-            </option>
-            <option value="cross_asset">Cross asset · BTC / ETH</option>
+            <option value="market_profile">Market profile</option>
+            <option value="cross_asset">Cross-asset comparison</option>
             <option value="volatility_cluster">Volatility clusters</option>
           </select>
         </label>
@@ -98,8 +93,8 @@ export function ResearchForm() {
             value={form.symbol}
             onChange={(e) => field("symbol", e.target.value)}
           >
-            <option>BTCUSDT</option>
-            <option>ETHUSDT</option>
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
           </select>
         </label>
         <label>
@@ -129,7 +124,7 @@ export function ResearchForm() {
             onChange={(e) => field("history_start", e.target.value)}
           />
           <small>
-            12 prior bars for profile/cross asset; clusters need 300 prior bars.
+            Profiles and cross-asset runs need 12 prior bars; clusters need 300.
           </small>
         </label>
         <fieldset>
@@ -154,9 +149,8 @@ export function ResearchForm() {
         </fieldset>
         <VersionInput value={versions} onChange={setVersions} />
         <p className="notice wide">
-          Fixed interval: 5 minutes. Cluster rules: volatility quantile 0.9,
-          volume multiple 2, minimum 2 bars. History is separate from
-          evaluation. No missing bars are filled.
+          Five-minute bars. Clusters use volatility quantile 0.9, volume
+          multiple 2 and at least 2 bars. Missing bars are never filled.
         </p>
         <div className="wide">
           <ErrorBox>{validation}</ErrorBox>
@@ -171,9 +165,9 @@ export function ResearchForm() {
               : "Submit research run"}
           </button>
           {mutation.busy && (
-            <p role="status">
-              Validation can take several minutes within the existing 30-minute
-              bound. Keep this page open; a run is queued only after acceptance.
+            <p role="status" className="muted">
+              Validation can take several minutes. Keep this page open; the run
+              is queued once it is accepted.
             </p>
           )}
         </div>
@@ -190,11 +184,10 @@ export function Ingestion() {
   );
   return (
     <>
-      <PageTitle eyebrow="OFFICIAL HISTORICAL DATA" title="Submit ingestion" />
+      <PageTitle title="New ingestion" />
       <p className="intro">
-        Request official January daily archives. Existing workers download,
-        validate and publish immutable versions; a fresh operation rechecks the
-        source.
+        Request official daily trade archives. A worker downloads, verifies and
+        publishes each day as an immutable version.
       </p>
       <form
         className="panel form-grid"
@@ -229,7 +222,10 @@ export function Ingestion() {
             </label>
           ))}
         </fieldset>
-        <p>At most 62 daily jobs. Partial completion remains explicit.</p>
+        <p className="muted">
+          Up to 62 daily jobs per submission. Each day succeeds or fails on its
+          own.
+        </p>
         <label>
           First UTC date (inclusive)
           <input
@@ -272,9 +268,11 @@ export function IngestionDetail({ id }: { id: string }) {
   );
   return (
     <>
-      <PageTitle eyebrow="DURABLE DAILY JOBS" title="Ingestion submission" />
+      <PageTitle
+        title="Ingestion submission"
+        meta={<ShortId value={id} label="submission ID" />}
+      />
       <ErrorBox>{r.error}</ErrorBox>
-      <p className="exact">{id}</p>
       {r.data && (
         <>
           <section className="stat-grid">
@@ -297,13 +295,22 @@ export function IngestionDetail({ id }: { id: string }) {
               </strong>
             </div>
           </section>
-          <WorkerNotice kind="ingestion" />
+          {!r.data.complete && r.data.jobs?.some((j: Data) => active(j)) && (
+            <WorkerHint
+              kind="ingestion"
+              id={id}
+              jobs={r.data.total}
+              since={r.data.submission?.created_at}
+            />
+          )}
           <section className="panel">
             {r.data.jobs.map((job: Data) => (
               <details key={job.job_id}>
                 <summary>
-                  {job.symbol} · {job.trade_date} <Tag value={job.state} /> ·
-                  attempts {job.attempt_count}/3
+                  {job.symbol} · {job.trade_date} <Tag value={job.state} />{" "}
+                  <span className="muted">
+                    attempt {job.attempt_count} of 3
+                  </span>
                 </summary>
                 <DataView data={job} />
               </details>
@@ -314,125 +321,6 @@ export function IngestionDetail({ id }: { id: string }) {
       )}
       <Refresh r={r} />
     </>
-  );
-}
-export function ResearchDetail({ id }: { id: string }) {
-  const info = useResource(`/v1/research/runs/${id}`, active);
-  const done = info.data?.state === "succeeded";
-  const summary = useResource(done ? `/v1/research/runs/${id}/summary` : null);
-  const results = useResource(done ? `/v1/research/runs/${id}/results` : null);
-  return (
-    <>
-      <PageTitle eyebrow="PINNED RESEARCH RUN" title="Numerical results">
-        {info.data && <Tag value={info.data.state} />}
-      </PageTitle>
-      <p className="exact" data-testid="run-id">
-        {id}
-      </p>
-      <ErrorBox>{info.error}</ErrorBox>
-      {info.data && (
-        <>
-          <section className="panel">
-            <h2>{label(info.data.spec?.workflow ?? "Research")}</h2>
-            <DataView
-              data={{
-                evaluation_start: info.data.spec?.start,
-                evaluation_end_exclusive: info.data.spec?.end,
-                history_start: info.data.spec?.history_start,
-                interval: "5m",
-                attempt_count: info.data.attempt_count,
-              }}
-            />
-            {!done && <WorkerNotice kind="research" />}
-            {info.data.error && <ErrorBox>{info.data.error}</ErrorBox>}
-          </section>
-          {done && (
-            <>
-              <section className="panel" data-testid="numerical-summary">
-                <div className="toolbar">
-                  <h2>Verified numerical summary</h2>
-                  {summary.cache && <Tag value={`cache ${summary.cache}`} />}
-                </div>
-                <p className="muted">
-                  Exact backend values · descriptive statistics · ratios are not
-                  percent-scaled · Sharpe proxy is unannualized
-                </p>
-                <ErrorBox>{summary.error}</ErrorBox>
-                {summary.data && <DataView data={summary.data} />}
-              </section>
-              <BarsChart spec={info.data.spec} results={results.data} />
-              <section className="panel">
-                <h2>Complete numerical results</h2>
-                <ErrorBox>{results.error}</ErrorBox>
-                {results.data && <DataView data={results.data} />}
-              </section>
-              <Memo run={id} />
-            </>
-          )}
-          <Provenance
-            data={info.data}
-            title="Pinned specification, attempts and provenance"
-          />
-        </>
-      )}
-      <Refresh r={info} />
-    </>
-  );
-}
-function Memo({ run }: { run: string }) {
-  const r = useResource(`/v1/research/runs/${run}/memo`, active);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const enqueue = async () => {
-    setBusy(true);
-    try {
-      await request(`/v1/research/runs/${run}/memo`, { method: "POST" });
-      setError("");
-      r.refresh();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <section className="panel memo" data-testid="memo-panel">
-      <div className="toolbar">
-        <h2>Generated research memo</h2>
-        {r.data && <Tag value={r.data.status ?? r.data.state} />}
-      </div>
-      <p className="muted">
-        Supplemental generated content. Numerical results remain available
-        independently.
-      </p>
-      <ErrorBox>{error || r.error}</ErrorBox>
-      {r.data?.content && (
-        <div className="memo-content">
-          {String(r.data.content)
-            .split("\n\n")
-            .map((p, i) => (
-              <p key={i}>{p}</p>
-            ))}
-        </div>
-      )}
-      {r.data && ["pending", "running"].includes(r.data.status) && (
-        <WorkerNotice kind="shared inference" />
-      )}
-      {r.data?.error && <ErrorBox>{r.data.error}</ErrorBox>}
-      {!r.data && r.error.toLowerCase().includes("not found") && (
-        <button
-          className="secondary"
-          disabled={busy}
-          onClick={() => void enqueue()}
-        >
-          Enqueue historical memo
-        </button>
-      )}
-      {r.data && (
-        <Provenance data={r.data} title="Memo provenance and hashes" />
-      )}
-      <Refresh r={r} />
-    </section>
   );
 }
 export function CopilotForm() {
@@ -448,14 +336,11 @@ export function CopilotForm() {
   );
   return (
     <>
-      <PageTitle
-        eyebrow="CONSTRAINED LOCAL INTERPRETATION"
-        title="Ask the copilot"
-      />
+      <PageTitle title="Ask the copilot" />
       <p className="intro">
-        Describe one supported January research request. Specify UTC evaluation,
-        history, metrics and assets. Ambiguity can require clarification;
-        validated requests submit through the same research service.
+        Describe one research run in plain words: assets, UTC evaluation window,
+        warm-up history and metrics. The copilot asks when something is unclear
+        and submits the run once it validates.
       </p>
       <form
         className="panel form-grid"
@@ -486,7 +371,7 @@ export function CopilotForm() {
             placeholder="Describe your research question…"
           />
           <small>
-            At most 8,192 UTF-8 bytes; no trading recommendations or forecasts.
+            Up to 8,192 bytes. Forecasts and trading advice are out of scope.
           </small>
         </label>
         <VersionInput value={versions} onChange={setVersions} />
@@ -523,22 +408,27 @@ export function CopilotDetail({ id }: { id: string }) {
   return (
     <>
       <PageTitle
-        eyebrow="INTERPRETATION AND CLARIFICATION"
         title="Copilot request"
+        meta={<ShortId value={id} label="request ID" />}
       >
         {r.data && <Tag value={r.data.outcome ?? r.data.state} />}
       </PageTitle>
-      <p className="exact">{id}</p>
       <ErrorBox>{r.error}</ErrorBox>
       {r.data && (
         <>
           <section className="panel">
             <p>{r.data.body?.text}</p>
             <p>Revision {revision} of at most 5 clarification rounds</p>
-            {active(r.data) && <WorkerNotice kind="shared inference" />}
+            {active(r.data) && (
+              <WorkerHint
+                kind="copilot"
+                id={id}
+                running={r.data.state === "running"}
+              />
+            )}
             {r.data.outcome === "submitted" && (
               <p className="notice">
-                Validated interpretation submitted a queued numerical run.{" "}
+                The request validated and queued a research run.{" "}
                 <a href={`#/runs/${r.data.run_id}`}>Open research run</a>
               </p>
             )}
@@ -549,9 +439,9 @@ export function CopilotDetail({ id }: { id: string }) {
                   <Tag value={item.outcome ?? item.state} />
                 </h2>
                 {item.questions && <DataView data={item.questions} />}
-                <p>
-                  Attempts {item.attempt_count}/3 · reserved model calls{" "}
-                  {item.model_calls}/2
+                <p className="muted">
+                  Attempt {item.attempt_count} of 3, model calls{" "}
+                  {item.model_calls} of 2
                 </p>
                 {item.error && <ErrorBox>{item.error}</ErrorBox>}
               </article>
@@ -589,15 +479,12 @@ export function CopilotDetail({ id }: { id: string }) {
                 Refresh current revision
               </button>
               <p className="muted">
-                A stale revision is rejected. Refresh before answering again;
-                existing answers are never overwritten.
+                Answers apply to the current revision only. If the request
+                changed, refresh before answering.
               </p>
             </form>
           )}
-          <Provenance
-            data={r.data}
-            title="Request, revisions, exact versions and provenance"
-          />
+          <Provenance data={r.data} />
         </>
       )}
       <Refresh r={r} />

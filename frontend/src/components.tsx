@@ -9,6 +9,7 @@ import {
   type Operation,
 } from "./client";
 import { useResource } from "./hooks";
+import { Exact, ShortId } from "./ui";
 export const active = (d: Data) =>
   ["queued", "running", "retry_wait", "pending"].includes(d.state ?? d.status);
 export const label = (s: string) => s.replaceAll("_", " ");
@@ -22,13 +23,23 @@ export function ErrorBox({ children }: { children: ReactNode }) {
 export function Tag({ value }: { value: unknown }) {
   return (
     <span className={`tag ${String(value)}`}>
-      {label(String(value ?? "unknown"))}
+      <span className="tag-text">{label(String(value ?? "unknown"))}</span>
     </span>
   );
 }
-export function DataView({ data }: { data: unknown }) {
+export function DataView({
+  data,
+  name = "value",
+}: {
+  data: unknown;
+  name?: string;
+}) {
   if (data === null || data === undefined)
-    return <span className="muted">Unavailable (null)</span>;
+    return <span className="null-value">Unavailable (null)</span>;
+  if (typeof data === "string" && /^[a-f0-9]{64}$/.test(data))
+    return <ShortId value={data} label={label(name)} />;
+  if (typeof data === "string" && /^-?\d+\.\d+$/.test(data))
+    return <Exact value={data} />;
   if (typeof data !== "object")
     return <span className="exact">{String(data)}</span>;
   if (Array.isArray(data))
@@ -36,7 +47,7 @@ export function DataView({ data }: { data: unknown }) {
       <div className="array">
         {data.map((v, i) => (
           <div key={i}>
-            <DataView data={v} />
+            <DataView data={v} name={name} />
           </div>
         ))}
       </div>
@@ -44,12 +55,12 @@ export function DataView({ data }: { data: unknown }) {
       <span className="muted">None</span>
     );
   return (
-    <dl className="data-grid">
+    <dl className="kv">
       {Object.entries(data).map(([k, v]) => (
         <div key={k}>
           <dt>{label(k)}</dt>
           <dd>
-            <DataView data={v} />
+            <DataView data={v} name={k} />
           </dd>
         </div>
       ))}
@@ -58,7 +69,7 @@ export function DataView({ data }: { data: unknown }) {
 }
 export function Provenance({
   data,
-  title = "Provenance and exact payload",
+  title = "Raw JSON",
 }: {
   data: unknown;
   title?: string;
@@ -131,12 +142,11 @@ export function useMutation(
       <ErrorBox>{error}</ErrorBox>
       {saved?.state === "uncertain" && (
         <section className="notice">
-          <strong>Saved operation — outcome unresolved</strong>
+          <strong>The last request has no confirmed outcome</strong>
           <p>
-            The API may have accepted this request. Retrying uses the same key
-            and exact body. Reloading never submits automatically.
+            The server may already have accepted it. Retrying sends the same key
+            and body, so it cannot be applied twice. Reloading never resends it.
           </p>
-          <code>{saved.key}</code>
           <Provenance
             data={saved.body ? JSON.parse(saved.body) : {}}
             title="Review saved request"
@@ -190,50 +200,43 @@ export function VersionInput({
         required
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Paste explicit full version IDs or select them in Catalog."
+        placeholder="Paste full version IDs, or select days in Datasets."
       />
       <small>
-        One full ID per line; include history and evaluation days. No latest
-        version is selected automatically.
+        One ID per line. Include warm-up and evaluation days; nothing is
+        selected automatically.
       </small>
     </label>
   );
 }
 export function PageTitle({
-  eyebrow,
   title,
+  meta,
   children,
 }: {
-  eyebrow: string;
   title: string;
+  meta?: ReactNode;
   children?: ReactNode;
 }) {
   return (
     <header className="page-title">
       <div>
-        <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
+        {meta}
       </div>
       {children}
     </header>
-  );
-}
-export function WorkerNotice({ kind }: { kind: string }) {
-  return (
-    <p className="notice">
-      Queued work requires an operator-started bounded {kind} CLI worker. This
-      workspace submits and inspects jobs; worker availability and completion
-      time are not inferred.
-    </p>
   );
 }
 export function Refresh({ r }: { r: ReturnType<typeof useResource> }) {
   return (
     <div className="actions">
       <button className="secondary" onClick={r.refresh}>
-        {r.stopped ? "Resume monitoring" : "Refresh"}
+        {r.stopped ? "Resume updates" : "Refresh"}
       </button>
-      {r.stopped && <span>Automatic monitoring paused after 30 minutes.</span>}
+      {r.stopped && (
+        <span className="muted">Updates paused after 30 minutes.</span>
+      )}
     </div>
   );
 }

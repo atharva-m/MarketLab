@@ -271,7 +271,7 @@ test("chart is explicit and bounded, gaps stay empty, edits hide old plot", asyn
   await page.getByRole("button", { name: "Load chart window" }).click();
   await expect(page.getByRole("img")).toBeVisible();
   await expect(
-    page.getByText("2 observed / 3 expected · 1 empty buckets"),
+    page.getByText("2 of 3 buckets observed, 1 empty"),
   ).toBeVisible();
   expect(reads).toBe(1);
   await expect(page.locator("svg g")).toHaveCount(2);
@@ -434,7 +434,7 @@ test("ingestion submission and job discovery show partial daily outcomes", async
   await expect(
     page.getByText("Source integrity failure", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "Jobs & submissions" }).click();
+  await page.getByRole("link", { name: "Jobs", exact: true }).click();
   await page.getByLabel("Job family").selectOption("ingestion");
   await page.getByRole("link").filter({ hasText: submission }).click();
   await expect(
