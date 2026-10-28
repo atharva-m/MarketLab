@@ -183,3 +183,30 @@ with the reviewed test overlay in an isolated container; its retained real
 process evidence is ignored under `ci-fix-linux-evidence` in the evidence folder.
 The exact owned container was removed after ownership checks; original services
 remained untouched. Hosted validation of the publication remains pending.
+
+### Publication and hosted CI verified
+
+The 13 audited source/test/CI/documentation files were committed and pushed
+normally to `origin/main` as
+`a21a1992fa46ca6c10429b2632873ab33f889e42`.
+[Hosted run 40721875385](https://github.com/atharva-m/MarketLab/actions/runs/40721875385)
+completed successfully for that exact SHA. All five jobs passed:
+
+- Ubuntu quality: 1,020 offline passes and one expected Windows-only skip.
+- Windows quality: 1,021 offline passes.
+- Integration: 196 real PostgreSQL passes and four expected historical-input
+  skips, plus Docker build/migration/API/healthy Redis/outage/cleanup checks.
+- Frontend: typecheck, lint, 20 component tests, production build and 66 browser
+  tests across Chromium, Firefox and WebKit on Ubuntu.
+- Demo: locked clean install, lint/type checks and all 11 tests on Node 24.
+
+No further repair was needed in this published run. The earlier failed run and
+cancelled Windows job remain historical failures; the later pass does not erase
+them. Hosted job logs are retained under the ignored evidence directory with
+`hosted-` names. The commit contains no artifacts, data, credentials, environments
+or weights. The pre-existing README GIF was unchanged. Original local services
+were not deployed or modified.
+
+This documentation-only outcome update is published separately. Its exact-SHA
+hosted CI outcome will be checked and reported in the session; the success above
+applies specifically to `a21a1992fa46ca6c10429b2632873ab33f889e42`.

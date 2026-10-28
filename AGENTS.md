@@ -13,6 +13,21 @@ original services. No unrelated deployment or system change is authorized.
 Publication and hosted outcomes are pending at this entry; record observed
 outcomes in the verification report and distinguish them from local acceptance.
 
+### UI regression publication verified
+
+The reviewed changes and test-only Linux process-disappearance race repair were
+published to origin/main as `a21a1992fa46ca6c10429b2632873ab33f889e42`.
+[Hosted run 40721875385](https://github.com/atharva-m/MarketLab/actions/runs/40721875385)
+passed all five jobs: Ubuntu 1,020 offline plus one Windows-only skip, Windows
+1,021 offline, PostgreSQL 196 plus four expected historical-input skips,
+frontend 20 component/66 browser cases and build/quality, demo 11 tests and
+lint/types, and existing Docker/API/Redis-outage/cleanup checks. No further fix
+was needed. The prior HEAD's failed Ubuntu and cancelled Windows run remain
+recorded in the verification report. No excluded files were committed; the
+existing GIF was unchanged. The documentation-only outcome publication is pending
+at this entry; check its exact-SHA CI separately. No original-service rollout or
+unrelated authority follows.
+
 ## Current R9 publication authority (October 27, 2026)
 
 After verified local R9 closeout, the user explicitly authorized committing and
