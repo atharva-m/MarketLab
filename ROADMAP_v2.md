@@ -8,7 +8,9 @@ official/CSV/Parquet campaign and six native process-crash boundaries passed.
 Final preservation, ownership-checked cleanup and independent closeout review
 passed with no unresolved blocking finding. Phase 2 is complete.
 The user subsequently authorized publication of verified Phase 2 and exact-SHA
-hosted CI; both are pending. Phases 3-9 remain proposed and require separate
+hosted CI. The first published run failed its integration disk-capacity gate;
+a scoped CI-only capacity repair and exact-SHA rerun are pending. Local acceptance
+remains complete. Phases 3-9 remain proposed and require separate
 authorization. No infrastructure purchase or original-service deployment is
 authorized. Historical ROADMAP.md and milestone contracts remain intact.
 

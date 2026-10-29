@@ -5,6 +5,16 @@ read-only closeout review passed with no unresolved blocking finding. The pre-co
 contract and scoped repairs were reviewed before their implementation.
 Date: October 28, 2026 (America/New_York).
 
+Publication supplement: the first exact-SHA hosted run exposed insufficient
+runner disk capacity for unchanged native 4 GiB output plus 20 GiB scratch
+admission. The authorized CI-only repair prepares unused toolchain space on the
+guarded disposable GitHub-hosted Linux integration runner and requires measured
+50 GiB free on both temporary and checkout filesystems after image/service setup:
+the divergent-orphan test retains a failed 24 GiB reservation while admitting a
+second attempt, plus source bytes and headroom. Neither charge is reset.
+Production thresholds, application source and actual CLI tests remain unchanged;
+see the [failure and prospective repair record](phase-2-verification.md#first-published-ci-failure-and-pre-repair-scope).
+
 ## 1. Authority and phase boundary
 
 The user approved the detailed Binance-only Phase 2 proposal: update contributor

@@ -74,6 +74,19 @@ jobs:
       MARKETLAB_DATABASE_URL: postgresql+psycopg://marketlab:marketlab@127.0.0.1:5432/marketlab
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare hosted runner capacity for native v2 admission
+        shell: bash
+        run: |
+          if [[ "${GITHUB_ACTIONS:-}" != "true" || "${RUNNER_ENVIRONMENT:-}" != "github-hosted" || "${RUNNER_OS:-}" != "Linux" ]]; then
+            echo "Storage preparation requires a disposable GitHub-hosted Linux runner" >&2
+            exit 1
+          fi
+          df -h -- "$GITHUB_WORKSPACE" "${TMPDIR:-/tmp}"
+          # This job uses Python/PostgreSQL/Docker, not these bundled toolchains.
+          sudo rm -rf -- \
+            /usr/local/lib/android /usr/share/dotnet /usr/local/.ghcup /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /usr/lib/jvm /usr/share/swift /opt/microsoft/powershell
+          df -h -- "$GITHUB_WORKSPACE" "${TMPDIR:-/tmp}"
       - uses: astral-sh/setup-uv@v6
         with:
           version: '0.13.5'
@@ -83,6 +96,30 @@ jobs:
       - run: docker compose config --quiet
       - run: docker compose build api
       - run: docker compose up --detach --wait --wait-timeout 120
+      - name: Verify native v2 storage prerequisite after Docker setup
+        shell: bash
+        run: |
+          uv run --locked python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import shutil
+          import tempfile
+
+          # The orphan-rejection test retains one failed 24 GiB attempt while
+          # admitting a second 24 GiB attempt; preserve both reservations.
+          required = 50 * 1024**3
+          checks = []
+          for label, path in (
+              ("pytest_temp", Path(tempfile.gettempdir()).resolve()),
+              ("checkout", Path(os.environ["GITHUB_WORKSPACE"]).resolve()),
+          ):
+              free = shutil.disk_usage(path).free
+              checks.append({"filesystem": label, "path": str(path), "free_bytes": free, "required_bytes": required})
+          print(json.dumps(checks), flush=True)
+          if any(check["free_bytes"] < required for check in checks):
+              raise SystemExit("Native v2 tests require 50 GiB free on both temporary and checkout filesystems; no tests were skipped")
+          PY
       - run: uv run --locked pytest -m integration
       - run: uv run --locked python scripts/api_smoke.py
       - name: Verify Redis initially healthy

@@ -17,6 +17,20 @@ weights or generated media; the existing README GIF remains unchanged. No
 original-service rollout, Phase 3 implementation, dependency/model change or
 unrelated repair/system change is authorized. Earlier entries below remain intact.
 
+### First Phase 2 publication and scoped CI capacity repair
+
+Phase 2 was published as `eca54fe68af357ca16973aa98ed7dcca3a266973`.
+[Hosted run 40799181424](https://github.com/atharva-m/MarketLab/actions/runs/40799181424)
+failed integration with 205 passes, six failures and four historical-input skips;
+the other four jobs passed. The unchanged native reservation guard rejected the
+runner's insufficient free disk capacity. The authorized repair is CI-only:
+guarded exact unused-toolchain removal on the disposable GitHub-hosted Linux
+integration runner, then measured 50 GiB free prerequisites for both temporary
+and checkout filesystems after Docker setup, covering two overlapping retained
+24 GiB attempt reservations plus source/headroom. No local/system cleanup, production
+limit reduction, test bypass or runtime change follows. Independent review and
+new exact-SHA hosted validation remain pending; preserve the failed run.
+
 ## Current authority: v2 Phase 2 Binance ingestion (October 28, 2026)
 
 The user approved the detailed Binance-only Phase 2 scope: contributor/roadmap

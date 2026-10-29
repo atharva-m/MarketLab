@@ -4,8 +4,10 @@ Date: October 28, 2026 (America/New_York).
 Status: PHASE 2 COMPLETE; final-source quality/backend/package, actual-data,
 native crash, preservation, owned cleanup and independent read-only closeout
 review passed. No unresolved blocking finding remains.
-Verified Phase 2 publication is now authorized; commit/push and exact-SHA hosted
-CI are pending. Local acceptance remains separate from hosted outcomes.
+Verified Phase 2 was published as `eca54fe68af357ca16973aa98ed7dcca3a266973`.
+Its exact-SHA hosted integration job failed six capacity-dependent tests;
+four other jobs passed. The scoped CI capacity repair and rerun are pending.
+Local acceptance remains separate from hosted outcomes.
 Earlier checkpoint statuses below are retained as historical observations.
 
 ## Authority and source
@@ -360,3 +362,66 @@ README GIF. Protected artifacts, original services, historical failures and loca
 measurement limits remain preserved. No original rollout, Phase 3 or unrelated
 repair authority follows. Actual commit identity and hosted outcomes will be
 recorded separately when observed.
+
+
+## First published CI failure and pre-repair scope
+
+[Hosted run 40799181424](https://github.com/atharva-m/MarketLab/actions/runs/40799181424)
+for published SHA `eca54fe68af357ca16973aa98ed7dcca3a266973` FAILED its integration
+job: 205 passed, six failed and four historical-input cases skipped. The other
+four jobs succeeded. The first failure was the native `capacity_exceeded` guard
+when reserving 20 GiB scratch after the 4 GiB output reservation. The remaining
+five failures followed unsuccessful ingestion; their assertions did not reach
+the intended publication/readback/race checks. The retained job log is
+`artifacts/v2-phase2-publication-20261028/check-two-job-123202896931.log`.
+
+Read-only diagnosis found each v2 test already uses a separate disposable schema
+and temporary storage root. Production reservation accounting is unchanged: the
+runner lacks the required free space after the image build, rather than sharing
+stale reservations between tests. Before editing the workflow, the scoped repair
+is fixed as follows: only the integration job's GitHub-hosted Linux runner may
+remove its exact unused preinstalled Android, .NET, Haskell, CodeQL, Java, Swift
+and PowerShell toolchain paths.
+Explicit runner/environment guards prevent this preparation on local or
+self-hosted machines. After the Docker build and service startup, measure both
+the actual Python temporary filesystem and checkout filesystem and require at
+least 50 GiB free on each before running the unchanged integration suite. The
+divergent-orphan test retains the first failed attempt's 24 GiB reservation while
+admitting another 24 GiB attempt, plus source bytes and headroom. Both conservative
+charges remain intact. Review rejected the initial 26 GiB prerequisite before
+publication because it covered only one attempt; its local syntax/guard check
+remains retained as an earlier insufficient-design checkpoint.
+Insufficient capacity must fail as an explicit prerequisite, not skip tests.
+
+No application/runtime, production limit, dependency/lock, CLI subprocess,
+database isolation or test assertion changes are part of this repair. The exact
+directory preparation is for the disposable hosted runner only and is not
+executed against local/original services. Independent review and a new exact-SHA
+hosted run are required; the failed published run remains failed.
+
+The final preparation allowlist is exactly `/usr/local/lib/android`,
+`/usr/share/dotnet`, `/usr/local/.ghcup`, `/opt/ghc`,
+`/opt/hostedtoolcache/CodeQL`, `/usr/lib/jvm`, `/usr/share/swift` and
+`/opt/microsoft/powershell`. GitHub's published
+[runner image installers](https://github.com/actions/runner-images/tree/main/images/ubuntu/scripts/build)
+identify the bundled toolchain locations; absent paths are harmless, and the
+measured post-build capacity remains the definitive prerequisite. No toolcache
+root, Docker state or dynamic path is removed.
+
+Local repair checks passed YAML parsing, Bash syntax for both new steps, exact
+allowlist inspection and a structural comparison proving every earlier workflow
+step/job unchanged. Guard-only execution rejected missing/self-hosted/non-Linux
+environments before any cleanup and accepted only the GitHub-hosted Linux shape.
+Prerequisite-only checks accepted exactly 50 GiB and rejected one byte below it
+on either filesystem; these are labeled synthetic prerequisite checks, not
+application capacity acceptance. Actual local temporary/checkout free space also
+passed the prerequisite. The first sandbox Bash check failed on MSYS object
+permissions; the approved elevated read-only rerun passed. No cleanup command was
+executed locally. Evidence is `ci-capacity-local-check-final.json`, retaining the
+earlier insufficient 26 GiB check separately.
+
+Only the workflow and four authority/roadmap/contract/verification documents
+changed. Application execution fingerprint remains
+`a15d48bee4a5e19ac44a35bef2fbf54656f573341bfeaf87f95fc5bcee00ebba` and lock
+SHA remains `730f02bec94d1f824a2cadf74f60cf5dcc246faa55004d5d060b92931224618f`.
+Independent review and actual hosted capacity/results remain pending.
