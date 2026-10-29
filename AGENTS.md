@@ -1,5 +1,108 @@
 # MarketLab contributor instructions
 
+## Current Phase 2 publication authority (October 28, 2026)
+
+After verified local Phase 2 closeout, the user authorized committing and pushing
+the reviewed Phase 2 changes, checking hosted CI for the exact published SHA,
+fixing actual Phase 2 CI failures through coder gpt-6.1-sol/high followed by
+independent read-only reviewer gpt-6-astra/medium, and documenting observed
+outcomes in [Phase 2 verification](docs/v2/phase-2-verification.md). This supersedes
+earlier no-commit/push restrictions solely for this verified publication scope.
+Publication and exact-SHA hosted CI are pending at this entry; local acceptance
+does not establish hosted success.
+
+Preserve historical authority, failed invocations, all protected artifacts and
+original services. Never commit artifacts/data/archives/credentials/environments/
+weights or generated media; the existing README GIF remains unchanged. No
+original-service rollout, Phase 3 implementation, dependency/model change or
+unrelated repair/system change is authorized. Earlier entries below remain intact.
+
+## Current authority: v2 Phase 2 Binance ingestion (October 28, 2026)
+
+The user approved the detailed Binance-only Phase 2 scope: contributor/roadmap
+updates, the [pre-code contract](docs/v2/phase-2-ingestion.md) BEFORE code,
+implementation through coder gpt-6.1-sol/high then independent read-only reviewer
+gpt-6-astra/medium, full actual acceptance and honest outcome documentation in
+[verification](docs/v2/phase-2-verification.md). Implementation, final-source
+quality/backend/package suites, the actual official/CSV/Parquet campaign and all
+six native process-crash boundaries have passed. All seven database dump/restores,
+ownership-checked cleanup and final preservation passed: 287/287 protected hashes
+and all five original/README service fields/endpoints matched. Independent
+gpt-6-astra/medium closeout review found no unresolved blocking finding. Phase 2
+is complete; no commit/push, hosted CI, original rollout or Phase 3 authority follows.
+Earlier documentation-only restrictions
+are superseded solely within this approved Phase 2 scope.
+
+Allow Binance spot registry, forward v2 ingestion/catalog tables, CLI/shared
+services, generalized official daily archives, Binance-origin canonical CSV/
+Parquet staging/imports, bounded durable jobs, verified immutable publication and
+union reads. Preserve legacy constraints/records/artifact IDs/interfaces, all
+historical outcomes, protected files and original services. Reuse locked Python
+3.13 dependencies. No UI/public v2 HTTP endpoints, generalized numerical/model/
+prompt behavior, dependency/lock change, original-service configuration/rollout,
+object storage, multi-host/auth/scheduling/GC or Phases 3-9 implementation.
+
+Use owned disposable resources, fresh source/protected/service snapshots and
+backup/migration rehearsal before operations; inspect ownership before cleanup.
+Mandatory actual days: BTCUSDT 2025-02-01 and SOLUSDT 2025-03-01, plus canonical
+CSV/Parquet equivalence from that verified SOLUSDT day. Missing prerequisites or
+failed gates leave Phase 2 incomplete. Retain failed invocations; distinguish
+lower-limit fixtures from actual capacity acceptance. Raw artifacts/data/
+credentials/environments/weights stay outside Git. NO COMMIT OR PUSH, original
+rollout, purchases or unrelated system changes. Historical entries below remain
+intact and are superseded only within this explicit Phase 2 approval.
+
+## Current scope amendment: Binance spot only (October 28, 2026)
+
+The user confined the platform to Binance and authorized documentation changes
+only. ROADMAP_v2.md and the current docs/v2 contract/matrices now scope all future
+phases to Binance spot instruments/dates. Canonical CSV/Parquet imports remain
+Binance-origin only, with supplied quote quantity and retained source/conversion
+provenance; other venues, derivatives, synthetic venue aliases and alternate
+provider fallback are excluded. The independent legacy synthetic `/trades`
+subsystem remains preserved under its historical contract.
+
+The non-Binance acceptance requirement is superseded by Binance-origin CSV and
+Parquet equivalence against the checksum-verified SOLUSDT 2025-03-01 archive.
+Prior Phase 1 documents are preserved under docs/v2/history/pre-binance-20261028;
+prior review/hash/service receipts describe that earlier document revision and
+observed interval. Preserve all historical authority and actual outcomes below.
+This amendment grants no Phase 2 implementation, runtime/schema/dependency/model/
+service changes, tests, data downloads, provisioning, commit, push or deployment.
+Use coder gpt-6.1-sol/high then independent read-only reviewer gpt-6-astra/medium
+for the documentation amendment; record actual amendment checks/review separately.
+
+## Current authority: v2 Phase 1 contracts (October 28, 2026)
+
+The user approved implementing the detailed Phase 1 scope from
+[ROADMAP_v2.md](ROADMAP_v2.md): documentation, read-only source/service inspection,
+protected hash inventory, compatibility and acceptance matrices, and independent
+review through coder gpt-6.1-sol/high then read-only reviewer gpt-6-astra/medium.
+Write the normative contract in docs/v2/phase-1-contract.md and record actual
+outcomes in docs/v2/phase-1-verification.md. Update this authority and v2 roadmap
+status only within that documentation scope. Preserve all historical authority,
+evidence and contracts; earlier completed milestones are not new runtime authority.
+
+NO application code, schema/migration, dependency/lock, model/prompt or service
+configuration changes. No test suites, data downloads, model invocations,
+provisioning, service restarts, original-service modifications, commit or push.
+Phases 2-9 remain proposals requiring separate authorization. Document future
+interfaces as planned, never already implemented. Raw inventories/evidence stay
+under ignored artifacts; no credentials, datasets, weights or generated media
+belong in this publication scope. Any unavailable evidence must remain an explicit
+gap; documentation completion is not runtime acceptance or continuous uptime proof.
+
+Phase 1 documentation is complete: the coder authored the contract and matrices;
+independent reviewer gpt-6-astra/medium found no unresolved blocking finding after
+design corrections. Current-interval preservation matched 287/287 protected files
+and 222/222 tracked non-documentation files; all five observed containers matched
+their captured fields. Relative document links and JSON example syntax passed
+static inspection. No application tests or runtime acceptance were run. The older
+R9 baseline differs in two already-committed frontend dependency files; this is
+recorded rather than claimed as full historical equality. See the verification
+report for evidence and limitations. No Phase 2 implementation or publication
+authority follows.
+
 ## UI regression publication authority (October 28, 2026)
 
 The user authorized publishing the independently reviewed UI regression fixes

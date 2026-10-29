@@ -4,6 +4,13 @@ MarketLab is a local workspace for reproducible research on January 2025 Binance
 BTCUSDT and ETHUSDT trades. Ingest verified data, run deterministic analyses, explore
 results in your browser, and optionally use a local copilot and grounded research memos.
 
+The explicit [v2 ingestion CLI](docs/v2/phase-2-usage.md) adds registered Binance
+spot instruments/dates and Binance-origin CSV/Parquet imports with durable jobs
+and a unified read catalog. Generalized browser research remains a later phase;
+the existing workspace and research commands below retain their January BTC/ETH
+scope. See [Phase 2 verification](docs/v2/phase-2-verification.md) for actual
+acceptance status and limits.
+
 ## Demo
 
 ![MarketLab workflow: pin January BTCUSDT dataset versions, submit a deterministic research run, execute it with a local worker, then inspect exact results, a candle chart and the generated memo](docs/assets/marketlab-demo.gif)

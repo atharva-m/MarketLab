@@ -26,6 +26,11 @@ class _Parser(argparse.ArgumentParser):
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    if arguments and arguments[0] == "v2":
+        from marketlab.datasets.v2.cli import main as v2_main
+
+        return v2_main(arguments[1:])
     parser = _Parser(description="Publish/inspect R1 immutable historical datasets")
     commands = parser.add_subparsers(dest="command", required=True, parser_class=_Parser)
     ingest = commands.add_parser("ingest")
