@@ -4,13 +4,13 @@ Date: October 28, 2026 (America/New_York).
 Status: PHASE 2 COMPLETE; final-source quality/backend/package, actual-data,
 native crash, preservation, owned cleanup and independent read-only closeout
 review passed. No unresolved blocking finding remains.
-Verified Phase 2 was published as `eca54fe68af357ca16973aa98ed7dcca3a266973`.
-Its exact-SHA hosted integration job failed six capacity-dependent tests;
-four other jobs passed. The first capacity repair's hosted run then failed the
-50 GiB prerequisite before tests, as did the second and third capacity repairs.
-A fourth scoped capacity repair is independently reviewed; publication and
-hosted results are pending.
-Local acceptance remains separate from hosted outcomes.
+Verified Phase 2 and its reviewed hosted capacity repair were published as
+`be3f7aeb3539c1db7386401b6553fe918337d6a7`.
+[Hosted run 40811497336](https://github.com/atharva-m/MarketLab/actions/runs/40811497336)
+passed all five jobs for that exact SHA. All four earlier failed published runs
+remain recorded below. The documentation-only outcome publication is pending;
+its exact-SHA CI will be reported separately in the session. Local actual-data
+acceptance remains separate from hosted outcomes.
 Earlier checkpoint statuses below are retained as historical observations.
 
 ## Authority and source
@@ -556,3 +556,55 @@ indentation and failed; its separate receipt is retained. The corrected comparis
 passed without workflow changes. Independent read-only `gpt-6-astra/medium` review
 approved the executable repair with no unresolved blocking finding. Its
 publication and actual hosted outcome remain pending; no local cleanup ran.
+
+
+## Published Phase 2: exact-SHA hosted CI passed
+
+Reviewed Phase 2 plus the final hosted capacity preparation was published as
+`be3f7aeb3539c1db7386401b6553fe918337d6a7`.
+[Hosted run 40811497336](https://github.com/atharva-m/MarketLab/actions/runs/40811497336)
+PASSED all five jobs for that exact SHA:
+
+| Hosted job | Observed outcome |
+| --- | --- |
+| Ubuntu quality | Locked lint/format/mypy; 1,144 offline passes, two skips |
+| Windows quality | Locked lint/format/mypy; 1,145 offline passes, one skip |
+| PostgreSQL/package | 211 real PostgreSQL passes, four historical-input skips in 79.97s; Docker build, API, optional Redis outage and cleanup passed |
+| Frontend | Type/lint/build, 20 component tests and 66 browser cases passed |
+| Demo | Lint and all 11 tests passed |
+
+The offline retained resource fixture is deliberately excluded from Git and
+skipped on both hosted platforms; Ubuntu also skips the Windows classic-path
+preflight. These counts are not 1,146 hosted passes per platform. The four
+PostgreSQL historical-input skips remain distinct from the 215-case unskipped
+local real-PG pass. The successful integration runner measured 55,642,251,264
+bytes free on both actual temporary and checkout filesystems against the unchanged
+53,687,091,200-byte prerequisite. Real CLI, publication/race and orphan checks
+ran after capacity admission; no production threshold or test assertion was
+lowered. Hosted receipts/logs are `fourth-fix-three-*` under the ignored
+publication evidence root.
+
+The original `eca54fe68af357ca16973aa98ed7dcca3a266973` run 40799181424 and capacity
+repair runs 40800454123 (`dfb31c1e44157bc362c1c78789cfc5fefd2f69d4`), 40801456648
+(`f8b4c2ee41dd6ca81d8b498f55bfecb3ef576624`) and 40806821029
+(`da80db3c7600beef6804f71d840f162bc2005766`) remain FAILED as recorded above.
+This pass resolves their current publication blocker without rewriting them.
+
+`artifacts/v2-phase2-20261028/publication-ci-passed.json` independently confirms
+all 287 protected hashes match and all five original/README service comparisons
+have zero mismatches, with endpoint observations retained. This is observed
+preservation, not continuous uptime or an original-service rollout. Application
+execution fingerprint remains `a15d48bee4a5e19ac44a35bef2fbf54656f573341bfeaf87f95fc5bcee00ebba`;
+production source, model/prompt, dependencies/locks and original configuration did
+not change in these CI repairs. No excluded artifacts/data/archives/credentials/
+environments/weights or new generated media were published; the existing README
+GIF stayed unchanged.
+
+Hosted CI does not rerun the local official BTC/SOL downloads, independent raw-ZIP
+oracles, full canonical CSV/Parquet actual-data campaign, native crash campaign,
+contained memory measurement or 62-version retained legacy readback. Those remain
+separate source-linked local evidence with their stated measurement limits and
+historical failures. No Phase 3, original rollout or unrelated authority follows.
+The follow-up documentation-only commit/push is authorized and pending at this
+checkpoint. Its exact-SHA CI will be checked and reported in the session rather
+than creating a self-referential outcome-update loop.

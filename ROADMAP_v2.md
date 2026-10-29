@@ -8,11 +8,12 @@ official/CSV/Parquet campaign and six native process-crash boundaries passed.
 Final preservation, ownership-checked cleanup and independent closeout review
 passed with no unresolved blocking finding. Phase 2 is complete.
 The user subsequently authorized publication of verified Phase 2 and exact-SHA
-hosted CI. The first published run failed its integration disk-capacity gate;
-three scoped CI-only repairs then failed the explicit 50 GiB prerequisite.
-A fourth independently reviewed measured-directory capacity repair and exact-SHA
-rerun are pending. Local acceptance
-remains complete. Phases 3-9 remain proposed and require separate
+hosted CI. Published SHA `be3f7aeb3539c1db7386401b6553fe918337d6a7` passed
+[all five hosted jobs](https://github.com/atharva-m/MarketLab/actions/runs/40811497336)
+after reviewed CI-only capacity repairs; all four earlier failed runs remain in
+verification. Local actual-data acceptance remains distinct from hosted checks.
+The documentation-only outcome publication is pending; its exact-SHA CI will be
+reported in the session. Phases 3-9 remain proposed and require separate
 authorization. No infrastructure purchase or original-service deployment is
 authorized. Historical ROADMAP.md and milestone contracts remain intact.
 

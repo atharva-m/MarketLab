@@ -59,6 +59,29 @@ SDK roots listed in verification to the guarded literal inventory/removal list.
 The 50 GiB requirement, runtime and actual tests remain unchanged. Preserve all
 four failed published runs; review and new exact-SHA validation remain pending.
 
+
+### Phase 2 publication and hosted CI verified
+
+Verified Phase 2 and the reviewed CI-only capacity repairs were published as
+`be3f7aeb3539c1db7386401b6553fe918337d6a7`.
+[Hosted run 40811497336](https://github.com/atharva-m/MarketLab/actions/runs/40811497336)
+passed all five jobs for that exact SHA: Ubuntu 1,144 offline/two skips, Windows
+1,145 offline/one skip, 211 real PostgreSQL/four historical-input skips, frontend
+20 components/66 browser cases, demo 11, locked quality/build and existing
+Docker/API/Redis-outage/cleanup checks. Both platforms skip the ignored retained
+resource fixture; Ubuntu also skips the Windows-only classic-path preflight.
+The unchanged 50 GiB prerequisite passed with 55,642,251,264 bytes free on each
+measured filesystem. Production limits and actual CLI/test assertions stayed
+unchanged. Preserve all four earlier failed published runs and their diagnostics.
+
+Final publication-interval preservation matched all 287 protected hashes and all
+five original/README service fields/endpoints. Hosted validation remains distinct
+from local actual-data/oracle/crash/resource/retained-legacy acceptance. Historical
+failures and measurement/uptime/clock limits remain explicit. No excluded files
+were published and the existing README GIF was unchanged. The documentation-only
+outcome publication is pending at this entry; check its exact-SHA CI separately
+and report it in the session. No Phase 3 or original-service rollout is authorized.
+
 ## Current authority: v2 Phase 2 Binance ingestion (October 28, 2026)
 
 The user approved the detailed Binance-only Phase 2 scope: contributor/roadmap
