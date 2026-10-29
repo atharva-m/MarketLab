@@ -6,7 +6,8 @@ native crash, preservation, owned cleanup and independent read-only closeout
 review passed. No unresolved blocking finding remains.
 Verified Phase 2 was published as `eca54fe68af357ca16973aa98ed7dcca3a266973`.
 Its exact-SHA hosted integration job failed six capacity-dependent tests;
-four other jobs passed. The scoped CI capacity repair and rerun are pending.
+four other jobs passed. The first capacity repair's hosted run then failed the
+50 GiB prerequisite before tests. A further scoped CI capacity repair is pending.
 Local acceptance remains separate from hosted outcomes.
 Earlier checkpoint statuses below are retained as historical observations.
 
@@ -425,3 +426,53 @@ changed. Application execution fingerprint remains
 `a15d48bee4a5e19ac44a35bef2fbf54656f573341bfeaf87f95fc5bcee00ebba` and lock
 SHA remains `730f02bec94d1f824a2cadf74f60cf5dcc246faa55004d5d060b92931224618f`.
 Independent review and actual hosted capacity/results remain pending.
+
+
+## First capacity repair: hosted prerequisite still failed
+
+[Hosted run 40800454123](https://github.com/atharva-m/MarketLab/actions/runs/40800454123)
+for `dfb31c1e44157bc362c1c78789cfc5fefd2f69d4` FAILED the explicit 50 GiB
+prerequisite before integration tests. All four other jobs passed. Its Ubuntu
+26.04 image `20261025.179` reported 72 GiB total: 15 GiB available initially,
+42 GiB after removing the eight reviewed unused bundles, and exactly
+41,474,846,720 bytes free after Docker setup on both measured filesystems versus
+53,687,091,200 bytes required. This is a failed capacity prerequisite, not a
+successful integration invocation or another six-test failure. The retained log
+is `fix-two-job-123207035813.log` under the publication evidence root; completed
+run/job receipts are `fix-complete-run.json` and `fix-complete-jobs.json`.
+
+Before the next workflow edit, the further scoped repair extends the exact
+unused-bundle allowlist by seven roots: `/opt/hostedtoolcache/Python`,
+`/opt/hostedtoolcache/PyPy`, `/opt/hostedtoolcache/go`,
+`/opt/hostedtoolcache/Ruby`, `/usr/lib/llvm-20`, `/usr/lib/llvm-21` and
+`/usr/lib/llvm-22`. GitHub's published
+[Ubuntu 26.04 toolset](https://github.com/actions/runner-images/blob/main/images/ubuntu/toolsets/toolset-2604.json)
+identifies those cached languages and Clang versions. Its
+[toolcache installer](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/Install-Toolset.ps1)
+places named languages beneath `/opt/hostedtoolcache`. This is evidence of
+bundled tools, not a claim about their unmeasured per-directory sizes in the
+failed runner. The next hosted invocation will log byte-size inventories of
+all fifteen exact candidates before removal and remeasure free space afterward.
+
+The failed run independently downloaded uv-managed CPython 3.13.17 before the
+locked sync; its uv installation is under `/opt/hostedtoolcache/uv`. Both that
+path and the entire toolcache root remain untouched, along with Node, system
+Python, Docker and container runtimes. The application image uses its own Python
+interpreter. Host cached Python/PyPy/Go/Ruby and the three unused Clang toolchains
+are not required by this Python/PostgreSQL/Docker integration job. No glob,
+dynamic target, package-manager cleanup or local command execution is introduced.
+The 50 GiB prerequisite, production thresholds, conservative reservation records
+and all actual test/CLI assertions remain unchanged. Independent review and
+measured hosted results are required again; both earlier failed runs remain failed.
+
+The further repair passed YAML parsing, both Bash syntax checks, all four
+hosted-environment guard cases and exact equality between the fifteen inventory
+and removal paths. Structural comparison confirmed the 50 GiB prerequisite,
+all integration tests and every other workflow step/job unchanged. No inventory
+or cleanup command ran locally. Receipt `ci-capacity-second-local-check.json`
+pins workflow SHA-256
+`d81655238e0429dd25fa2463a69d77487cde52a89c39db57b87afa9d5f190068`.
+Independent read-only `gpt-6-astra/medium` review approved that executable repair
+with no unresolved blocking finding. Its publication and actual hosted capacity/
+integration outcome remain pending; bundled-tool sizes remain unmeasured until
+the next hosted inventory.

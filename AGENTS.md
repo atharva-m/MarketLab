@@ -31,6 +31,15 @@ and checkout filesystems after Docker setup, covering two overlapping retained
 limit reduction, test bypass or runtime change follows. Independent review and
 new exact-SHA hosted validation remain pending; preserve the failed run.
 
+The first CI repair SHA `dfb31c1e44157bc362c1c78789cfc5fefd2f69d4` also failed its
+hosted integration prerequisite in run 40800454123: 41,474,846,720 bytes free was
+below the unchanged 50 GiB requirement. All four other jobs passed. A further
+reviewed CI-only extension may remove the seven exact unused cached-language/
+Clang bundle roots recorded prospectively in Phase 2 verification, with byte
+inventories before removal. uv-managed Python, uv, Node, system Python, Docker,
+application source/limits/tests and original services remain unchanged. The
+next review and exact-SHA hosted outcome are pending; retain both failed runs.
+
 ## Current authority: v2 Phase 2 Binance ingestion (October 28, 2026)
 
 The user approved the detailed Binance-only Phase 2 scope: contributor/roadmap
