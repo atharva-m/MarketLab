@@ -40,6 +40,17 @@ inventories before removal. uv-managed Python, uv, Node, system Python, Docker,
 application source/limits/tests and original services remain unchanged. The
 next review and exact-SHA hosted outcome are pending; retain both failed runs.
 
+
+The second capacity repair `f8b4c2ee41dd6ca81d8b498f55bfecb3ef576624` failed its
+hosted prerequisite in run 40801456648 with 46,776,778,752 bytes free against
+50 GiB required. Four other jobs passed. The independently reviewed third
+CI-only repair adds exact verified unused browser/Rust roots and six preloaded
+image tags recorded in verification, with identity/size inspection and non-force
+tag removal before the application build. No prune, pull, arbitrary cleanup,
+production/test limit change or local cleanup is authorized. Preserve all three
+failed runs. The third repair's publication and exact-SHA hosted outcome are pending.
+
+
 ## Current authority: v2 Phase 2 Binance ingestion (October 28, 2026)
 
 The user approved the detailed Binance-only Phase 2 scope: contributor/roadmap

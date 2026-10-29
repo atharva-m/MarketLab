@@ -7,7 +7,9 @@ review passed. No unresolved blocking finding remains.
 Verified Phase 2 was published as `eca54fe68af357ca16973aa98ed7dcca3a266973`.
 Its exact-SHA hosted integration job failed six capacity-dependent tests;
 four other jobs passed. The first capacity repair's hosted run then failed the
-50 GiB prerequisite before tests. A further scoped CI capacity repair is pending.
+50 GiB prerequisite before tests, as did the second capacity repair. A third
+scoped CI capacity repair is independently reviewed; publication and hosted
+results are pending.
 Local acceptance remains separate from hosted outcomes.
 Earlier checkpoint statuses below are retained as historical observations.
 
@@ -476,3 +478,43 @@ Independent read-only `gpt-6-astra/medium` review approved that executable repai
 with no unresolved blocking finding. Its publication and actual hosted capacity/
 integration outcome remain pending; bundled-tool sizes remain unmeasured until
 the next hosted inventory.
+
+
+## Second capacity repair failed; third repair scope
+
+[Run 40801456648](https://github.com/atharva-m/MarketLab/actions/runs/40801456648)
+for `f8b4c2ee41dd6ca81d8b498f55bfecb3ef576624` FAILED its capacity prerequisite:
+46,776,778,752 bytes free versus 53,687,091,200 required. All four other jobs
+passed. Exact candidate sizes remain in `second-fix-complete-job-123210281948.log`.
+The additional cached-language/Clang removal was insufficient; integration tests
+did not run. Preserve this and both earlier failed runs.
+
+Before the third workflow repair, its scope is fixed: retain the fifteen reviewed
+roots and add `/usr/local/share/chromium`, `/usr/lib/firefox`, `/etc/skel/.rustup`,
+`/etc/skel/.cargo`, `/home/runner/.rustup` and `/home/runner/.cargo`. GitHub's
+[Chromium installer](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/install-google-chrome.sh),
+[Firefox installer](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/install-firefox.sh)
+and [Rust installer](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/install-rust.sh)
+identify browser and Rust skeleton locations; the runner-home Rust copies are
+literal SDK paths, not computed targets. This integration job uses no browser or
+Rust compiler. Measure each present exact candidate before removal.
+
+GitHub's [Docker installer](https://github.com/actions/runner-images/blob/main/images/ubuntu/scripts/build/install-docker.sh)
+preloads six unrelated exact tags: `ghcr.io/dependabot/dependabot-updater-core:latest`,
+`ghcr.io/github/gh-aw-mcpg:latest`, `ghcr.io/github/gh-aw-firewall/agent:latest`,
+`ghcr.io/github/gh-aw-firewall/api-proxy:latest`,
+`ghcr.io/github/gh-aw-firewall/squid:latest` and
+`ghcr.io/github/github-mcp-server:latest`. Before the application's build, only
+on the guarded disposable hosted runner, inspect each present tag's ID/size/tags
+and remove that exact tag without force. No image pull, prune, arbitrary image ID,
+container or volume removal is introduced. Docker disk inventories before/after
+and bounded read-only top-directory diagnostics on prerequisite failure retain
+remaining shortfall evidence. Azure CLI paths are omitted without verified path
+evidence. Neither additional bundle sizes nor reclaimable image bytes are claimed
+before the next hosted measurement.
+
+Production source, 50 GiB prerequisite, conservative reservations and actual tests
+remain unchanged. No local cleanup runs. The read-only installer-name lookup was
+aborted while awaiting tool approval; two subsequent workspace apply_patch calls
+hung and were aborted without edits. Native workspace text edits are used instead.
+Independent review and new exact-SHA hosted capacity/integration results are pending.
