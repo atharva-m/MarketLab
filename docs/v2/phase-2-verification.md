@@ -7,9 +7,9 @@ review passed. No unresolved blocking finding remains.
 Verified Phase 2 was published as `eca54fe68af357ca16973aa98ed7dcca3a266973`.
 Its exact-SHA hosted integration job failed six capacity-dependent tests;
 four other jobs passed. The first capacity repair's hosted run then failed the
-50 GiB prerequisite before tests, as did the second capacity repair. A third
-scoped CI capacity repair is independently reviewed; publication and hosted
-results are pending.
+50 GiB prerequisite before tests, as did the second and third capacity repairs.
+A fourth scoped capacity repair is independently reviewed; publication and
+hosted results are pending.
 Local acceptance remains separate from hosted outcomes.
 Earlier checkpoint statuses below are retained as historical observations.
 
@@ -518,3 +518,41 @@ remain unchanged. No local cleanup runs. The read-only installer-name lookup was
 aborted while awaiting tool approval; two subsequent workspace apply_patch calls
 hung and were aborted without edits. Native workspace text edits are used instead.
 Independent review and new exact-SHA hosted capacity/integration results are pending.
+
+
+## Third capacity repair: measured near miss and fourth repair scope
+
+[Hosted run 40806821029](https://github.com/atharva-m/MarketLab/actions/runs/40806821029)
+for `da80db3c7600beef6804f71d840f162bc2005766` FAILED its explicit capacity
+prerequisite before integration tests: 52,738,031,616 bytes free versus
+53,687,091,200 required, a shortfall of 949,059,584 bytes. Four other jobs passed.
+This fourth failed published run remains failed; integration acceptance is not
+claimed. Log `third-fix-complete-job-123227648698.log` retains actual diagnostics.
+
+Before the fourth workflow repair, its scope adds only four measured unused roots:
+`/usr/lib/google-cloud-sdk` (886,489,088 bytes), `/opt/az` (700,432,384 bytes),
+`/opt/microsoft/msedge` (705,482,752 bytes), and `/usr/share/az_15.6.1`
+(611,815,424 bytes). Their combined measured directory size is 2,904,219,648 bytes;
+actual reclaimed filesystem space remains to be measured by the next hosted run.
+These cloud/browser SDKs are unused by the integration job. Add each literal path
+to both the existing pre-removal inventory and exact removal command, retaining
+the environment guards, six inspected/non-force image tag removals and bounded
+read-only failure diagnostics. No new research, dynamic path or broader cleanup
+is introduced. The 50 GiB gate, runtime, production limits, reservation accounting
+and actual tests remain unchanged. Independent review and hosted results are
+pending; no local inventory or cleanup command is run.
+
+
+The fourth repair passed YAML parsing, Python prerequisite compilation, equality
+of all 25 inventory/removal roots, and structural comparison proving the only
+executable delta is those four measured paths. All other steps, tests, inspected
+image tags, guards and the 50 GiB prerequisite remain unchanged. Application
+execution/lock identities remain `a15d48bee4a5e19ac44a35bef2fbf54656f573341bfeaf87f95fc5bcee00ebba`/
+`730f02bec94d1f824a2cadf74f60cf5dcc246faa55004d5d060b92931224618f`.
+Receipt `ci-capacity-fourth-local-check.json` pins workflow SHA-256
+`ee29a4f15cfe79ba9327b259fe715c60019d127e9e3f5635a691d10404b3f7f9`.
+An initial comparison harness used raw YAML indentation rather than parsed block
+indentation and failed; its separate receipt is retained. The corrected comparison
+passed without workflow changes. Independent read-only `gpt-6-astra/medium` review
+approved the executable repair with no unresolved blocking finding. Its
+publication and actual hosted outcome remain pending; no local cleanup ran.

@@ -90,7 +90,8 @@ jobs:
             /opt/hostedtoolcache/go /opt/hostedtoolcache/Ruby \
             /usr/lib/llvm-20 /usr/lib/llvm-21 /usr/lib/llvm-22 \
             /usr/local/share/chromium /usr/lib/firefox \
-            /etc/skel/.rustup /etc/skel/.cargo /home/runner/.rustup /home/runner/.cargo; do
+            /etc/skel/.rustup /etc/skel/.cargo /home/runner/.rustup /home/runner/.cargo \
+            /usr/lib/google-cloud-sdk /opt/az /opt/microsoft/msedge /usr/share/az_15.6.1; do
             if [[ -e "$bundle" || -L "$bundle" ]]; then
               sudo du -x -B1 -s -- "$bundle"
             fi
@@ -103,7 +104,8 @@ jobs:
             /opt/hostedtoolcache/go /opt/hostedtoolcache/Ruby \
             /usr/lib/llvm-20 /usr/lib/llvm-21 /usr/lib/llvm-22 \
             /usr/local/share/chromium /usr/lib/firefox \
-            /etc/skel/.rustup /etc/skel/.cargo /home/runner/.rustup /home/runner/.cargo
+            /etc/skel/.rustup /etc/skel/.cargo /home/runner/.rustup /home/runner/.cargo \
+            /usr/lib/google-cloud-sdk /opt/az /opt/microsoft/msedge /usr/share/az_15.6.1
           docker system df -v
           for image in \
             ghcr.io/dependabot/dependabot-updater-core:latest \

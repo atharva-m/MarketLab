@@ -51,6 +51,14 @@ production/test limit change or local cleanup is authorized. Preserve all three
 failed runs. The third repair's publication and exact-SHA hosted outcome are pending.
 
 
+
+The third capacity repair `da80db3c7600beef6804f71d840f162bc2005766` failed run
+40806821029's explicit prerequisite by 949,059,584 bytes; four other jobs passed.
+A fourth CI-only repair may add only the four actual measured unused cloud/browser
+SDK roots listed in verification to the guarded literal inventory/removal list.
+The 50 GiB requirement, runtime and actual tests remain unchanged. Preserve all
+four failed published runs; review and new exact-SHA validation remain pending.
+
 ## Current authority: v2 Phase 2 Binance ingestion (October 28, 2026)
 
 The user approved the detailed Binance-only Phase 2 scope: contributor/roadmap

@@ -9,8 +9,9 @@ Final preservation, ownership-checked cleanup and independent closeout review
 passed with no unresolved blocking finding. Phase 2 is complete.
 The user subsequently authorized publication of verified Phase 2 and exact-SHA
 hosted CI. The first published run failed its integration disk-capacity gate;
-two scoped CI-only repairs then failed the explicit 50 GiB prerequisite.
-A third independently reviewed capacity repair and exact-SHA rerun are pending. Local acceptance
+three scoped CI-only repairs then failed the explicit 50 GiB prerequisite.
+A fourth independently reviewed measured-directory capacity repair and exact-SHA
+rerun are pending. Local acceptance
 remains complete. Phases 3-9 remain proposed and require separate
 authorization. No infrastructure purchase or original-service deployment is
 authorized. Historical ROADMAP.md and milestone contracts remain intact.
