@@ -49,6 +49,29 @@ image; every other argument, plan, birth, ancestry, executable and drain check
 remains mandatory. Both failures remain preserved. Independent rereview and a
 new exact-SHA hosted outcome are pending; no application/limit/test-skip change.
 
+### Phase 3 publication and hosted CI verified
+
+Verified Phase 3 and both independently reviewed harness-only Windows CI repairs
+were published as `387dc8202b8716926b079fa9c4c56231b53bc6e0`.
+[Hosted run 40998640447](https://github.com/atharva-m/MarketLab/actions/runs/40998640447)
+passed all five jobs for that exact SHA: Ubuntu 1,322 offline/two skips, Windows
+1,323 offline/one skip, 231 real PostgreSQL/four historical-input skips, frontend
+20 components/66 browser cases, demo 11, locked quality/build and existing
+Docker/API/Redis-outage/cleanup checks. Both platforms skip the ignored retained
+resource fixture; Ubuntu also skips the Windows-only classic-path preflight.
+The unchanged 50 GiB prerequisite passed with 133,756,026,880 bytes free on each
+measured filesystem. No application/dependency/limit/workflow/test-eligibility
+change was used for these repairs. Preserve both failed published runs and the
+explicitly inferred, unobserved hosted argv diagnosis.
+
+Publication-interval preservation matched all 287 protected hashes and all five
+original/README service fields/endpoints; the existing README GIF stayed exact.
+No excluded files were published. Hosted checks remain distinct from retained
+local actual-data/oracle/crash/cache/cold acceptance and its original raw source
+fingerprints. The documentation-only outcome publication is pending at this
+entry; check its exact-SHA CI separately and report it in the session. No Phase 4,
+original-service rollout or unrelated authority follows.
+
 ## Current authority: v2 Phase 3 numerical research (October 29, 2026)
 
 The user approved the detailed Phase 3 proposal and authorized contributor/roadmap

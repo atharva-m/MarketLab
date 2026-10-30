@@ -1,6 +1,6 @@
 # V2 Phase 3: actual verification
 
-Status: PHASE 3 LOCAL COMPLETE; independent closeout review passed. October 29, 2026
+Status: PHASE 3 LOCAL COMPLETE; publication and exact-SHA hosted CI verified. October 29, 2026
 (America/New_York). The user approved the detailed Phase 3 proposal and explicitly
 prohibited commit/push. Authority is recorded in [AGENTS](../../AGENTS.md) and
 the [pre-code contract](phase-3-research.md). Earlier Phase 2 outcomes remain in
@@ -809,3 +809,54 @@ Application code, dependencies, production limits, CI workflow, original service
 and test eligibility are unchanged. Independent repair rereview, publication and
 new exact-SHA hosted validation remain pending. Both prior failed runs and all
 earlier source/evidence distinctions remain intact.
+
+## Phase 3 publication and exact-SHA hosted CI verified
+
+Verified Phase 3 and the two scoped Windows harness repairs were published as
+`387dc8202b8716926b079fa9c4c56231b53bc6e0`.
+[Hosted run 40998640447](https://github.com/atharva-m/MarketLab/actions/runs/40998640447)
+passed all five jobs for that exact SHA. Its complete logs and final status are
+retained under `hosted/40998640447`, including `logs.zip`.
+
+| Hosted gate | Observed result |
+| --- | --- |
+| Ubuntu locked offline/quality | 1,322 passed, two skipped, 235 integration cases deselected; Ruff/format/mypy passed. |
+| Windows locked offline/quality | 1,323 passed, one skipped, 235 integration cases deselected; Ruff/format/mypy passed, including the actual native worker identity/marker/drain cases. |
+| Real PostgreSQL | 231 passed, four historical-input skips, 1,324 offline cases deselected; existing Docker build, API smoke, optional Redis outage and exact owned cleanup checks passed. |
+| Frontend | Type/lint/build, 20 component tests and 66 browser cases passed. |
+| Demo | Lint and all 11 tests passed. |
+
+Both operating systems skip the ignored retained Parquet resource fixture;
+Ubuntu additionally skips the Windows-only classic-path preflight. The four
+PostgreSQL skips require the excluded historical R8 source fixture. These are
+explicit coverage limits, not additional passes. The unchanged 50 GiB integration
+prerequisite passed with 133,756,026,880 free bytes on both temporary and checkout
+filesystems. Retained deprecation warnings remain in the logs; dependencies and
+production limits were not changed to suppress them.
+
+The first native-query repair had passed 43 local focused cases and independent
+`gpt-6-astra/medium` review before publication. The second exact-launch-form repair
+had passed 58 focused cases and separate independent review before this successful
+publication. Each repair commit contained only its four scoped helper/test/docs
+files. No application, dependencies, production limits, CI workflow or test
+eligibility changed in either repair. Both failed runs remain failed and retained.
+The final pass verifies the supported launcher forms; it does not retroactively
+reveal the actual argv missing from the second failed hosted log or establish the
+underlying cause of the first CIM timeout.
+
+`publication-after-ci-repairs.json` matched all 287 protected hashes and all five
+original/README service identities and captured fields with zero mismatches;
+original live/readiness endpoints were 200. The existing README GIF remained
+unchanged. Publication excluded artifacts/data/archives/credentials/environments/
+weights and generated media. No original service was a repair or deployment
+target. These observations do not establish continuous uptime or erase prior
+clock, cancellation, memory, resource or unknown-cause historical limits.
+
+Hosted success remains separate from the retained local actual-data Decimal
+oracle, legacy full hashes, native crash/cache, cold and packaged acceptance.
+The original local raw-byte fingerprints, published Git line-ending normalization
+and later harness-only revisions retain their distinct evidence identities.
+
+The documentation-only outcome publication and its own exact-SHA hosted result
+are pending at this entry; they will be checked and reported separately in the
+session. No Phase 4, original-service rollout or unrelated authority follows.
