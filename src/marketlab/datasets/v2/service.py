@@ -52,12 +52,13 @@ def _reserve(
     import_id: Any = None,
     job: dict[str, Any] | None = None,
 ) -> None:
-    lock(connection, "v2-space:" + str(root.resolve()))
-    outstanding = execute(
-        connection,
-        "SELECT coalesce(sum(reserved_bytes),0) FROM v2_storage_reservations WHERE "
-        "state<>'released'",
-    ).scalar_one()
+    from .capacity import capacity_root
+    from .capacity import outstanding as reserved_capacity
+
+    root = capacity_root(root)
+    lock(connection, "v2-space:" + str(root))
+
+    outstanding = reserved_capacity(connection)
     if shutil.disk_usage(root).free < int(outstanding) + ceiling:
         raise V2Error("capacity_exceeded", "Insufficient reserved staging capacity")
     execute(

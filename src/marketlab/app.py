@@ -24,6 +24,8 @@ from marketlab.memos.service import MemoService
 from marketlab.observability import RequestMetrics, RequestMiddleware, configure_logging
 from marketlab.research.routes import router as research_router
 from marketlab.research.service import ResearchService
+from marketlab.research.v2.routes import router as v2_research_router
+from marketlab.research.v2.service import ResearchService as V2ResearchService
 from marketlab.trades.routes import router as trade_router
 from marketlab.workspace import WorkspaceService
 from marketlab.workspace import router as workspace_router
@@ -58,6 +60,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             registry=metrics.registry,
         )
         app.state.research_service = ResearchService(app.state.bar_service)
+        app.state.v2_research_service = V2ResearchService(app.state.bar_service)
         app.state.workspace_service = WorkspaceService(app.state.bar_service)
         app.state.copilot_service = CopilotService(
             app.state.research_service,
@@ -78,6 +81,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             finally:
                 await app.state.workspace_service.close()
                 await app.state.research_service.close()
+                await app.state.v2_research_service.close()
                 await app.state.bar_service.close()
                 await run_in_threadpool(trade_engine.dispose)
                 await redis.aclose()
@@ -91,6 +95,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(workspace_router)
     app.include_router(bar_router)
     app.include_router(research_router)
+    app.include_router(v2_research_router)
     app.include_router(copilot_router)
     app.include_router(memo_router)
 

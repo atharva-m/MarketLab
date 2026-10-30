@@ -1,5 +1,94 @@
 # MarketLab contributor instructions
 
+## Current Phase 3 publication authority (October 29, 2026)
+
+After verified local Phase 3 closeout, the user explicitly authorized committing
+and pushing the reviewed Phase 3 changes, checking hosted CI for the exact
+published SHA, fixing actual Phase 3 CI failures through coder
+`gpt-6.1-sol/high` followed by independent read-only reviewer
+`gpt-6-astra/medium`, and documenting observed publication/CI outcomes in
+[Phase 3 verification](docs/v2/phase-3-verification.md). This supersedes earlier
+no-commit/push restrictions solely for this verified Phase 3 publication scope.
+Publication and exact-SHA hosted CI are pending at this entry; local completion
+does not establish hosted success.
+
+Preserve historical authority, failed invocations, protected artifacts and all
+original services. Never commit artifacts/data/archives/credentials/environments/
+weights or generated media; the existing README GIF remains unchanged. No Phase 4,
+original-service rollout, dependency/model/prompt change or unrelated repair/system
+change is authorized. Earlier entries below remain intact and are superseded
+only within this explicit publication approval.
+
+## Current authority: v2 Phase 3 numerical research (October 29, 2026)
+
+The user approved the detailed Phase 3 proposal and authorized contributor/roadmap
+updates, the [pre-code contract](docs/v2/phase-3-research.md) BEFORE runtime code,
+implementation through coder gpt-6.1-sol/high followed by independent read-only
+reviewer gpt-6-astra/medium, full local acceptance and honest outcome documentation
+in [verification](docs/v2/phase-3-verification.md). Independent pre-code review
+must resolve blocking decisions before implementation. NO COMMIT OR PUSH. This
+supersedes earlier Phase 3 exclusions solely within this approved scope; retain
+all historical entries, failed invocations, protected artifacts and original services.
+
+Deliver explicit v2 pinned-selection bars and the existing three numerical research
+workflows through shared services, CLI, narrowly scoped numerical HTTP adapters,
+additive research tables and durable workers. Preserve existing formulas, exact
+legacy outputs/readers, source/lock compatibility, cache isolation, resource
+limits and fenced immutable publication. Require equal quote assets for comparison,
+bounded selected-snapshot identity checks, registered daily coverage and actual
+warm-up eligibility. V2 memo enqueue remains gated until Phase 5.
+
+The narrowly necessary Phase 2 capacity-preservation integration is included:
+ingestion and research must share the existing exact v2-space root lock and
+account for both reservation ledgers, with unchanged ceilings and conservative
+retained-byte charges. No broader ingestion repair or resource-limit relaxation.
+
+Use owned disposable resources, fresh source/protected/service snapshots and
+verified backup/restore migration rehearsal. Mandatory actual data includes retained
+BTCUSDT 2025-02-01, SOLUSDT 2025-03-01 and equivalent canonical CSV/Parquet; the
+approved additional official campaign is BTCUSDT and SOLUSDT 2025-02-28 through
+2025-03-02 inclusive for overlapping comparisons and cross-day cluster history.
+Run all five retained numerical scenarios, independent generalized Decimal oracles,
+real recovery/cache/resource checks and the unchanged legacy cold all-62 gate.
+Missing prerequisites or failed gates leave Phase 3 incomplete. Record every source
+identity/failure and distinguish fixtures, actual-data, local and hosted evidence.
+
+No Phase 4 discovery/UI/uploads, Phase 5 model/prompt/memo changes, new numerical
+workflows, dependency/lock changes, object storage, multi-host/auth/scheduling/GC,
+original-service rollout, purchases or unrelated system changes. Preserve the
+independent synthetic trades subsystem. Never include artifacts/data/archives/
+credentials/environments/weights/generated media in Git; keep the README GIF exact.
+Inspect exact ownership before cleanup; original services are never cleanup targets.
+
+### Phase 3 local complete; independent closeout review passed
+
+After independent implementation/correction reviews, final-source checks passed
+1,282 offline and 235 real PostgreSQL cases plus quality; five retained legacy
+scenarios and generalized repeats; 20 independent actual bar checks and nine
+research runs plus nine fresh-key repeats; fresh cold all-62 in 257.632s including
+drain with 230,311,900 trades, one numerical attempt and memo queued/zero calls;
+six native crash boundaries and three-attempt exhaustion; actual cache faults/
+outage/recovery; and 31 rebuilt-package checks. The final runtime source SHA256 is
+`29f533bcdeac1ea40937f1672d4b93d352cd147ef9469456e1959745caf6b3c6`.
+All earlier failed/interrupted invocations, including the no-Git packaged HTTP
+failure before the reviewed v2 provenance correction, remain in verification.
+
+Before final cleanup, 287/287 protected hashes and all five original/README
+service identities/fields/endpoints matched their baseline. This is an observed
+interval, not continuous uptime proof. Final checksummed dumps and isolated
+restores passed for all eight source databases. All 246 actual and 41 legacy
+research reservations were released with zero research charges/running work;
+historical ingestion reservations, retained bytes and failure history remain
+preserved. Exact cleanup removed only five owned containers, three owned volumes,
+one owned network and one remaining owned application image. All local data,
+evidence and dumps were retained. Final preservation again matched all 287 hashes,
+five original/README service fields/endpoints and original images. Independent
+technical review found no unresolved blocker before cleanup; final independent
+read-only `gpt-6-astra/medium` documentation/post-cleanup review passed with no
+unresolved blocking finding. Phase 3 is locally complete. No commit/push, hosted
+Phase 3 validation, original-service
+rollout, dependency/model/prompt change or Phase 4 authority follows.
+
 ## Current Phase 2 publication authority (October 28, 2026)
 
 After verified local Phase 2 closeout, the user authorized committing and pushing

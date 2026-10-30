@@ -81,14 +81,14 @@ def parse_json(raw: bytes, limit: int = 64 * 1024) -> dict[str, Any]:
         raise V2Error("invalid_request", "Control document exceeds limit")
     try:
         result = json.loads(raw.decode("utf-8"), object_pairs_hook=_pairs)
-    except (UnicodeError, ValueError) as error:
+    except (UnicodeError, ValueError, RecursionError) as error:
         raise V2Error("invalid_request", "Invalid JSON document") from error
     if not isinstance(result, dict):
         raise V2Error("invalid_request", "Expected JSON object")
     # Reject JSON NaN/Infinity even in nested unrecognized values.
     try:
         canonical_json(result)
-    except (ValueError, TypeError) as error:
+    except (ValueError, TypeError, RecursionError) as error:
         raise V2Error("invalid_request", "Invalid JSON value") from error
     return result
 

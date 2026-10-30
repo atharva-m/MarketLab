@@ -13,8 +13,13 @@ hosted CI. Published SHA `be3f7aeb3539c1db7386401b6553fe918337d6a7` passed
 after reviewed CI-only capacity repairs; all four earlier failed runs remain in
 verification. Local actual-data acceptance remains distinct from hosted checks.
 The documentation-only outcome publication is pending; its exact-SHA CI will be
-reported in the session. Phases 3-9 remain proposed and require separate
-authorization. No infrastructure purchase or original-service deployment is
+reported in the session. Phase 3 was separately approved on October 29, 2026
+for implementation and local acceptance under its pre-code contract below.
+Final-source runtime gates, eight database backup/restores, owned cleanup and
+final preservation passed; independent closeout review passed with no unresolved
+blocking finding. Phase 3 is locally complete.
+Phases 4-9 remain proposed and require separate authorization.
+No infrastructure purchase or original-service deployment is
 authorized. Historical ROADMAP.md and milestone contracts remain intact.
 
 Scope amendment, October 28, 2026: the user confined the platform to Binance
@@ -81,6 +86,17 @@ remain unchanged and readable; malformed inputs and identity collisions are
 rejected.
 
 ## Phase 3 — Generalized analytics and research
+
+Status: implemented under the independently reviewed
+[pre-code contract](docs/v2/phase-3-research.md). Final-source quality/backend,
+retained legacy, independent actual numerical, cold, crash/cache and rebuilt
+package gates passed. All eight database backup/restores, exact owned cleanup
+and final preservation passed, with no unresolved technical blocker before cleanup.
+Final independent `gpt-6-astra/medium` documentation/post-cleanup review passed with
+no unresolved blocking finding. Phase 3 is locally complete. Actual outcomes belong in
+[verification](docs/v2/phase-3-verification.md). Deliver shared services, CLI and
+only numerical v2 HTTP adapters; metadata discovery/UI/uploads remain Phase 4,
+and v2 memo enqueue remains Phase 5. No commit or push is authorized.
 
 Make registered data usable throughout the numerical platform.
 

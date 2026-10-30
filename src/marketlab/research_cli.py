@@ -64,6 +64,10 @@ async def invoke(arguments: argparse.Namespace) -> object:
 
 
 def main() -> int:
+    if len(sys.argv) > 1 and sys.argv[1] == "v2":
+        from marketlab.research.v2.cli import main as v2_main
+
+        return v2_main(sys.argv[2:])
     args = parser().parse_args()
     try:
         value = asyncio.run(invoke(args))

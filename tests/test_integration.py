@@ -53,7 +53,7 @@ def test_trade_migration() -> None:
                 .scalars()
                 .all()
             )
-        assert revision == "0008_v2_ingestion"
+        assert revision == "0009_v2_research"
         assert set(tables) == {
             "alembic_version",
             "trades",
@@ -80,6 +80,13 @@ def test_trade_migration() -> None:
             "v2_ingestion_attempts",
             "v2_dataset_versions",
             "v2_storage_reservations",
+            "v2_research_submissions",
+            "v2_research_selections",
+            "v2_research_runs",
+            "v2_research_attempts",
+            "v2_research_results",
+            "v2_research_operations",
+            "v2_research_reservations",
         }
         inspector = inspect(engine)
         columns = {column["name"]: column for column in inspector.get_columns("trades")}
