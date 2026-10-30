@@ -36,6 +36,19 @@ or malformed native identity fails closed. No application, dependencies, resourc
 limits, workflow settings, test skips or original services change. Independent
 repair review and new exact-SHA hosted validation remain pending.
 
+The first reviewed Windows repair was published as
+`70bf0d420e917097b14d98532276953e864809ee`.
+[Run 40997375069](https://github.com/atharva-m/MarketLab/actions/runs/40997375069)
+again passed four jobs but failed the Windows owned-worker command comparison
+(1,307 passes, one skip, one failure). The native query succeeded; its actual
+worker argv was not included in the retained log. A supported uv managed-Python
+trampoline form is the working diagnosis, not an observed hosted argv value.
+The next narrow harness repair accepts Windows argv0 only as the expected
+allowlisted launcher or the independently queried, allowlisted actual interpreter
+image; every other argument, plan, birth, ancestry, executable and drain check
+remains mandatory. Both failures remain preserved. Independent rereview and a
+new exact-SHA hosted outcome are pending; no application/limit/test-skip change.
+
 ## Current authority: v2 Phase 3 numerical research (October 29, 2026)
 
 The user approved the detailed Phase 3 proposal and authorized contributor/roadmap

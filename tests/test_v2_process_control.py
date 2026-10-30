@@ -6,6 +6,7 @@ import importlib.util
 import json
 import os
 import sys
+import sysconfig
 from pathlib import Path
 from types import SimpleNamespace
 from uuid import uuid4
@@ -66,6 +67,57 @@ def test_exact_command_plan_proof_refuses_foreign_values(control, tmp_path, chan
     else:
         actual["argv"][{"script": 1, "config": 4, "plan": 6, "invocation": 8}[change]] = "foreign"
     assert not control.matching(actual, expected, allowed)
+
+
+@pytest.mark.parametrize("form", ["launcher", "base"])
+@pytest.mark.parametrize(
+    "change", [None, "foreign_argv0", "other_allowed_argv0", "image", "launcher", "plan"]
+)
+def test_windows_exact_launcher_or_queried_base_image_only(
+    control, tmp_path, monkeypatch, form, change
+):
+    expected, _ = command_values(tmp_path)
+    launcher = str(tmp_path / "venv/python.exe")
+    base = str(tmp_path / "base/python.exe")
+    other = str(tmp_path / "other/python.exe")
+    expected[0] = launcher
+    actual = {"argv": list(expected), "executable": base}
+    actual["argv"][0] = launcher if form == "launcher" else base
+    allowed = {launcher, base, other}
+    monkeypatch.setattr(control, "os", SimpleNamespace(name="nt"))
+    if change == "foreign_argv0":
+        actual["argv"][0] = str(tmp_path / "foreign/python.exe")
+    elif change == "other_allowed_argv0":
+        actual["argv"][0] = other
+    elif change == "image":
+        actual["executable"] = str(tmp_path / "foreign/python.exe")
+    elif change == "launcher":
+        allowed.remove(launcher)
+    elif change == "plan":
+        actual["argv"][6] = str(tmp_path / "foreign-plan.json")
+    assert control.matching(actual, expected, allowed) is (change is None)
+
+
+def test_alternate_argv0_is_windows_only_and_diagnostics_omit_argument_values(
+    control, tmp_path, monkeypatch
+):
+    expected, _ = command_values(tmp_path)
+    base = str(tmp_path / "base/python")
+    actual = {
+        "pid": 123,
+        "identity": 456,
+        "parent": 12,
+        "argv": [base, *expected[1:]],
+        "executable": base,
+    }
+    monkeypatch.setattr(control, "os", SimpleNamespace(name="posix"))
+    assert not control.matching(actual, expected, {expected[0], base})
+    actual["argv"][4] = "private-config-value"
+    actual["argv"][6] = "private-plan-value"
+    diagnostic = control.command_diagnostic(actual, expected)
+    assert diagnostic["raw_different_argument_positions"] == [0, 4, 6]
+    assert "private" not in json.dumps(diagnostic)
+    assert diagnostic["argv0"] == diagnostic["executable"] == base
 
 
 def native_command_buffer(control, text):
@@ -280,8 +332,9 @@ def test_cleanup_only_verified_command_and_birth_descendants_worker_before_launc
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("wrong_hash", [False, True])
+@pytest.mark.parametrize("launch_form", ["current", "base"])
 async def test_actual_venv_launcher_worker_marker_and_failure_cleanup(
-    control, wrong_hash, monkeypatch
+    control, wrong_hash, monkeypatch, launch_form
 ):
     project = (await asyncio.to_thread(Path(__file__).resolve)).parents[1]
     harness = load("phase3_process_probe_harness", project / "scripts/v2_phase3_acceptance.py")
@@ -295,6 +348,23 @@ async def test_actual_venv_launcher_worker_marker_and_failure_cleanup(
     command, prepared, allowed, plan_hash = harness.boundary_plan(
         case / "unused-private-config.json", case, plan, "p3-process-probe", "process-probe-child"
     )
+    if launch_form == "base":
+        native_popen = control.subprocess.Popen
+        base = str(
+            await asyncio.to_thread(Path(getattr(sys, "_base_executable", sys.executable)).resolve)
+        )
+
+        def base_popen(arguments, **kwargs):
+            assert arguments == command
+            environment = os.environ.copy()
+            # Bind only this fixture child to the existing locked packages; no
+            # install or parent/global environment mutation is involved.
+            environment["PYTHONPATH"] = os.pathsep.join(
+                [str(project / "src"), sysconfig.get_path("purelib")]
+            )
+            return native_popen([base, *arguments[1:]], env=environment, **kwargs)
+
+        monkeypatch.setattr(control.subprocess, "Popen", base_popen)
     monkeypatch.setattr(
         control.subprocess,
         "check_output",
@@ -320,6 +390,11 @@ async def test_actual_venv_launcher_worker_marker_and_failure_cleanup(
         # The assertion deliberately accommodates both the two-process venv shim
         # and a direct interpreter while requiring exact proof of the real PID.
         assert marker["pid"] == receipt["worker"]["pid"]
+        if launch_form == "base":
+            assert receipt["worker"]["argv"][0] == base
+            assert await asyncio.to_thread(Path(receipt["worker"]["executable"]).resolve) == Path(
+                base
+            )
 
 
 @pytest.mark.parametrize(

@@ -190,15 +190,43 @@ def command(pid: int, birth: Any) -> dict[str, Any]:
 def matching(actual: dict[str, Any], expected: list[str], allowed_executables: set[str]) -> bool:
     if len(actual["argv"]) != len(expected):
         return False
-    # Match exact argument tokens; only executable/path spelling is normalized.
+    allowed = {Path(v).resolve() for v in allowed_executables}
+    executable = Path(actual["executable"]).resolve()
+    if executable not in allowed or Path(expected[0]).resolve() not in allowed:
+        return False
+    # CPython's venv shim preserves launcher argv0; uv's managed-Python
+    # trampoline uses its base image. Accept only that independently queried,
+    # frozen-allowlisted image as the Windows alternative; every other token
+    # retains its exact path/value comparison.
     paths = {0, 1, 4, 6}
     for offset, (left, right) in enumerate(zip(actual["argv"], expected, strict=True)):
         if offset in paths:
             if Path(left).resolve() != Path(right).resolve():
+                if offset == 0 and os.name == "nt" and Path(left).resolve() == executable:
+                    continue
                 return False
         elif left != right:
             return False
-    return Path(actual["executable"]).resolve() in {Path(v).resolve() for v in allowed_executables}
+    return True
+
+
+def command_diagnostic(actual: dict[str, Any], expected: list[str]) -> dict[str, Any]:
+    """Retain owned interpreter identities, never other argument values or environments."""
+    return {
+        "pid": actual["pid"],
+        "birth": actual["identity"],
+        "parent": actual["parent"],
+        "executable": actual["executable"],
+        "argv0": actual["argv"][0] if actual["argv"] else None,
+        "expected_launcher": expected[0],
+        "argc": len(actual["argv"]),
+        "expected_argc": len(expected),
+        "raw_different_argument_positions": [
+            index
+            for index, (left, right) in enumerate(zip(actual["argv"], expected, strict=False))
+            if left != right
+        ],
+    }
 
 
 def terminate(pid: int, birth: Any) -> None:
@@ -410,8 +438,13 @@ async def run(
             ):
                 raise RuntimeError("Ready worker ancestry/birth/plan mismatch")
             worker = command(pid, ready["birth"])
+            record["ready_worker_identity"] = command_diagnostic(worker, expected)
+            save(case / "process-control.json", record)
             if not matching(worker, expected, allowed_executables):
-                raise RuntimeError("Ready worker command or plan mismatch")
+                raise RuntimeError(
+                    "Ready worker command or plan mismatch: "
+                    + json.dumps(record["ready_worker_identity"], sort_keys=True)
+                )
             trusted[pid] = ready["birth"]
             record["worker"] = worker
             save(
@@ -432,8 +465,12 @@ async def run(
             if marker["boundary"] != plan["boundary"]:
                 raise RuntimeError("Boundary marker mismatch")
             current = command(pid, ready["birth"])
+            record["boundary_worker_identity"] = command_diagnostic(current, expected)
             if not matching(current, expected, allowed_executables):
-                raise RuntimeError("Boundary worker command changed")
+                raise RuntimeError(
+                    "Boundary worker command changed: "
+                    + json.dumps(record["boundary_worker_identity"], sort_keys=True)
+                )
             record.update(status="passed", marker=marker)
             return marker
     except BaseException as error:

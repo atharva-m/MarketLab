@@ -744,3 +744,68 @@ workspace temporary directory. These failures are not successful focused runs.
 No application/dependency/limit/workflow/original-service behavior changed and
 no tests were skipped to fix this failure. Independent repair review, publication
 of the repair and its new exact-SHA hosted outcome remain pending at this entry.
+
+## Second hosted Windows failure: explicit interpreter launch forms
+
+The independently reviewed native-query repair was published as
+`70bf0d420e917097b14d98532276953e864809ee`.
+[Run 40997375069](https://github.com/atharva-m/MarketLab/actions/runs/40997375069)
+again finished with the other four jobs passing and Windows failing one actual
+owned-worker case: 1,307 passed, one skip and one failure. Ubuntu passed 1,307
+with two skips; PostgreSQL passed 231 with four historical-input skips. The
+unchanged 50 GiB gate passed with 133,756,022,784 free bytes on each measured
+filesystem. Full failed-run logs remain under `hosted/40997375069/logs.zip`.
+Neither failed published run is a hosted acceptance pass.
+
+This failure reached the ready worker's exact command comparison after successful
+native identity inspection. The retained hosted log lacks its actual argv/image
+values, so the exact mismatching field was not directly observed. Inspection of
+[uv 0.13.5's trampoline](https://github.com/astral-sh/uv/blob/0.13.5/crates/uv-trampoline/src/bounce.rs)
+and [venv construction](https://github.com/astral-sh/uv/blob/0.13.5/crates/uv-virtualenv/src/virtualenv.rs)
+shows that its managed-Python trampoline launches the base interpreter as argv0;
+the regular CPython venv shim preserves launcher argv0. Hosted execution uses
+uv-managed Python, while the local environment uses a system-CPython venv.
+This is a source-supported diagnosis, not a recovered hosted command line.
+
+A bounded offline disposable uv-venv probe with the existing system Python did
+not reproduce the rewrite: it also used the ordinary CPython launcher form.
+Its failed reproduction assertion and exact drain evidence remain in
+`hosted/uv-argv-reproduction-7c402b901647461b995b55337b7a7343`.
+The initial empty-venv probe exited because importing the retained inventory
+helper required absent sqlalchemy; that failed probe remains separately retained.
+No Python download or package installation followed. These probes do not
+establish the hosted mismatch's exact cause.
+
+The scoped repair supports only the two explicit Windows launch forms. The
+expected launcher must itself belong to the frozen executable allowlist. The
+actual executable must independently belong to that allowlist, and argv0 must
+resolve either to the expected launcher or to that exact independently queried
+actual image. Another allowlisted interpreter as argv0 still fails if it is
+neither of those identities. All remaining arguments retain their exact value/
+path rules, and native birth/parent/ancestry, plan hash, marker, pre-termination
+identity and actual drain checks remain unchanged. Non-Windows argv0 comparison
+retains its original rule.
+
+Safe diagnostics now retain only the observed owned interpreter paths, PID/birth/
+parent, argument counts and differing argument positions before readiness or
+boundary rejection. Other argument values and process environments are omitted;
+future hosted failures can identify the mismatch without publishing private
+configuration values.
+
+Focused checks passed 58 cases in 12.94s, including actual native subprocesses
+with both the current CPython launcher form and the explicit base-interpreter
+argv0 form, with readiness, marker, failure cleanup and exact drain verified.
+The base-form fixture deliberately constructs that command shape using the
+existing interpreter and locked packages; it is not claimed as a real local
+managed-uv reproduction. Controlled cases reject foreign argv0, another allowed
+image as argv0, foreign executable, unallowlisted expected launcher and changed
+plan; alternate argv0 remains rejected on non-Windows. An initial lint check
+flagged explicit zip strictness and blocking Path resolution in the async tests;
+those were corrected before the passing focused run.
+Repository Ruff, formatting of 250 Python files, strict mypy of 74 sources,
+relative documentation links and `git diff --check` then passed.
+
+Application code, dependencies, production limits, CI workflow, original services
+and test eligibility are unchanged. Independent repair rereview, publication and
+new exact-SHA hosted validation remain pending. Both prior failed runs and all
+earlier source/evidence distinctions remain intact.
