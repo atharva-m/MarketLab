@@ -1,6 +1,7 @@
 """Exact worker ownership, Windows launcher handling and failure-path native drain."""
 
 import asyncio
+import ctypes
 import importlib.util
 import json
 import os
@@ -67,6 +68,177 @@ def test_exact_command_plan_proof_refuses_foreign_values(control, tmp_path, chan
     assert not control.matching(actual, expected, allowed)
 
 
+def native_command_buffer(control, text):
+    payload = text.encode("utf-16-le")
+    header = ctypes.sizeof(control.WindowsUnicodeString)
+    buffer = ctypes.create_string_buffer(header + len(payload) + 2)
+    value = control.WindowsUnicodeString.from_buffer(buffer)
+    value.length = len(payload)
+    value.maximum_length = len(payload) + 2
+    value.buffer = ctypes.addressof(buffer) + header
+    ctypes.memmove(value.buffer, payload, len(payload))
+    return buffer
+
+
+def test_bounded_native_command_response_preserves_unicode_and_windows_limit(control):
+    for text in ['"C:\\owned path\\python.exe" "\u03a9 plan.json"', "x" * 32766]:
+        buffer = native_command_buffer(control, text)
+        assert control.windows_command_text(buffer, ctypes.sizeof(buffer)) == text
+
+
+@pytest.mark.parametrize(
+    "invalid",
+    [
+        "short_header",
+        "oversize_response",
+        "empty",
+        "odd_length",
+        "odd_maximum",
+        "length_exceeds_maximum",
+        "null_pointer",
+        "header_pointer",
+        "outside_pointer",
+        "misaligned_pointer",
+        "truncated_payload",
+        "embedded_null",
+        "invalid_utf16",
+    ],
+)
+def test_native_command_response_rejects_invalid_bounds_before_dereference(control, invalid):
+    text = "owned\0command" if invalid == "embedded_null" else "owned command"
+    buffer = native_command_buffer(control, text)
+    value = control.WindowsUnicodeString.from_buffer(buffer)
+    returned = ctypes.sizeof(buffer)
+    if invalid == "short_header":
+        returned = ctypes.sizeof(control.WindowsUnicodeString) - 1
+    elif invalid == "oversize_response":
+        returned += 1
+    elif invalid == "empty":
+        value.length = 0
+    elif invalid == "odd_length":
+        value.length -= 1
+    elif invalid == "odd_maximum":
+        value.maximum_length -= 1
+    elif invalid == "length_exceeds_maximum":
+        value.maximum_length = value.length - 2
+    elif invalid == "null_pointer":
+        value.buffer = None
+    elif invalid == "header_pointer":
+        value.buffer = ctypes.addressof(buffer)
+    elif invalid == "outside_pointer":
+        value.buffer = ctypes.addressof(buffer) + ctypes.sizeof(buffer)
+    elif invalid == "misaligned_pointer":
+        value.buffer += 1
+    elif invalid == "truncated_payload":
+        returned -= 2
+    elif invalid == "invalid_utf16":
+        ctypes.memmove(value.buffer, b"\x00\xd8", 2)
+    with pytest.raises((OSError, UnicodeDecodeError)):
+        control.windows_command_text(buffer, returned)
+
+
+@pytest.mark.parametrize(
+    "failure",
+    [
+        None,
+        "open",
+        "birth_read",
+        "birth_before",
+        "unsupported",
+        "access_denied",
+        "insufficient_buffer",
+        "bounds",
+        "image",
+        "image_empty",
+        "image_truncated",
+        "birth_after",
+        "argv",
+    ],
+)
+def test_native_command_handle_exact_birth_and_failures_close_handle(control, monkeypatch, failure):
+    calls = []
+    birth_reads = []
+
+    def open_process(rights, inherit, pid):
+        assert (rights, inherit, pid) == (0x1000, False, 123)
+        return None if failure == "open" else 456
+
+    def process_times(handle, created, *unused):
+        assert handle == 456
+        birth_reads.append(1)
+        if failure == "birth_read":
+            return False
+        created._obj.dwLowDateTime = (
+            101
+            if failure == "birth_before" or (failure == "birth_after" and len(birth_reads) == 2)
+            else 100
+        )
+        return True
+
+    def query(handle, kind, buffer, size, returned):
+        assert handle == 456 and kind == 60 and size <= 65600
+        if failure in {"unsupported", "access_denied", "insufficient_buffer"}:
+            return {
+                "unsupported": -1073741821,
+                "access_denied": -1073741790,
+                "insufficient_buffer": -1073741820,
+            }[failure]
+        payload = '"owned python.exe" owned-plan'.encode("utf-16-le")
+        header = ctypes.sizeof(control.WindowsUnicodeString)
+        value = control.WindowsUnicodeString.from_buffer(buffer)
+        value.length = len(payload)
+        value.maximum_length = len(payload) + 2
+        value.buffer = ctypes.addressof(buffer) + header
+        ctypes.memmove(value.buffer, payload, len(payload))
+        returned._obj.value = size + 1 if failure == "bounds" else header + len(payload) + 2
+        return 0
+
+    def image(handle, flags, buffer, size):
+        assert (handle, flags) == (456, 0)
+        if failure == "image":
+            return False
+        buffer.value = "owned python.exe"
+        size._obj.value = (
+            0
+            if failure == "image_empty"
+            else len(buffer)
+            if failure == "image_truncated"
+            else len(buffer.value)
+        )
+        return True
+
+    kernel = SimpleNamespace(
+        OpenProcess=open_process,
+        CloseHandle=lambda handle: calls.append(handle),
+        GetProcessTimes=process_times,
+        QueryFullProcessImageNameW=image,
+    )
+    native = SimpleNamespace(NtQueryInformationProcess=query)
+    monkeypatch.setattr(
+        control.ctypes,
+        "WinDLL",
+        lambda name, **kwargs: kernel if name == "kernel32" else native,
+        raising=False,
+    )
+
+    def argv(text):
+        if failure == "argv":
+            raise OSError("Controlled command-line parser failure")
+        return ["owned python.exe", "owned-plan"]
+
+    monkeypatch.setattr(control, "windows_argv", argv)
+    if failure:
+        with pytest.raises((OSError, RuntimeError)):
+            control.windows_command(123, 100)
+    else:
+        assert control.windows_command(123, 100) == (
+            ["owned python.exe", "owned-plan"],
+            "owned python.exe",
+        )
+        assert len(birth_reads) == 2
+    assert calls == ([] if failure == "open" else [456])
+
+
 @pytest.mark.parametrize("foreign", [False, True])
 def test_cleanup_only_verified_command_and_birth_descendants_worker_before_launcher(
     control, tmp_path, monkeypatch, foreign
@@ -108,7 +280,9 @@ def test_cleanup_only_verified_command_and_birth_descendants_worker_before_launc
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("wrong_hash", [False, True])
-async def test_actual_venv_launcher_worker_marker_and_failure_cleanup(control, wrong_hash):
+async def test_actual_venv_launcher_worker_marker_and_failure_cleanup(
+    control, wrong_hash, monkeypatch
+):
     project = (await asyncio.to_thread(Path(__file__).resolve)).parents[1]
     harness = load("phase3_process_probe_harness", project / "scripts/v2_phase3_acceptance.py")
     case = harness.BASE / ("process-probe-" + uuid4().hex)
@@ -120,6 +294,11 @@ async def test_actual_venv_launcher_worker_marker_and_failure_cleanup(control, w
     }
     command, prepared, allowed, plan_hash = harness.boundary_plan(
         case / "unused-private-config.json", case, plan, "p3-process-probe", "process-probe-child"
+    )
+    monkeypatch.setattr(
+        control.subprocess,
+        "check_output",
+        lambda *args, **kwargs: pytest.fail("Exact native identity must not spawn a query shell"),
     )
     if wrong_hash:
         with pytest.raises(RuntimeError, match="plan mismatch"):

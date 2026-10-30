@@ -689,3 +689,58 @@ data, archives, credentials, environments, weights or generated media belong in
 this publication; the existing README GIF remains exact. Original services and
 all historical limits remain preserved. No Phase 4 or original-service rollout
 authority follows.
+
+## First published SHA: hosted Windows harness failure and scoped repair
+
+The reviewed Phase 3 changes were published as
+`6bb5afd526e5c74e2e46c2121aa4ef856326c21e`.
+[Hosted run 40996059380](https://github.com/atharva-m/MarketLab/actions/runs/40996059380)
+finished with four jobs passing and the Windows offline job failing. Ubuntu
+passed 1,280 offline cases with two explicit skips. Windows passed 1,280 cases
+with one skip and one failure in
+`test_actual_venv_launcher_worker_marker_and_failure_cleanup[False]`.
+Integration passed 231 real PostgreSQL cases with four historical-input skips;
+frontend passed 20 components and 66 browsers, and demo passed 11 tests. Locked
+quality/build and existing package/API/Redis-outage checks passed in their
+respective jobs. The unchanged 50 GiB native integration prerequisite passed
+with 133,756,080,128 bytes free on both measured filesystems. Hosted skips and
+coverage remain distinct from the fuller retained local acceptance above.
+
+The failed Windows trace records `subprocess.TimeoutExpired` after 20s while
+PowerShell/CIM queried the ready owned worker PID 5992. It does not establish why
+that shell/CIM operation stalled. No identity mismatch, plan mismatch or numerical
+application failure is inferred. The complete failed logs remain under
+`hosted/40996059380/logs.zip` and the exact failed job log. The published staged
+audit also records Git line-ending normalization only for `src/marketlab/app.py`
+and `scripts/v2_phase3_acceptance.py`. Earlier local raw-byte execution/evidence
+fingerprints remain their original observations, not byte-identical claims about
+the normalized published checkout.
+
+The narrowly scoped repair replaces only the Windows harness command reader's
+PowerShell/CIM subprocess with a single bounded native
+`NtQueryInformationProcess` command-line query and `QueryFullProcessImageNameW`
+on the same limited-query process handle. Creation time on that handle must match
+the expected birth before and after the read; native inventory still checks
+parent/birth on both sides. Returned size, Unicode header, even lengths, pointer
+alignment and the entire pointed payload must fit inside the fixed allocation
+before any dereference. Unsupported/access-denied/insufficient-buffer responses,
+malformed UTF-16, unavailable executable and changed birth fail closed; handles
+close on every acquired-handle path. Existing exact argv/executable/plan checks,
+readiness fuse, verified worker-before-launcher termination and native drain
+assertions remain unchanged. There is no marker-only identity fallback or blind
+process-tree kill.
+
+The final focused invocation passed 43 cases in 7.94s, including actual Windows
+venv launcher/worker readiness, marker and failure-path drain with a guard that
+forbids spawning a query shell. Controlled regressions cover invalid status,
+header/length/pointer bounds, Unicode, image bounds, reused handle birth and
+handle closure. Repository Ruff, formatting of 250 files and strict mypy of
+74 sources passed. The earlier 38-case/7.95s and 43-case/7.90s focused iterations
+remain separate logs under `hosted/native-process-focused-*`. Initial sandbox
+tests failed temporary-directory creation and an async invocation was interrupted;
+the successful actual-worker checks used an elevated retry with a unique owned
+workspace temporary directory. These failures are not successful focused runs.
+
+No application/dependency/limit/workflow/original-service behavior changed and
+no tests were skipped to fix this failure. Independent repair review, publication
+of the repair and its new exact-SHA hosted outcome remain pending at this entry.

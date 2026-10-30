@@ -19,6 +19,23 @@ original-service rollout, dependency/model/prompt change or unrelated repair/sys
 change is authorized. Earlier entries below remain intact and are superseded
 only within this explicit publication approval.
 
+### First Phase 3 publication and scoped Windows CI repair
+
+Phase 3 was published as `6bb5afd526e5c74e2e46c2121aa4ef856326c21e`.
+[Hosted run 40996059380](https://github.com/atharva-m/MarketLab/actions/runs/40996059380)
+failed only its Windows offline job: 1,280 passed, one historical-input skip and
+one native process-control test failed because a PowerShell/CIM query of the
+already-ready owned worker timed out after 20s. The other four jobs passed.
+The timeout's underlying cause is unknown; preserve the failed run and logs.
+
+The scoped repair changes only the acceptance process-control helper and its
+tests/documentation: a bounded native query on the exact birth-checked process
+handle replaces the shell/CIM command read. Exact ancestry, birth, executable,
+argument/plan checks and actual owned-process drain remain mandatory; unavailable
+or malformed native identity fails closed. No application, dependencies, resource
+limits, workflow settings, test skips or original services change. Independent
+repair review and new exact-SHA hosted validation remain pending.
+
 ## Current authority: v2 Phase 3 numerical research (October 29, 2026)
 
 The user approved the detailed Phase 3 proposal and authorized contributor/roadmap

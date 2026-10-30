@@ -67,28 +67,113 @@ def windows_argv(text: str) -> list[str]:
         kernel.LocalFree(pointer)
 
 
+class WindowsUnicodeString(ctypes.Structure):
+    _fields_ = [
+        ("length", ctypes.c_ushort),
+        ("maximum_length", ctypes.c_ushort),
+        ("buffer", ctypes.c_void_p),
+    ]
+
+
+def windows_command_text(buffer: Any, returned: int) -> str:
+    """Validate the native bounded response before reading any pointed-to bytes."""
+    header_size = ctypes.sizeof(WindowsUnicodeString)
+    if not header_size <= returned <= ctypes.sizeof(buffer):
+        raise OSError("Owned command response size invalid")
+    value = WindowsUnicodeString.from_buffer(buffer)
+    base = ctypes.addressof(buffer)
+    pointer = value.buffer or 0
+    if (
+        not value.length
+        or value.length % 2
+        or value.maximum_length % 2
+        or value.length > value.maximum_length
+        or pointer % 2
+        or pointer < base + header_size
+        or pointer + value.maximum_length > base + returned
+    ):
+        raise OSError("Owned command response bounds invalid")
+    text = ctypes.string_at(pointer, value.length).decode("utf-16-le", errors="strict")
+    if "\0" in text:
+        raise OSError("Owned command contains embedded null")
+    return text
+
+
+def windows_command(pid: int, birth: Any) -> tuple[list[str], str]:
+    """Read this exact handle without PowerShell startup or the WMI service."""
+    from ctypes import wintypes
+
+    kernel = ctypes.WinDLL("kernel32", use_last_error=True)
+    native = ctypes.WinDLL("ntdll", use_last_error=True)
+    kernel.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    kernel.OpenProcess.restype = wintypes.HANDLE
+    kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel.GetProcessTimes.argtypes = [wintypes.HANDLE] + [ctypes.POINTER(wintypes.FILETIME)] * 4
+    kernel.QueryFullProcessImageNameW.argtypes = [
+        wintypes.HANDLE,
+        wintypes.DWORD,
+        wintypes.LPWSTR,
+        ctypes.POINTER(wintypes.DWORD),
+    ]
+    native.NtQueryInformationProcess.argtypes = [
+        wintypes.HANDLE,
+        wintypes.ULONG,
+        ctypes.c_void_p,
+        wintypes.ULONG,
+        ctypes.POINTER(wintypes.ULONG),
+    ]
+    native.NtQueryInformationProcess.restype = wintypes.LONG
+    handle = kernel.OpenProcess(0x1000, False, pid)
+    if not handle:
+        raise OSError("Owned command process handle unavailable")
+
+    def check_birth() -> None:
+        created, exited, cpu, user = (wintypes.FILETIME() for _ in range(4))
+        if not kernel.GetProcessTimes(
+            handle,
+            ctypes.byref(created),
+            ctypes.byref(exited),
+            ctypes.byref(cpu),
+            ctypes.byref(user),
+        ):
+            raise OSError("Owned command process birth unavailable")
+        if (created.dwHighDateTime << 32) | created.dwLowDateTime != birth:
+            raise RuntimeError("Owned command process handle birth changed")
+
+    try:
+        check_birth()
+        # ProcessCommandLineInformation returns a local UNICODE_STRING plus its
+        # UTF-16 payload. One fixed allocation covers the Windows command limit;
+        # unsupported/query-failed/truncated responses fail closed, without retry.
+        buffer = ctypes.create_string_buffer(65536 + ctypes.sizeof(WindowsUnicodeString))
+        returned = wintypes.ULONG()
+        status = native.NtQueryInformationProcess(
+            handle, 60, buffer, ctypes.sizeof(buffer), ctypes.byref(returned)
+        )
+        if status < 0:
+            raise OSError("Owned native command query failed")
+        text = windows_command_text(buffer, returned.value)
+        image = ctypes.create_unicode_buffer(32768)
+        size = wintypes.DWORD(len(image))
+        if not kernel.QueryFullProcessImageNameW(handle, 0, image, ctypes.byref(size)):
+            raise OSError("Owned command executable unavailable")
+        if not 0 < size.value < len(image):
+            raise OSError("Owned command executable size invalid")
+        executable = image[: size.value]
+        check_birth()
+        return windows_argv(text), executable
+    finally:
+        kernel.CloseHandle(handle)
+
+
 def command(pid: int, birth: Any) -> dict[str, Any]:
     before = inventory().get(pid)
     if before is None or before["identity"] != birth:
         raise RuntimeError("Owned process birth changed before command inspection")
     if os.name == "nt":
-        # Only this already ancestry/birth-checked PID is queried; unrelated
-        # command lines and environments are never enumerated or recorded.
-        code = (
-            f"$p=Get-CimInstance Win32_Process -Filter 'ProcessId = {int(pid)}'; "
-            "if($null -ne $p){$p | Select-Object "
-            "ProcessId,ParentProcessId,ExecutablePath,CommandLine "
-            "| ConvertTo-Json -Compress}"
-        )
-        raw = subprocess.check_output(
-            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", code],
-            text=True,
-            timeout=20,
-            creationflags=subprocess.CREATE_NO_WINDOW,
-        )
-        data = json.loads(raw)
-        argv = windows_argv(data["CommandLine"])
-        executable = data["ExecutablePath"]
+        # Only this ancestry/birth-checked PID is opened; unrelated command lines
+        # and environments are never enumerated or recorded.
+        argv, executable = windows_command(pid, birth)
     else:
         argv = [
             v.decode()
