@@ -1,5 +1,11 @@
 # V2 Phase 4: metadata-driven browser research and Binance imports
 
+The October 31, 2026 [completion amendment](phase-4-completion.md) governs
+remaining work and supersedes conflicting acceptance/harness/closeout provisions
+in this historical pre-code contract. Product, accounting, compatibility, and
+resource-limit requirements remain preserved. Actual outcomes remain in
+[verification](phase-4-verification.md).
+
 Status: PRE-CODE CONTRACT RECORD. Its initial review-pending checkpoint is
 historical; independent pre-code rereview passed before runtime implementation,
 as recorded in [verification](phase-4-verification.md#pre-code-rereview-and-immutable-contract-checkpoint).

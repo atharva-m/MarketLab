@@ -1,12 +1,250 @@
 # V2 Phase 4 verification
 
-Status: PHASE 4 INCOMPLETE. Implementation and current-source-04 quality, backend,
-frontend, package, numerical/cache/recovery, upload protocol/crash/expiry and
-resource-02 gates passed. Measured actual-browser acceptance, exact 4 GiB upload,
-and final preservation/backup/restore/cleanup remain incomplete. Native/mock
-helper qualifications are separate from actual acceptance; all earlier failures
-remain retained.
-Date: October 30, 2026 (America/New_York).
+## Publication authorization and pending hosted validation (October 31, 2026)
+
+The user explicitly authorized committing/pushing the locally completed reviewed
+Phase 4 work, checking exact-SHA hosted CI and narrowly fixing actual failures
+through coder `gpt-6.1-sol/high` and independent read-only reviewer
+`gpt-6-astra/medium`. This includes the unpublished user backup commit
+`402f3af1ac59cb4c16682d04511579e7145f0c02` above remote baseline
+`4972113f007358029a25b7cee1a1ed00a471e6f6`. Independent publication-content review
+covered the full 52-file unpublished scope, and root's final repository Ruff and
+format checks passed (270 files). These are publication preparation results;
+no commit/push or hosted result is claimed at this checkpoint.
+
+Record the actual published SHA, run URL and job outcomes after observation.
+Retain failures and distinguish hosted checks from local actual-data, numerical,
+resource, backup and preservation evidence. No excluded data/media/credential
+file, dependency/limit change, original-service rollout or Phase 5 work belongs
+in this publication scope. The local-closeout statements below preserve their
+earlier no-publication checkpoint and are superseded only by this explicit
+authorization.
+
+Status: PHASE 4 LOCALLY COMPLETE, October 31, 2026. The simplified actual
+three-engine campaign and exact 4 GiB transport/accounting gates passed.
+Source-qualified regression gates, final seventeen-database dump/restores, both
+package-volume exports, owned cleanup and protected/original preservation passed.
+Independent implementation, acceptance, backup/export and cleanup outcome reviews
+found no unresolved blocking finding. No commit, push, hosted Phase 4 validation,
+deployment or Phase 5 authority is claimed. Earlier failed and interrupted
+outcomes remain retained; the checkpoints below preserve their earlier states.
+
+## Final local closeout (October 31, 2026)
+
+`final-backup-completed/receipt.json` passed after rechecking all seventeen
+previously verified source/restore snapshot pairs and dump hashes. The narrowly
+corrected package-volume export produced two verified host exports containing
+240,563,247 and 191,229,130 bytes. The completed backup receipt SHA256 is
+`efad73f4de63be8ada99c881976a1b0a2ae6269e4de654323628c7f91c8a5114`.
+Independent read-only review verified the completed backup and export evidence.
+The first failed backup receipt, partial output, both `export-diagnostic-01` and
+`export-diagnostic-02`, and the old operational helper bytes in
+`closeout-source-before-export-fix.py` remain retained. The export correction
+changed only closeout tooling and did not invalidate browser/numerical results.
+
+`final-cleanup/receipt.json` passed after checking exact ownership and the
+completed backup hash. It removed only four owned containers, four volumes, one
+network and three owned application images. Before/after preservation passed
+for all 287 protected files and all five original service identities/images/
+endpoints; original images and the byte-exact README GIF remained preserved.
+These snapshots establish the observed interval, not continuous uptime. All
+host data, both retained upload files (successful exact 4 GiB and failed partial),
+source/output bytes, dumps, exports, logs and failure evidence remain retained.
+Historical database states and retained charges were not reset or forgiven.
+Independent operational outcome review passed with no unresolved blocker.
+
+The earlier scaffolding cleanup archived and verified 647 redundant loose
+helper/draft files before deleting their loose copies. Its archive, original-path
+index and deletion inventory remain retained. Earlier cleanup removed fourteen
+contained bytecode directories with 164 `.pyc` files; the separate
+`completion-bytecode-cleanup.json` records three later helper `.pyc` removals.
+No data/evidence/archive/credential/environment/weight/generated-media file was
+added to Git. The user-created backup
+`402f3af1ac59cb4c16682d04511579e7145f0c02` remains HEAD; this completion effort
+made no commit or push.
+
+`final-source.json` inventories 160 executable/test files. Its canonical
+files-map SHA256 is
+`d9ad84b024d12367067f84a178070b47f5d00c9a14574d8972ea1c0cad53ee05`.
+It preserves 151 exact source-04 files plus the explicitly reviewed Vite forward
+correction. Reused source-qualified gates include 1,375 offline cases/one skip,
+268 PostgreSQL cases, locked quality and packaged API/CLI checks; generalized
+actual numerical/oracle/repeat results, all five retained legacy scenarios and
+the fresh cold all-62 gate; and the recorded upload protocol/crash/expiry,
+cache/recovery and resource-race campaigns. The Vite correction passed affected
+frontend build/types/lint, 29 component and 90 mocked browser cases. The new
+actual three-engine and exact-size outcomes below supply their own functional,
+lifecycle and declared resource evidence. These scopes remain distinct; no
+continuous peak, whole-host memory or unmeasured numerical-resource claim follows.
+
+The retired disposable acceptance containers/volumes/network/images are no
+longer provisioned. Retained private configurations and resource manifests
+describe those historical targets and cannot be treated as live endpoints.
+Future replay requires newly owned reprovisioning/restoration and a fresh reviewed
+resource/configuration baseline; original services remain excluded. No new
+model dispatch, dependency/lock change, original-service rollout, or deployment
+occurred. Phase 4 is locally complete under the approved completion amendment.
+
+## Current completion reset outcomes (October 31, 2026)
+
+`browser-actual-01/receipt.json` passed all three gates without forced cleanup.
+Its actual Chromium/Firefox/WebKit flows ran from 05:02:04.672 through
+06:32:16.303 UTC, with three official submissions, six complete canonical
+CSV/Parquet imports, fifteen exact numerical/chart cases, and twenty-four
+successful targeted workers. Independent outcome review verified 158 source
+bindings, original selected-version/oracle assertions and all three engines.
+The workload Job ended empty, held handles closed, and source identities matched.
+Its 1,084 service samples have a maximum recorded gap of 6.044 seconds. The
+declared mixed non-simultaneous resource envelope was 2,498,179,891 bytes, below
+8 GiB; this is Job/process committed-memory high-water accounting plus named
+service sampled maxima, not RSS or a whole-host peak. This result is separate
+from the earlier failed measured browser campaign and supplies no retroactive
+credit to it.
+
+`browser-boundary-01` failed before upload because its exact-label canonical
+format selector did not locate the current form. Its lifecycle and resource
+gates passed independently, with no forced cleanup. A one-line boundary-only
+correction reused the format combobox locator already proven by the successful
+canonical flows. The actual-flow functions and main engine loop stayed
+byte-exact; independent review approved the correction without repeating the
+successful ninety-minute campaign. The exact pre-correction JavaScript bytes
+remain at `browser-boundary-01/browser-source-before-selector.mjs`.
+
+Independent review subsequently approved the narrow timeout correction described
+below, and root launched `browser-boundary-03` with explicit
+`--vite-sha256 e5c3f1c5788f425a47c98348667ed4d1a787b5edf65a5dc54c951a4445fe63a1`.
+The original source-04 Vite hash remains recorded alongside the 151 unchanged
+files; no claim of 152-file byte equality follows from this forward correction.
+The subsequent exact-size result and closeout checkpoint follow. No original
+service, model, dependency, commit, or push change follows.
+
+`browser-boundary-03/receipt.json` passed functional, cooperative lifecycle, and
+resource gates with no forced cleanup, an empty workload Job, and closed held
+handles. Actual UI file selection, incremental hashing, and upload reached
+`uploaded` with declared and received lengths of exactly 4,294,967,296 bytes.
+The browser rejected the 4-GiB-plus-one file before an import-create request;
+the corresponding API declaration returned 422. Supported cancellation then
+left the exact-size import cancelled with no ingestion job or publication. The
+declared mixed resource envelope was 1,126,327,484 bytes, below 8 GiB. This is a
+source-derived transport fixture; no canonical validity, normalization, or new
+Binance dataset is claimed.
+
+The read-only `boundary-accounting-after.json` independently hashed both the
+retained server file and fixture and verified the cancelled generation, source
+reservation, retained charge, released admission ticket, and root inventory.
+Both files contain exactly 4,294,967,296 bytes with **file-content SHA256**
+`8c9be32517ff0829b055282947e5358a7c5d6ab7c8369af0616c7e6ef18ef8c5`.
+The bytes and full charge remain retained, with no refund or publication. This
+content hash is distinct from the checker receipt's own hash.
+
+`accounting-after.json` covers all seventeen owned databases and records all
+436 observed admission tickets released. Retained source/failure reservations
+and historical memo/copilot records remain preserved. `final-inventory` passed
+with zero blockers and matched protected/original-service observations. The
+owned package-2 API had already stopped cooperatively with exit zero and no
+forced termination; no original service was a stop target.
+
+The final backup attempt verified matching dumps and isolated restores for all
+seventeen source databases, then failed its package-volume `docker cp` export.
+The failed receipt and partial output are retained; no cleanup followed that
+failure. A narrow export correction/continuation may reuse those verified dumps
+after rechecking them. Overall backup/export completion, final ownership-checked
+cleanup/preservation and final outcome review remain pending at this checkpoint.
+No overall backup or Phase 4 completion is inferred from the seventeen successful
+database subchecks.
+
+October 31 transport correction checkpoint: the successful actual three-engine
+campaign remains tied to its recorded source. The later exact-4-GiB attempt
+`browser-boundary-02` encountered an observed backend `ClientDisconnect` after
+335,957.149 ms, retaining 4,294,930,176 bytes (37,120 short of 4 GiB). Root stopped
+the waiting runner and retained the interrupted outcome with no final
+lifecycle/resource pass. Root's separate accounting audit verified the retained
+generation/source charge, released upload slot, and ready root without a refund.
+See `browser-boundary-02/interruption.json` and
+`accounting-boundary02-interrupted.json` in the completion artifacts directory.
+
+Read-only inspection of the actual locked Vite/Node configuration established
+`requestTimeout=300000`, `headersTimeout=60000`, and connection-check interval
+30000, while both proxy timeouts and browser XHR allowed 1860000 ms. Local Node
+v22.19.0 source and the
+[Node request-timeout documentation](https://nodejs.org/download/release/v22.19.0/docs/api/http.html#serverrequesttimeout)
+confirm the independent incoming-request deadline. This configuration mismatch
+is observed; its causal role in that specific disconnect remains an inference
+because the original browser HTTP 408 was not captured.
+
+The narrow correction sets the native Vite HTTP/1 incoming deadline to the same
+31-minute transport constant. Actual-server inspection after the change observed
+all three deadlines at 1860000 ms with unchanged header/check intervals. The
+boundary harness now watches PUT response/network failure immediately, then
+uses the ordinary UI rendering wait. The runner permits only an explicitly
+pinned Vite forward hash and records 151 exact source-04 files plus old/new Vite
+hashes. Backend, formulas, application upload guards, resource limits, and locks
+are unchanged; the successful actual-flow JavaScript functions are byte-exact.
+
+Affected frontend checks passed: build including TypeScript, lint, 29 component
+cases and all 90 mocked Chromium/Firefox/WebKit cases in 44.4 seconds. An initial
+TypeScript union-property error and a sandbox temporary-file rename denial
+(six suites, zero tests run) remain recorded; a property guard and process-local
+workspace TEMP/TMP resolved their respective checks. Both fixed owned ports bound
+freely after the browser fixture drained. `timeout-correction.json` groups
+source identities, before/after inspections, commands/results and the retained
+failure/retry references; raw Vitest and browser logs/reports remain beside it.
+Independent correction review and a fresh 4-GiB outcome are pending at this
+checkpoint. No new dependency/framework, original-service change, commit, or push.
+
+Historical report opening date: October 30, 2026 (America/New_York). The current
+completion reset and outcomes above are dated October 31; historical checkpoints
+below retain their original pending/failure states and scope limitations.
+
+October 31 completion reset: the user authorized the
+[completion amendment](phase-4-completion.md), implementation through coder
+`gpt-6.1-sol/high` and independent read-only reviewer `gpt-6-astra/medium`, and
+cleanup of unnecessary earlier files with executed evidence/data preserved.
+The amendment is documented before its implementation; independent pre-code
+review and all new execution/cleanup outcomes remain pending. It supersedes
+conflicting harness/closeout requirements without regrading earlier failures or
+claiming a new acceptance pass. The user-created backup commit is `402f3af`;
+the amendment grants no commit or push authority.
+
+Independent pre-code review of the completion amendment passed with no blocking
+finding before the simplified runner was authored. Root's fresh source reuse
+baseline verified all 152 source-04 executable files exact; see
+`artifacts/v2-phase4-completion-20261031/source04-reuse-baseline.json`. The
+retained current-source gates remain scope-qualified evidence, not a new pass.
+
+The simplified Windows lifecycle helper passed six actual native cases (normal
+completion and retained post-exit Job memory counter, startup failure, worker
+crash, cooperative cancellation, timeout cleanup, and descendant containment
+after parent exit) in 1.89 seconds. Focused Ruff/format and JavaScript syntax
+checks passed. These are helper checks, not the actual-data campaign.
+
+The first smoke's sandbox loopback denial and subsequent ambiguous connect-based
+port preflight occurred before workload dispatch. A direct bind now checks the
+two fixed owned ports. `browser-smoke-01` then passed Chromium catalog/readback
+but failed Firefox launch through the logical cache path with `spawn UNKNOWN`;
+the cause is not asserted. Its unforced workload drain and sampled resource
+envelope of 968,108,080 bytes remain recorded separately from that functional
+failure. Its original lifecycle classification is retained under that version's
+rules. No new browser installation or application-source change followed.
+
+`browser-smoke-02` explicitly used the previously exercised physical installed
+cache path and passed all three engines' actual catalog/capability readbacks,
+cooperative lifecycle/drain, and the new resource metric at 2,066,247,154 bytes.
+This is a short real-stack smoke, with no imports or numerical work; the full
+actual-data and exact-4-GiB gates remain pending. Later focused corrections
+retain the distinction between functional failure and safe completed drain,
+record handle-close failures, and enforce the documented service cadence.
+Independent implementation review and the final campaigns remain pending.
+
+Root verified a checksummed archive and every decompressed member before removing
+647 redundant loose historical source/draft files. Fourteen contained bytecode
+directories containing 164 `.pyc` files were also removed. The archive and index
+are `artifacts/v2-phase4-completion-20261031/earlier-scaffolding.zip` and
+`earlier-scaffolding-index.json`; action inventories are `scaffolding-cleanup.json` and
+`bytecode-cleanup.json`. Executed JSON receipts, logs, measurements, data, private
+configuration, dumps, and historical source bytes remain retained. The new
+runner has no execution dependency on those archived helper sources. No commit
+or push occurred, and Phase 4 remains incomplete.
 
 The user approved Phase 4 scope, contributor/roadmap updates, pre-code contract,
 implementation through coder `gpt-6.1-sol/high`, independent read-only reviewer

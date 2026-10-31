@@ -25,9 +25,17 @@ published runs remain preserved in Phase 3 verification. Local actual-data gates
 and hosted validation remain separate. The user approved Phase 4 on October 30,
 2026 under its [pre-code contract](docs/v2/phase-4-ui-imports.md), with independent
 design review before code, prescribed coder/reviewer, full local acceptance and
-original-service preservation. Phase 4 is authorized and not yet complete.
-No commit or push is authorized for Phase 4. Phases 5-9 remain proposed and require
-separate authorization.
+original-service preservation. The October 31
+[completion amendment](docs/v2/phase-4-completion.md) bounded the remaining
+acceptance and cleanup work. Actual three-engine flows, exact 4 GiB upload,
+source-qualified regression gates, verified seventeen-database backup/restores,
+two package exports, ownership-checked cleanup and final preservation passed.
+Independent implementation/acceptance/backup/cleanup reviews found no unresolved
+blocking finding. Phase 4 is locally complete; see
+[verification](docs/v2/phase-4-verification.md). Historical failures remain retained.
+The user authorized Phase 4 publication on October 31; commit/push and exact-SHA
+hosted CI outcomes are pending in verification. Phases 5-9 remain proposed and
+require separate authorization.
 No infrastructure purchase or original-service deployment is
 authorized. Historical ROADMAP.md and milestone contracts remain intact.
 
@@ -125,13 +133,22 @@ protected hashes remain exact.
 
 ## Phase 4 — Metadata-driven UI and Binance file imports
 
-Status: authorized October 30, 2026. The
-[pre-code contract](docs/v2/phase-4-ui-imports.md) is written before runtime edits;
-independent pre-code review is pending. Implementation and actual acceptance are
-pending; record observed outcomes in [verification](docs/v2/phase-4-verification.md).
-No commit/push or original-service deployment is authorized. Earlier Phase 2/3
-scope/status statements above remain historical within their milestone contracts;
-this explicit approval supersedes their Phase 4 exclusions only.
+Status: locally complete October 31, 2026, with independent implementation,
+acceptance, backup/export and cleanup reviews passed and no unresolved blocker.
+The October 31 [completion amendment](docs/v2/phase-4-completion.md) bounded the work
+and supersedes conflicting acceptance/harness/closeout requirements in the
+[original pre-code contract](docs/v2/phase-4-ui-imports.md). The user authorized
+coder `gpt-6.1-sol/high`, independent read-only reviewer `gpt-6-astra/medium`, and
+cleanup of unnecessary earlier scaffolding with evidence/data preservation.
+Actual three-engine workflows, the exact 4 GiB transport boundary and retained
+accounting, source-qualified regression gates, seventeen database dump/restores,
+two package exports, original/protected preservation and exact owned cleanup
+passed; observed outcomes are in [verification](docs/v2/phase-4-verification.md).
+Redundant loose helper source/drafts were consolidated into a verified archive
+and unnecessary bytecode removed; evidence/data/dumps remain retained.
+Phase 4 publication is now authorized; exact-SHA hosted outcomes remain pending.
+Original-service deployment is unauthorized. Earlier scope/status statements
+remain historical.
 
 Make the generalized capabilities usable without editing application code.
 
@@ -159,6 +176,11 @@ January/BTC/ETH assumptions in Chromium, Firefox and WebKit. Require actual offi
 and canonical workflows, upload/cancellation/crash/admission races, unchanged
 legacy/generalized numerical gates including cold all-62, final-source suites and
 package checks, independent review, backups, preservation and owned cleanup.
+Use one active runner/lifecycle helper and separate functional, lifecycle, and
+sampled-resource gates. Finish the actual three-engine campaign and exact 4 GiB
+browser transport boundary; retain valid source-linked completed gates and rerun
+only affected checks. Current owned inventory, final dumps/restores/preservation,
+and safe cleanup close the phase; global process/ancestry/thread forensics do not.
 
 ## Phase 5 — Generalized copilot and memos
 

@@ -1,15 +1,69 @@
 # Binance spot browser workspace and canonical imports
 
-Phase 4 implementation is under independent review and acceptance. Consult the
-[verification report](phase-4-verification.md) for observed gates and limitations;
-this guide does not establish completion or hosted validation. The existing
-[Phase 2 CLI](phase-2-usage.md) and [Phase 3 numerical CLI](phase-3-usage.md) remain
-available. Generalized numerical execution requires no model.
+Phase 4 is locally complete with independent implementation, acceptance and
+operational closeout reviews passed. See [verification](phase-4-verification.md)
+for source-qualified results and retained failures. The disposable acceptance
+stack was removed after verified backups/exports and preservation checks; its
+private connection files, resource IDs and port addresses are historical evidence.
+They do not describe currently provisioned acceptance services. No hosted Phase 4
+validation, deployment, commit or push is claimed.
+
+The [completion amendment](phase-4-completion.md) defines the finite acceptance
+and cleanup scope that was completed. Stable acceptance tooling is
+`scripts/v2_phase4_acceptance.py`, `scripts/v2_phase4_lifecycle.py`,
+`scripts/v2_phase4_service.py`, and `scripts/v2_phase4_browser.mjs`; it executes
+no helper source from the historical artifacts directory. Use an explicit
+installed physical Playwright browser-cache path and fresh invocation directory
+inside `artifacts/v2-phase4-completion-20261031`. The runner accepts `smoke`,
+`actual`, or `boundary`, plus `--config`, `--campaign`, `--browser-cache`, and
+`--output`. A future replay first requires owned reprovisioning or restoration
+and a fresh reviewed resource/configuration baseline; the historical acceptance
+scripts retain explicit retired-target guards. Preserve the old manifests and
+private files rather than silently rebinding them to a new stack. Connection
+configuration is private and must address only the newly owned
+disposable browser stack. The supplied campaign contains retained verified source
+paths and independent expected results; the runner checks input/runtime identity.
+Receipts report functional, lifecycle, and resource results separately. The
+boundary mode creates a labeled source-derived transport fixture, uploads it
+through actual UI hashing/transport, verifies exact size/hash, and cancels it
+without normalization/publication; retained bytes stay charged.
+
+The local Vite HTTP/1 server's incoming-request deadline now matches the existing
+31-minute browser/proxy transport deadline. Node's separate default five-minute
+incoming deadline previously remained active despite the proxy timeout settings.
+The API's thirty-second inactivity guard, file limit, lease, and accounting rules
+are unchanged. A reviewed forward Vite correction is pinned with
+`--vite-sha256`; the runner permits only that one exact file to differ from the
+source-04 application baseline and records the 151 unchanged files and old/new
+Vite hashes. Use the independently reviewed hash recorded with the correction;
+do not use the option to accept unrelated changes. Boundary acceptance observes
+the actual PUT response or network failure before checking the uploaded UI state.
+
+Historical loose helper source/drafts were consolidated into the checksummed
+`artifacts/v2-phase4-completion-20261031/earlier-scaffolding.zip`. Its sibling
+`earlier-scaffolding-index.json` maps original relative paths to archive members
+and hashes. Restore a historical member only to a separate inspection directory
+when investigating old evidence; the active runner consumes no archived source.
+
+The existing [Phase 2 CLI](phase-2-usage.md) and
+[Phase 3 numerical CLI](phase-3-usage.md) remain available for a configured owned
+stack. Generalized numerical execution requires no model.
+
+The simplified actual three-engine import-to-research campaign has passed with
+independent outcome review. The source-pinned exact-4-GiB UI hashing/upload
+boundary also passed, including client/API over-limit rejection, supported
+cancellation and independent retained-byte/charge verification. Its fixture is
+transport-only and is not normalized or published. Final operational closeout
+passed seventeen database dump/restores, both package exports and exact owned
+cleanup with protected/original preservation. The failed first export, its two
+diagnostics, earlier selector failure and interrupted upload remain retained.
 
 ## Owned local setup
 
-Use the locked Python/frontend dependencies and a disposable database, Redis and
-storage root. Preserve original services and data. Back up and restore the owned
+For future local use, provision the locked Python/frontend dependencies and a
+new disposable database, Redis and storage root, or restore verified retained
+backups into newly owned targets. The retired acceptance endpoints are not a
+running setup. Preserve original services and data. Back up and restore the owned
 database before applying forward migration `0010_v2_browser_imports`; never run a
 destructive downgrade or apply this milestone to original services.
 
@@ -29,8 +83,9 @@ baseline file requires drained reconciliation. Historical completed readers keep
 their existing integrity checks.
 
 Run the existing API and frontend against that owned configuration. The ordinary
-frontend proxy targets API port 8000. Acceptance tooling uses separately owned
-ports 55175/55176 with `MARKETLAB_PHASE4_TEST=1`; this does not change original
+frontend proxy targets API port 8000. Historical acceptance used separately owned
+ports 55175/55176 with `MARKETLAB_PHASE4_TEST=1`; these retired addresses are
+examples for a future owned setup. This does not change original
 service configuration. Local mode has shared stack-operator authority and origin
 protection. It does not provide authenticated remote/customer access.
 

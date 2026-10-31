@@ -1,5 +1,91 @@
 # MarketLab contributor instructions
 
+## Current authority: Phase 4 publication and exact-SHA CI (October 31, 2026)
+
+After verified local Phase 4 closeout, the user explicitly authorized committing
+and pushing the completed reviewed Phase 4 work, checking hosted CI for the exact
+published SHA, and fixing actual scoped CI failures through coder
+`gpt-6.1-sol/high` followed by independent read-only reviewer
+`gpt-6-astra/medium`. Record observed publication and CI outcomes in
+[Phase 4 verification](docs/v2/phase-4-verification.md). Publication and exact-SHA
+hosted results are pending at this entry; local completion does not establish CI
+success. This supersedes earlier no-commit/push restrictions solely for this
+reviewed publication scope, including the unpublished user backup commit.
+
+Preserve historical failures, source-qualified evidence, retained data/dumps and
+all original services. Exclude artifacts, data, archives, credentials,
+environments, weights and generated media from Git; the existing README GIF
+remains byte-exact. No Phase 5, dependency/limit relaxation, unrelated repair,
+original-service rollout or new deployment authority follows.
+
+## Phase 4 locally complete; independent closeout passed (October 31, 2026)
+
+The approved [completion amendment](docs/v2/phase-4-completion.md) was documented
+and independently reviewed before implementation through coder
+`gpt-6.1-sol/high` and read-only reviewer `gpt-6-astra/medium`. Independent
+implementation, acceptance, backup/export and cleanup outcome reviews passed
+with no unresolved blocking finding. See the source-qualified
+[verification](docs/v2/phase-4-verification.md).
+
+The simplified actual Chromium/Firefox/WebKit campaign passed three official
+flows, six canonical imports, fifteen exact numerical/chart cases and twenty-four
+targeted workers. Exact 4 GiB UI hashing/upload, over-limit rejection, supported
+cancellation, retained-byte/charge verification and scoped resource/lifecycle
+gates passed. The successful 4 GiB and earlier failed partial upload remain fully
+retained and charged. Valid source-04 backend/package/numerical/cache/crash/race
+gates were reused; the reviewed one-file Vite timeout correction passed affected
+frontend checks. The other 151 source-04 files remain exact. The final 160-file
+executable/test inventory has canonical files-map SHA256
+`d9ad84b024d12367067f84a178070b47f5d00c9a14574d8972ea1c0cad53ee05`.
+
+All seventeen source database dumps/restores and both package-volume exports
+(240,563,247 and 191,229,130 bytes) were verified before exact cleanup of four
+owned containers, four volumes, one network and three application images.
+Before/after preservation matched all 287 protected files and five original
+service/image/endpoint observations. This is interval evidence, not continuous
+uptime proof. Host data, dumps, exports, raw outcomes and failures remain retained.
+The first backup/export failure and both export diagnostics remain preserved.
+
+Cleanup consolidated 647 redundant loose helper/draft files into a verified
+checksummed archive, removed 164 earlier bytecode files and three later helper
+bytecode files, and preserved historical source recovery. Original services,
+the README GIF, formulas, limits, dependency locks and historical model records
+remain preserved. No new model dispatch, commit, push or deployment occurred in
+this completion effort; user backup `402f3af1ac59cb4c16682d04511579e7145f0c02`
+remains HEAD. Phase 4 is locally complete. No publication, Phase 5 or further
+operational authority follows. Earlier authority and checkpoint entries remain
+historical; NO COMMIT OR PUSH is authorized.
+
+## Current authority: bounded v2 Phase 4 completion (October 31, 2026)
+
+The user approved documenting and implementing the
+[completion amendment](docs/v2/phase-4-completion.md) through coder
+`gpt-6.1-sol/high` followed by independent read-only reviewer
+`gpt-6-astra/medium`, and cleaning unnecessary files from the earlier attempt.
+Document the amendment and resolve blocking pre-code review decisions before
+implementation. It supersedes conflicting Phase 4 acceptance/harness/closeout
+requirements below while preserving product behavior, conservative accounting,
+resource limits, production restart identity checks, and historical outcomes.
+NO COMMIT OR PUSH.
+
+Finish the frozen browser import-to-research deliverable with one active runner
+and lifecycle helper, launch-time ownership/held handles/private Job containment,
+bounded cooperative stop/join/drain, and separate functional/lifecycle/sampled
+resource results. No global process census, historical ancestry reconstruction,
+OS-thread forensics, or required reproduction of incidental native errors.
+Complete the actual three-engine campaign, one exact 4 GiB browser transport
+boundary and over-limit rejection, source-valid regression closure, and current
+owned accounting/inventory, final backup/restore/preservation and safe cleanup.
+
+Remove only verified unnecessary scaffolding/drafts/temp/bytecode after contained
+path and reference checks with an action inventory. Retain executed evidence,
+data, dumps, failures, protected artifacts, original services and the README GIF.
+Historical helper source may be archived with original paths, checksums and a
+verified index before redundant loose copies are removed. No archival/data/media
+artifacts belong in Git. Further work must fix a demonstrated product defect,
+satisfy a named remaining gate, or enable safe closeout. Phase 5/dependencies/
+distributed execution/authentication/deployment remain excluded.
+
 ## Current authority: v2 Phase 4 browser research and imports (October 30, 2026)
 
 The user approved the detailed Phase 4 proposal and authorized contributor/roadmap

@@ -6,12 +6,16 @@ if (testPort && testPort !== "58007")
   throw new Error("Unsupported owned test API port");
 const phase4 = process.env.MARKETLAB_PHASE4_TEST === "1";
 const phase4Port = phase4 ? "55175" : "5173";
+const transportDeadline = 1_860_000;
 export default defineConfig({
   plugins: [
     react(),
     {
       name: "local-mutation-origin",
       configureServer(server) {
+        // Node's incoming-body deadline is separate from proxy socket timeouts.
+        if (server.httpServer && "requestTimeout" in server.httpServer)
+          server.httpServer.requestTimeout = transportDeadline;
         server.middlewares.use((req, res, next) => {
           if (
             req.method !== "GET" &&
@@ -46,8 +50,8 @@ export default defineConfig({
         {
           target: `http://127.0.0.1:${phase4 ? "55176" : (testPort ?? "8000")}`,
           changeOrigin: false,
-          timeout: 1_860_000,
-          proxyTimeout: 1_860_000,
+          timeout: transportDeadline,
+          proxyTimeout: transportDeadline,
         },
       ]),
     ),
