@@ -20,6 +20,65 @@ in this publication scope. The local-closeout statements below preserve their
 earlier no-publication checkpoint and are superseded only by this explicit
 authorization.
 
+## First publication failed; scoped native-identity repair (October 31, 2026)
+
+Reviewed Phase 4 was committed and pushed as
+`1760ee5c33b70d1562768c09def443c02103512e`.
+[Hosted run 41219190349](https://github.com/atharva-m/MarketLab/actions/runs/41219190349)
+failed Ubuntu quality at mypy with eight Windows-only `winreg`/`ctypes` attribute
+errors. Integration recorded 26 failures, 238 passes and four historical-input
+skips; the failing cases all reached the nonprivileged `/proc/1/ns/pid` permission
+denial and the resulting unavailable native-admission identity. Raw logs remain
+in `ci-job-124589998845/job-124589998845.log` and
+`ci-job-124589998790/job-124589998790.log` under the completion artifacts directory.
+The failed run remains failed and is not replaced by local passes.
+
+The repair changes only `native_identity.py`, focused regression coverage and
+publication documentation. Windows API guards now use mypy-recognized
+`sys.platform` conditions with the same supported-platform runtime ctypes ABI.
+Linux validates one bounded, strictly parsed NSpid row containing exactly the
+current PID. The [Linux status manual](https://man7.org/linux/man-pages/man5/proc_pid_status.5.html)
+defines the values from the proc mount's namespace through nested inner domains;
+a singleton matching PID establishes a matching current proc view independently
+of PID 1's ptrace-gated namespace link. A readable PID-1 link still must match;
+only PermissionError may rely on the mandatory independent proof. Missing,
+malformed, duplicate or multi-namespace status remains unavailable. Validated
+boot, self namespace inode, PID-1 birth, optional machine ID and the existing v1
+canonical hash encoding are preserved exactly, so existing same-domain tickets
+retain their identities; foreign-domain death remains unproven. No identity rows
+or historical charges are rewritten and no migration is needed.
+
+Focused corrected checks passed 37 native-domain/child tests in 0.45 seconds,
+eleven native-self/malformed-identity tests in 0.73 seconds, configured
+`mypy --platform linux` across 79 source files, Windows-target module typing,
+Ruff and format. The initial combined local pytest invocation had a new oracle
+failure because its expected canonical digest omitted the existing trailing
+newline; it was interrupted after partial output. Only that test expectation
+was corrected. The final focused tests passed without changing test eligibility,
+application limits, dependencies, workflow settings or hosted runner privilege.
+No unrelated browser-I/O repair or broad suite rerun is claimed from that attempt.
+
+The finite actual probe used two newly owned, network-none containers from the
+existing immutable image, executing identity checks as UID 65534 with capabilities
+dropped and no new privileges. Both reproduced actual PID-1 namespace permission
+denial, validated current/same/live identity and exact child live-to-dead behavior,
+and rejected an actual foreign namespace as dead/alive/rebooted. Evidence is
+`ci-linux-native-validation.json` and `ci-linux-domain-a.json`/`ci-linux-domain-b.json`;
+the executed module SHA256 is
+`4639283554749ae2263bdf3148cd317bac8d100456d29ac4129ea81a8c19b0f4`.
+Only the two exact label/image-checked probe containers were removed. Their inert
+PID-1 holders ignored cooperative termination and exited 137 after Docker's
+ten-second stop limit; this is bounded probe cleanup, not normal application
+shutdown evidence. The existing image and original services were not changed.
+
+Independent code review passed with no runtime blocker; final outcome/documentation
+review and a new published-SHA hosted result are pending at this checkpoint.
+`publication-preservation-01` separately matched all 287 protected hashes and
+five original service/image/endpoint observations after publication. That is
+point-in-time preservation, not continuous uptime. The source inventory and
+local acceptance below retain their original source identities; this narrow
+Linux portability correction has its own focused and future hosted evidence.
+
 Status: PHASE 4 LOCALLY COMPLETE, October 31, 2026. The simplified actual
 three-engine campaign and exact 4 GiB transport/accounting gates passed.
 Source-qualified regression gates, final seventeen-database dump/restores, both

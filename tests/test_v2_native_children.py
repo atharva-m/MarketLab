@@ -102,6 +102,7 @@ def linux_proc(monkeypatch):
     files = {
         "/proc/sys/kernel/random/boot_id": "12345678-1234-4321-8765-123456789abc",
         "/proc/self/stat": linux_stat(os.getpid(), 1, 88),
+        "/proc/self/status": f"Name:\tpython\nNSpid:\t{os.getpid()}\n",
         "/proc/1/stat": linux_stat(1),
         "/etc/machine-id": None,
     }
@@ -121,6 +122,63 @@ def test_linux_missing_machine_id_uses_validated_native_namespace_domain(linux_p
     host, boot = native_identity._linux_host_boot()
     assert len(host) == 32 and boot == linux_proc[0]["/proc/sys/kernel/random/boot_id"]
     assert native_identity._linux_host_boot() == (host, boot)
+
+
+def test_linux_denied_pid1_namespace_preserves_existing_domain(linux_proc, monkeypatch):
+    import hashlib
+    import json
+
+    files, links = linux_proc
+    # Persisted v1 domain encoding is unchanged by the additional proc-view proof.
+    legacy = {
+        "schema": "marketlab-linux-process-domain-v1",
+        "boot_id": files["/proc/sys/kernel/random/boot_id"],
+        "pid_namespace": links["/proc/self/ns/pid"],
+        "namespace_init_birth": "73",
+        "machine_id": None,
+    }
+    expected = hashlib.sha256(
+        (json.dumps(legacy, sort_keys=True, separators=(",", ":")) + "\n").encode()
+    ).hexdigest()[:32]
+    assert native_identity._linux_host_boot()[0] == expected
+
+    def readlink(path):
+        if path == "/proc/1/ns/pid":
+            raise PermissionError(path)
+        return links[path]
+
+    monkeypatch.setattr(os, "readlink", readlink)
+    assert native_identity._linux_host_boot()[0] == expected
+
+
+@pytest.mark.parametrize(
+    "status",
+    [
+        "Name:\tpython",
+        "NSpid:",
+        "NSpid:\t0",
+        "NSpid:\t+1",
+        "NSpid:\twrong",
+        "NSpid:\t999999999",
+        f"NSpid:\t{os.getpid()} {os.getpid()}",
+        f"NSpid:\t{os.getpid()}\nNSpid:\t{os.getpid()}",
+        f"NSpid:\t0{os.getpid()}",
+    ],
+)
+def test_linux_denied_pid1_link_requires_unambiguous_current_proc_view(
+    linux_proc, monkeypatch, status
+):
+    files, links = linux_proc
+    files["/proc/self/status"] = status
+
+    def readlink(path):
+        if path == "/proc/1/ns/pid":
+            raise PermissionError(path)
+        return links[path]
+
+    monkeypatch.setattr(os, "readlink", readlink)
+    with pytest.raises(OSError, match="namespace view"):
+        native_identity._linux_host_boot()
 
 
 @pytest.mark.parametrize("change", ["namespace", "init-birth", "boot", "machine-id"])
@@ -145,6 +203,7 @@ def test_linux_domain_never_aliases_another_namespace_or_boot(linux_proc, change
         ("/proc/sys/kernel/random/boot_id", "00000000-0000-0000-0000-000000000000"),
         ("/proc/sys/kernel/random/boot_id", None),
         ("/proc/self/stat", linux_stat(999999999)),
+        ("/proc/self/status", None),
         ("/proc/1/stat", linux_stat(1, birth=0)),
         ("/proc/1/stat", "malformed"),
     ],

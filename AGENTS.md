@@ -18,6 +18,34 @@ environments, weights and generated media from Git; the existing README GIF
 remains byte-exact. No Phase 5, dependency/limit relaxation, unrelated repair,
 original-service rollout or new deployment authority follows.
 
+### First Phase 4 publication and scoped native-identity CI repair
+
+Phase 4 was published as `1760ee5c33b70d1562768c09def443c02103512e`.
+[Hosted run 41219190349](https://github.com/atharva-m/MarketLab/actions/runs/41219190349)
+failed Ubuntu typing with eight Windows-only API attribute errors and integration
+with 26 failures, 238 passes and four historical-input skips. The integration
+failures reached the same nonprivileged `/proc/1/ns/pid` permission denial.
+Preserve the failed run/logs and distinguish these failures from local acceptance.
+
+The narrow repair keeps the Linux v1 domain schema/hash inputs and exact
+process-birth/child checks. It requires a bounded, strict single-current-PID
+`/proc/self/status` NSpid proof of the proc mount's PID-namespace view; only a
+PID-1 namespace-link PermissionError may use that independent proof. Readable
+PID-1 links must still match. Missing, malformed, duplicate or ancestor-namespace
+evidence fails closed, and foreign domains remain unknown. Windows guards use
+`sys.platform` without changing the ctypes ABI. No schema, limits, dependencies,
+workflow, runner privilege, or test eligibility changed.
+
+Focused local checks passed 37 native-domain/child cases, eleven native-self/
+malformed-identity cases, full Linux-target mypy (79 source files), Windows-target
+module typing and Ruff/format. Two owned network-isolated actual Linux namespaces
+reproduced the denial under UID 65534, passed current/child live/dead checks and
+rejected foreign-domain death. Both probe containers were removed; their inert
+PID-1 processes required Docker stop's bounded SIGKILL and supply no cooperative
+application-drain claim. Independent code review passed; repair publication,
+independent outcome/documentation review and new exact-SHA hosted validation are
+pending at this checkpoint. Original services/images remain preserved.
+
 ## Phase 4 locally complete; independent closeout passed (October 31, 2026)
 
 The approved [completion amendment](docs/v2/phase-4-completion.md) was documented

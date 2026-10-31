@@ -6,6 +6,7 @@ import json
 import os
 import platform
 import re
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -43,12 +44,25 @@ def _linux_host_boot() -> tuple[str, str]:
     if boot.replace("-", "") == "0" * 32:
         raise OSError("Native boot identity unavailable")
     namespace = os.readlink("/proc/self/ns/pid")
-    if (
-        not re.fullmatch(r"pid:\[[1-9][0-9]{0,19}\]", namespace)
-        or int(namespace[5:-1]) >= 2**64
-        or namespace != os.readlink("/proc/1/ns/pid")
-    ):
+    if not re.fullmatch(r"pid:\[[1-9][0-9]{0,19}\]", namespace) or int(namespace[5:-1]) >= 2**64:
         raise OSError("Native proc PID namespace mismatch")
+    # NSpid starts in the proc mount's namespace and lists any nested namespaces.
+    # One exact current PID independently proves this proc view is our namespace.
+    rows = [
+        line for line in _linux_text("/proc/self/status").splitlines() if line.startswith("NSpid:")
+    ]
+    if (
+        len(rows) != 1
+        or re.fullmatch(r"NSpid:[ \t]+" + str(os.getpid()) + r"[ \t]*", rows[0]) is None
+    ):
+        raise OSError("Native proc PID namespace view is unavailable or foreign")
+    try:
+        if namespace != os.readlink("/proc/1/ns/pid"):
+            raise OSError("Native proc PID namespace mismatch")
+    except PermissionError:
+        # PID 1's ns symlink is ptrace-gated even when this proc view is correct.
+        # The independent NSpid proof above is mandatory, including on this path.
+        pass
     _linux_stat(_linux_text("/proc/self/stat"), os.getpid())
     _, birth = _linux_stat(_linux_text("/proc/1/stat"), 1)
     try:
@@ -67,7 +81,7 @@ def _linux_host_boot() -> tuple[str, str]:
 
 
 def _host_boot() -> tuple[str, str]:
-    if os.name == "nt":
+    if sys.platform == "win32":
         import winreg
 
         with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, r"SOFTWARE\Microsoft\Cryptography") as key:
@@ -84,7 +98,7 @@ def _host_boot() -> tuple[str, str]:
 
 
 def _process(pid: int) -> dict[str, str] | None:
-    if os.name != "nt":
+    if sys.platform != "win32":
         try:
             raw = Path(f"/proc/{pid}/stat").read_text()
         except FileNotFoundError:
@@ -154,7 +168,7 @@ def child(pid: int) -> dict[str, Any]:
         before = _process(pid)
         if before is None:
             raise OSError("Owned child has exited")
-        if os.name != "nt":
+        if sys.platform != "win32":
             raw = Path(f"/proc/{pid}/stat").read_text()
             parent = int(raw[raw.rfind(")") + 2 :].split()[1])
         else:
