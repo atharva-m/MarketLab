@@ -198,6 +198,17 @@ def coverage(
     start, end = date_value(first), date_value(before)
     if not 1 <= (end - start).days <= 62:
         raise V2Error("invalid_request", "Coverage interval exceeds bounds")
+    with engine.connect() as connection:
+        candidates = execute(
+            connection,
+            "SELECT dataset_version_id FROM (" + UNION + ") c "
+            "WHERE instrument_id=:id AND trade_date>=:first AND trade_date<:before LIMIT 1001",
+            id=identity,
+            first=start,
+            before=end,
+        ).fetchall()
+        if len(candidates) > 1000:
+            raise V2Error("coverage_too_dense", "Narrow the coverage date window")
     # Bounded day count does not imply bounded versions: explicitly page alternatives.
     days = []
     for offset in range((end - start).days):

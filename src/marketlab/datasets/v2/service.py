@@ -51,12 +51,17 @@ def _reserve(
     *,
     import_id: Any = None,
     job: dict[str, Any] | None = None,
+    admission_ticket: dict[str, Any] | None = None,
 ) -> None:
     from .capacity import capacity_root
     from .capacity import outstanding as reserved_capacity
 
     root = capacity_root(root)
     lock(connection, "v2-space:" + str(root))
+    if admission_ticket is not None:
+        from .admission import transfer
+
+        transfer(connection, admission_ticket)
 
     outstanding = reserved_capacity(connection)
     if shutil.disk_usage(root).free < int(outstanding) + ceiling:
@@ -133,6 +138,75 @@ def import_file(
     *,
     limits: Limits = DEFAULT_LIMITS,
 ) -> dict[str, Any]:
+    from . import admission
+
+    with engine.connect() as connection:
+        prior = one(
+            connection,
+            "SELECT resource_id FROM v2_operations WHERE operation='import' "
+            "AND protocol=:protocol AND idempotency_key=:key",
+            protocol=PROTOCOL,
+            key=key,
+        )
+    if prior is not None:
+        return _import_file(engine, root, metadata, source, key, limits=limits)
+    if source.is_symlink() or not source.is_file():
+        raise V2Error("invalid_request", "Canonical input must be a regular file")
+    size = source.stat().st_size
+    if not 1 <= size <= limits.source_bytes:
+        raise V2Error("invalid_request", "Canonical input exceeds size limit")
+    ticket = admission.acquire(engine, root, "upload", size, physical_bytes=size)
+    try:
+        return _import_file(
+            engine, root, metadata, source, key, limits=limits, admission_ticket=ticket
+        )
+    finally:
+        if ticket is not None and ticket.get("drained", True):
+            with engine.connect() as connection:
+                row = one(
+                    connection,
+                    "SELECT resource_id FROM v2_admission_tickets WHERE ticket_id=:id",
+                    id=ticket["ticket_id"],
+                )
+                imported = (
+                    None
+                    if row is None or row["resource_id"] is None
+                    else one(
+                        connection,
+                        "SELECT source_relative_path,transport FROM v2_canonical_imports "
+                        "WHERE import_id=:id",
+                        id=row["resource_id"],
+                    )
+                )
+            path = None if imported is None else safe_path(root, imported["source_relative_path"])
+            retained = path.stat().st_size if path is not None and path.exists() else 0
+            if imported is not None:
+                if row is None or imported["transport"] != "cli":
+                    raise V2Error("integrity_failure", "CLI staging identity changed")
+                # Only positively drained CLI staging reaches this finalizer. Retain
+                # exact source identities before retiring its active-path ownership.
+                # inventory_owned returns newly inventoried bytes, not total size.
+                admission.inventory_owned(engine, ticket, imported["source_relative_path"])
+                with transaction(engine) as connection:
+                    _source_account(connection, row["resource_id"], retained)
+            admission.finish(
+                engine,
+                ticket,
+                retained,
+                None if imported is None else imported["source_relative_path"],
+            )
+
+
+def _import_file(
+    engine: Engine,
+    root: Path,
+    metadata: dict[str, Any],
+    source: Path,
+    key: str,
+    *,
+    limits: Limits = DEFAULT_LIMITS,
+    admission_ticket: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     metadata = canonical_metadata(metadata)
     # Replay is bound to retained source metadata, never the original caller path.
     with transaction(engine) as connection:
@@ -201,7 +275,18 @@ def import_file(
             path=relative,
             owner=owner,
         )
-        _reserve(connection, root, relative, declared, "source", import_id=iid)
+        _reserve(
+            connection,
+            root,
+            relative,
+            declared,
+            "source",
+            import_id=iid,
+            admission_ticket=admission_ticket,
+        )
+        from .admission import activate
+
+        activate(connection, admission_ticket, iid, generation=generation)
         initial = {"import_id": str(iid), "state": "staging", "revision": 0}
         save_operation(connection, "import", key, request, initial)
     target = safe_path(root, relative)
@@ -229,6 +314,8 @@ def import_file(
                 return
 
     renewer = threading.Thread(target=renew, daemon=True)
+    if admission_ticket is not None:
+        admission_ticket["drained"] = False
     renewer.start()
     received = 0
     try:
@@ -326,15 +413,28 @@ def import_file(
     finally:
         done.set()
         renewer.join(timeout=15)
+        if admission_ticket is not None:
+            admission_ticket["drained"] = not renewer.is_alive()
 
 
 def _job_reservations(engine: Engine, root: Path, current: dict[str, Any], relative: str) -> None:
     with transaction(engine) as connection:
-        jobs.fence(connection, current)
         _reserve(
-            connection, root, relative + "/output", 4 * 1024**3 + 128 * 1024, "output", job=current
+            connection,
+            root,
+            relative + "/output",
+            4 * 1024**3 + 128 * 1024,
+            "output",
+            job=current,
+            admission_ticket=current.get("_admission"),
         )
         _reserve(connection, root, relative + "/scratch", 20 * 1024**3, "scratch", job=current)
+    with transaction(engine) as connection:
+        jobs.fence(connection, current)
+    if current.get("_admission") is not None:
+        from .admission import mark_auxiliary_path
+
+        mark_auxiliary_path(engine, current["_admission"], relative)
 
 
 def _reconcile(
@@ -460,6 +560,10 @@ def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, 
                 os.fsync(stream.fileno())
         verify_dataset(output, cancelled=lost.is_set)
         final_relative = f"datasets-v2/{version}"
+        if current.get("_admission") is not None:
+            from .admission import mark_path
+
+            mark_path(engine, current["_admission"], final_relative)
         final = safe_path(root, final_relative)
         final.parent.mkdir(parents=True, exist_ok=True)
         # Preverification loop handles a concurrently-created winner outside DB locks.
@@ -552,6 +656,25 @@ def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, 
     finally:
         done.set()
         renewer.join(timeout=15)
+        if not renewer.is_alive() and current.get("_admission") is not None:
+            from .admission import finish, inventory_owned
+
+            retained = inventory_owned(engine, current["_admission"], relative)
+            with engine.connect() as connection:
+                paths = (
+                    execute(
+                        connection,
+                        "SELECT relative_path FROM v2_storage_reservations "
+                        "WHERE job_id=:id AND fencing_token=:token AND kind='output'",
+                        id=current["job_id"],
+                        token=current["fencing_token"],
+                    )
+                    .scalars()
+                    .all()
+                )
+            for path in paths:
+                retained += inventory_owned(engine, current["_admission"], path)
+            finish(engine, current["_admission"], retained, relative)
 
 
 def work(

@@ -19,6 +19,7 @@ from .common import V2Error, read_json
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Binance spot v2 dataset operations")
     commands = parser.add_subparsers(dest="command", required=True)
+    commands.add_parser("capacity-initialize")
     for name in ("instrument-add", "instrument-update", "submit"):
         command = commands.add_parser(name)
         command.add_argument("--request", required=True, type=Path)
@@ -60,7 +61,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     engine = create_engine(settings.sqlalchemy_url, connect_args=settings.database_connect_args)
     try:
         name = args.command
-        if name == "instrument-add":
+        if name == "capacity-initialize":
+            from .admission import initialize
+
+            result = initialize(engine, settings.storage_path)
+        elif name == "instrument-add":
             result = core.add_instrument(engine, read_json(args.request), args.key)
         elif name == "instrument-update":
             result = core.update_instrument(

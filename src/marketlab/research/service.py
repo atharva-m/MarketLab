@@ -291,6 +291,18 @@ class ResearchService:
                 shutil.rmtree(staging)
 
     async def execute(self, current: store.Claim) -> None:
+        from marketlab.datasets.v2.native_children import scope
+
+        with scope(self.engine, current.admission):
+            await self._execute(current)
+
+    async def _execute(self, current: store.Claim) -> None:
+        if current.admission is not None:
+            from marketlab.datasets.v2.admission import mark_path
+
+            await asyncio.to_thread(
+                mark_path, self.engine, current.admission, f"research/{current.run_id}"
+            )
         finished = asyncio.Event()
 
         async def renew() -> None:
@@ -345,6 +357,10 @@ class ResearchService:
             await keeper
             if staging is not None and staging.exists():
                 await asyncio.to_thread(shutil.rmtree, staging)
+            if current.admission is not None:
+                from marketlab.datasets.v2.admission import complete_legacy
+
+                await asyncio.to_thread(complete_legacy, self.engine, current.admission)
 
     async def work(self, maximum: int, run_id: str | None = None) -> int:
         if type(maximum) is not int or not 1 <= maximum <= 62:

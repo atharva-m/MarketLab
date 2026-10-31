@@ -192,12 +192,15 @@ class ResearchService:
         reservation = await asyncio.to_thread(capacity.reserve, self.engine, self.root)
         cancelled = threading.Event()
         try:
-            async with asyncio.timeout(self.attempt_timeout):
-                rows, _ = await self.prepare(spec, cancelled, reservation)
-                fingerprint = self.fingerprint(spec, rows, self.execution)
-                return await asyncio.to_thread(
-                    store.submit, self.engine, key, spec, fingerprint, rows
-                )
+            from marketlab.datasets.v2.native_children import scope
+
+            with scope(self.engine, reservation.get("_admission")):
+                async with asyncio.timeout(self.attempt_timeout):
+                    rows, _ = await self.prepare(spec, cancelled, reservation)
+                    fingerprint = self.fingerprint(spec, rows, self.execution)
+                    return await asyncio.to_thread(
+                        store.submit, self.engine, key, spec, fingerprint, rows
+                    )
         finally:
             cancelled.set()
             await asyncio.to_thread(capacity.release, self.engine, self.root, reservation)
@@ -280,6 +283,18 @@ class ResearchService:
             store.finish(connection, current)
 
     async def execute(self, current: store.Claim) -> None:
+        from marketlab.datasets.v2.native_children import scope
+
+        with scope(self.engine, current.admission):
+            await self._execute(current)
+
+    async def _execute(self, current: store.Claim) -> None:
+        if current.admission is not None:
+            from marketlab.datasets.v2.admission import mark_path
+
+            await asyncio.to_thread(
+                mark_path, self.engine, current.admission, f"research-v2/{current.run_id}"
+            )
         self.active[current.run_id] = current.lost
         finished = asyncio.Event()
 
@@ -302,7 +317,12 @@ class ResearchService:
         try:
             async with asyncio.timeout(self.attempt_timeout):
                 reservation = await asyncio.to_thread(
-                    capacity.reserve, self.engine, self.root, current.run_id, "attempt"
+                    capacity.reserve,
+                    self.engine,
+                    self.root,
+                    current.run_id,
+                    "attempt",
+                    current.admission,
                 )
                 info = await asyncio.to_thread(store.inspect, self.engine, current.run_id)
                 pinned_execution = info["fingerprint"]["execution"]
@@ -358,6 +378,19 @@ class ResearchService:
             self.active.pop(current.run_id, None)
             if reservation is not None:
                 await asyncio.to_thread(capacity.release, self.engine, self.root, reservation)
+            if current.admission is not None:
+                from marketlab.datasets.v2.admission import finish, inventory_owned
+
+                retained = await asyncio.to_thread(
+                    inventory_owned, self.engine, current.admission, f"research-v2/{current.run_id}"
+                )
+                await asyncio.to_thread(
+                    finish,
+                    self.engine,
+                    current.admission,
+                    retained,
+                    f"research-v2/{current.run_id}",
+                )
 
     async def work(
         self,

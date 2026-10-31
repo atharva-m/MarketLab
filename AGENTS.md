@@ -1,5 +1,49 @@
 # MarketLab contributor instructions
 
+## Current authority: v2 Phase 4 browser research and imports (October 30, 2026)
+
+The user approved the detailed Phase 4 proposal and authorized contributor/roadmap
+updates, the [pre-code contract](docs/v2/phase-4-ui-imports.md) BEFORE runtime code,
+implementation through coder `gpt-6.1-sol/high` followed by independent read-only
+reviewer `gpt-6-astra/medium`, full local acceptance and honest outcomes in
+[verification](docs/v2/phase-4-verification.md). Resolve blocking independent
+pre-code review findings before implementation. NO COMMIT OR PUSH. This supersedes
+earlier Phase 4 exclusions solely within this approved scope; all historical
+authority, failures, artifacts, service records and evidence remain intact.
+
+Deliver bounded metadata discovery, explicit pinned-version selection and the
+existing numerical workflows/charts in the browser, official Binance ingestion,
+canonical CSV/Parquet upload/finalize/status/renewal/cancellation through existing
+durable services, canonical guidance and local operator registry forms. Preserve
+legacy readers/routes/CLI/formulas, source/lock identities, resource limits, cache
+isolation and immutable fenced publication. Generalized copilot/memos stay Phase 5.
+
+Activate only the reviewed local-stack 100 GiB committed+reserved data ceiling,
+four concurrent staged uploads and eight running v2 ingestion/numerical attempts.
+Share the exact existing v2-space root lock and conservatively reconcile all
+generation/ingestion/research charges; retain failed bytes and never count a
+replay/renewal as permission to refund them. These are local limits, not customer
+isolation or remote-authentication guarantees. Existing physical/per-run limits
+remain unchanged. Only necessary forward v2 schema changes are authorized.
+
+Use owned disposable resources, fresh protected/source/service snapshots and
+verified backup/restore migration rehearsal. Reuse verified BTCUSDT 2025-02-01,
+SOLUSDT 2025-03-01 and equivalent canonical CSV/Parquet, plus retained BTC/SOL
+2025-02-28 through 2025-03-02 for comparisons/cluster history. Require actual
+Chromium/Firefox/WebKit upload/ingestion-to-results flows, upload/crash/accounting
+and resource races, final-source backend/frontend/quality/package gates, retained
+five numerical scenarios and unchanged legacy cold all-62. Fixtures/old passes
+never replace actual mandatory gates. Missing prerequisites leave Phase 4 incomplete.
+
+Original services/images/configuration/endpoints and protected artifacts are never
+migration/restart/cleanup targets. Inspect exact ownership before cleanup; retain
+all data/evidence/dumps and failures. No Phase 5/model/prompt/memo change, dependency/
+lock change, object storage, multi-host/auth/customer isolation, scheduling/GC,
+new workflow/venue/market/provider, purchase, original rollout or unrelated system
+change. Never include artifacts/data/archives/credentials/environments/weights or
+generated media in Git; keep the existing README GIF byte-exact. Prior publication
+authority does not authorize committing or pushing Phase 4.
+
 ## Current Phase 3 publication authority (October 29, 2026)
 
 After verified local Phase 3 closeout, the user explicitly authorized committing

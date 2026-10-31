@@ -18,7 +18,16 @@ for implementation and local acceptance under its pre-code contract below.
 Final-source runtime gates, eight database backup/restores, owned cleanup and
 final preservation passed; independent closeout review passed with no unresolved
 blocking finding. Phase 3 is locally complete.
-Phases 4-9 remain proposed and require separate authorization.
+Phase 3 was subsequently published as `387dc8202b8716926b079fa9c4c56231b53bc6e0`;
+[all five exact-SHA hosted jobs](https://github.com/atharva-m/MarketLab/actions/runs/40998640447)
+passed after two independently reviewed Windows harness-only repairs. Both failed
+published runs remain preserved in Phase 3 verification. Local actual-data gates
+and hosted validation remain separate. The user approved Phase 4 on October 30,
+2026 under its [pre-code contract](docs/v2/phase-4-ui-imports.md), with independent
+design review before code, prescribed coder/reviewer, full local acceptance and
+original-service preservation. Phase 4 is authorized and not yet complete.
+No commit or push is authorized for Phase 4. Phases 5-9 remain proposed and require
+separate authorization.
 No infrastructure purchase or original-service deployment is
 authorized. Historical ROADMAP.md and milestone contracts remain intact.
 
@@ -116,6 +125,14 @@ protected hashes remain exact.
 
 ## Phase 4 — Metadata-driven UI and Binance file imports
 
+Status: authorized October 30, 2026. The
+[pre-code contract](docs/v2/phase-4-ui-imports.md) is written before runtime edits;
+independent pre-code review is pending. Implementation and actual acceptance are
+pending; record observed outcomes in [verification](docs/v2/phase-4-verification.md).
+No commit/push or original-service deployment is authorized. Earlier Phase 2/3
+scope/status statements above remain historical within their milestone contracts;
+this explicit approval supersedes their Phase 4 exclusions only.
+
 Make the generalized capabilities usable without editing application code.
 
 - Add instrument, coverage, and capability discovery interfaces.
@@ -128,10 +145,20 @@ Make the generalized capabilities usable without editing application code.
 - Show onboarding for empty catalogs and explicit workload limits for large
   selections.
 - Keep historical reports and demo media accurately labeled.
+- Reuse existing official ingestion and numerical services through narrow local
+  HTTP adapters; preserve legacy routes/readers and keep v2 model/memos Phase 5.
+- Apply reviewed local 100 GiB committed+reserved data, four staged-upload and
+  eight running-v2-job ceilings through the shared exact capacity-root lock,
+  preserving physical/per-run limits and retained failed-generation charges.
+- Rehearse only necessary forward v2 migrations on owned copies with verified
+  backup/restore; original services are never operational targets.
 
 **Completion gate:** browser acceptance demonstrates import → catalog → selection
 → research → charts for new instruments and dates, with correct text and no hidden
-January/BTC/ETH assumptions.
+January/BTC/ETH assumptions in Chromium, Firefox and WebKit. Require actual official
+and canonical workflows, upload/cancellation/crash/admission races, unchanged
+legacy/generalized numerical gates including cold all-62, final-source suites and
+package checks, independent review, backups, preservation and owned cleanup.
 
 ## Phase 5 — Generalized copilot and memos
 

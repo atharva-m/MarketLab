@@ -305,6 +305,10 @@ def _ingest_archive(
         if checkpoint is not None:
             checkpoint("artifacts_complete")
         relative = _relative(version, symbol, trade_date)
+        if current.admission is not None:
+            from .v2.admission import mark_path
+
+            mark_path(engine, current.admission, relative.as_posix())
         final = _safe_path(root, relative)
         # Preflight readback is outside all publication locks. Cooperating writers
         # only create immutable finals; a race repeats preflight rather than reading

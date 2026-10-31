@@ -4,6 +4,8 @@ import react from "@vitejs/plugin-react";
 const testPort = process.env.MARKETLAB_R7_TEST_API_PORT;
 if (testPort && testPort !== "58007")
   throw new Error("Unsupported owned test API port");
+const phase4 = process.env.MARKETLAB_PHASE4_TEST === "1";
+const phase4Port = phase4 ? "55175" : "5173";
 export default defineConfig({
   plugins: [
     react(),
@@ -14,14 +16,15 @@ export default defineConfig({
           if (
             req.method !== "GET" &&
             req.method !== "HEAD" &&
-            req.url?.startsWith("/v1/")
+            (req.url?.startsWith("/v1/") || req.url?.startsWith("/v2/"))
           ) {
             const origin = req.headers.origin;
             if (
               origin &&
-              !["http://127.0.0.1:5173", "http://localhost:5173"].includes(
-                origin,
-              )
+              ![
+                `http://127.0.0.1:${phase4Port}`,
+                `http://localhost:${phase4Port}`,
+              ].includes(origin)
             ) {
               res.statusCode = 403;
               res.end("Local browser origin required");
@@ -38,10 +41,10 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     proxy: Object.fromEntries(
-      ["/v1", "/health"].map((prefix) => [
+      ["/v1", "/v2", "/health"].map((prefix) => [
         prefix,
         {
-          target: `http://127.0.0.1:${testPort ?? "8000"}`,
+          target: `http://127.0.0.1:${phase4 ? "55176" : (testPort ?? "8000")}`,
           changeOrigin: false,
           timeout: 1_860_000,
           proxyTimeout: 1_860_000,

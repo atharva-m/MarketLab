@@ -679,12 +679,15 @@ class BarService:
                 reservation = await self.base._thread(
                     lambda: reserve(self.engine, self.root, purpose="preparation"), stop
                 )
-                rows = await self.prepare_selection(
-                    (request.instrument_id,), request.versions, request.start, request.end, stop
-                )
-                return await self.read_prepared(
-                    request, rows, stop, scratch_root=Path(reservation["path"])
-                )
+                from marketlab.datasets.v2.native_children import scope
+
+                with scope(self.engine, reservation.get("_admission")):
+                    rows = await self.prepare_selection(
+                        (request.instrument_id,), request.versions, request.start, request.end, stop
+                    )
+                    return await self.read_prepared(
+                        request, rows, stop, scratch_root=Path(reservation["path"])
+                    )
         except TimeoutError as error:
             raise BarError("Bar preparation deadline exceeded", 504) from error
         finally:

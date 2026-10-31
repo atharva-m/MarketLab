@@ -274,6 +274,9 @@ class VerificationPool:
         try:
             # Creation and waits are outside the pool condition: shutdown can
             # observe startup and abort the public barrier while it is pending.
+            from marketlab.datasets.v2 import native_children
+
+            native_children.launch_guard()
             pid_queue = self.context.Queue(maxsize=2)
             barrier = self.context.Barrier(2)
             executor = ProcessPoolExecutor(
@@ -466,10 +469,18 @@ class VerificationPool:
             while pending or attached:
                 if cancelled.is_set():
                     raise VerificationCancelled("bar request cancelled")
+                from marketlab.datasets.v2 import native_children
+
                 if not self._ensure_started(cancelled):
                     with self.condition:
                         self.condition.wait(0.02)
                     continue
+                # Public bootstrap/initializer reports establish the worker set;
+                # independent native ancestry/birth is persisted before dispatch.
+                with self.condition:
+                    self._pids()
+                    owned_children = sorted(self.worker_pids)
+                native_children.register(owned_children)
                 with self.condition:
                     self._pids()
                     if self.closed or self.broken:

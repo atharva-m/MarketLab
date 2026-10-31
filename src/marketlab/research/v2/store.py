@@ -2,7 +2,7 @@
 
 import json
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 from uuid import uuid4
 
@@ -21,6 +21,7 @@ class Claim:
     token: int
     attempt: int
     lost: threading.Event = field(default_factory=threading.Event, compare=False)
+    admission: dict[str, Any] | None = field(default=None, compare=False)
 
 
 def key_value(key: str) -> None:
@@ -146,6 +147,33 @@ def inspect(engine: Engine, run_id: str) -> dict[str, Any]:
 
 
 def claim(engine: Engine, execution: dict[str, Any], run_id: str | None = None) -> Claim | None:
+    from marketlab.datasets.v2 import admission
+
+    root = admission.root_for(engine)
+    ticket = None
+    if root is not None:
+        try:
+            ticket = admission.acquire(
+                engine, root, "research", 34 * 1024**2, physical_bytes=22 * 1024**3 + 34 * 1024**2
+            )
+        except V2Error as error:
+            if error.code == "capacity_exceeded":
+                return None
+            raise
+    try:
+        result = _claim(engine, execution, run_id, ticket)
+    except BaseException:
+        admission.finish(engine, ticket, 0)
+        raise
+    if result is None:
+        admission.finish(engine, ticket, 0)
+        return None
+    return replace(result, admission=ticket)
+
+
+def _claim(
+    engine: Engine, execution: dict[str, Any], run_id: str | None, ticket: dict[str, Any] | None
+) -> Claim | None:
     identity = None if run_id is None else uid(run_id)
     with transaction(engine) as connection:
         while True:
@@ -196,6 +224,9 @@ def claim(engine: Engine, execution: dict[str, Any], run_id: str | None = None) 
             current = Claim(
                 str(row["run_id"]), str(uuid4()), row["fencing_token"] + 1, row["attempt_count"] + 1
             )
+            from marketlab.datasets.v2.admission import activate
+
+            activate(connection, ticket, current.run_id, current.attempt, current.token)
             execute(
                 connection,
                 "UPDATE v2_research_runs SET state='running',revision=revision+1,"

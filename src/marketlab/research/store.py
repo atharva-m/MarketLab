@@ -4,7 +4,7 @@ import hashlib
 import json
 import re
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import timedelta
 from typing import Any
 from uuid import uuid4
@@ -75,6 +75,7 @@ class Claim:
     token: int
     attempt: int
     lost: threading.Event = field(default_factory=threading.Event, compare=False)
+    admission: dict[str, Any] | None = field(default=None, compare=False)
 
 
 def bounded(connection: Connection) -> None:
@@ -173,6 +174,34 @@ def register(
 
 
 def claim(engine: Engine, run_id: str | None = None) -> Claim | None:
+    from marketlab.datasets.v2 import admission
+    from marketlab.datasets.v2.common import V2Error
+
+    root = admission.root_for(engine, historical=True)
+    ticket = None
+    if root is not None:
+        try:
+            ticket = admission.acquire(
+                engine, root, "legacy", 50 * 1024**2, physical_bytes=22 * 1024**3 + 50 * 1024**2
+            )
+        except V2Error as error:
+            if error.code == "capacity_exceeded":
+                return None
+            raise
+    try:
+        result = _claim(engine, run_id, ticket)
+    except BaseException:
+        admission.finish(engine, ticket, 0)
+        raise
+    if result is None:
+        admission.finish(engine, ticket, 0)
+        return None
+    return replace(result, admission=ticket)
+
+
+def _claim(
+    engine: Engine, run_id: str | None, admission_ticket: dict[str, Any] | None
+) -> Claim | None:
     with engine.begin() as connection:
         bounded(connection)
         now = sa.func.clock_timestamp()
@@ -225,6 +254,9 @@ def claim(engine: Engine, run_id: str | None = None) -> Claim | None:
             current = Claim(
                 row["run_id"], owner, row["fencing_token"] + 1, row["attempt_count"] + 1
             )
+            from marketlab.datasets.v2.admission import activate
+
+            activate(connection, admission_ticket, current.run_id, current.attempt, current.token)
             connection.execute(
                 runs.update()
                 .where(runs.c.run_id == current.run_id)

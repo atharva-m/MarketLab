@@ -27,13 +27,10 @@ def capacity_root(root: Path) -> Path:
 
 
 def outstanding(connection: Connection) -> int:
-    old = int(
-        execute(
-            connection,
-            "SELECT coalesce(sum(reserved_bytes),0) FROM "
-            "v2_storage_reservations WHERE state<>'released'",
-        ).scalar_one()
-    )
+    terms = [
+        "(SELECT coalesce(sum(reserved_bytes),0) FROM "
+        "v2_storage_reservations WHERE state<>'released')"
+    ]
     present = execute(connection, "SELECT to_regclass('v2_research_reservations')").scalar_one()
     if present is None:
         version_table = execute(
@@ -47,27 +44,82 @@ def outstanding(connection: Connection) -> int:
             if version_table
             else None
         )
-        if revision == "0009_v2_research":
+        if revision in {"0009_v2_research", "0010_v2_browser_imports"}:
             raise V2Error("integrity_failure", "Research capacity ledger is missing")
-        return old
-    return old + int(
-        execute(
-            connection,
-            "SELECT coalesce(sum(scratch_bytes+spill_bytes+output_bytes),0) "
-            "FROM v2_research_reservations WHERE state<>'released'",
-        ).scalar_one()
-    )
+    else:
+        terms.append(
+            "(SELECT coalesce(sum(scratch_bytes+spill_bytes+output_bytes),0) "
+            "FROM v2_research_reservations WHERE state<>'released')"
+        )
+    if execute(connection, "SELECT to_regclass('v2_admission_tickets')").scalar_one() is not None:
+        terms.append(
+            "(SELECT coalesce(sum(physical_bytes),0) FROM "
+            "v2_admission_tickets WHERE state<>'released')"
+        )
+    # Every ledger sum shares one PostgreSQL statement snapshot. A browser
+    # handoff can commit concurrently without exposing neither or both budgets.
+    return int(execute(connection, "SELECT " + "+".join(terms)).scalar_one())
 
 
 def reserve(
-    engine: Engine, root: Path, run_id: str | None = None, purpose: str = "preparation"
+    engine: Engine,
+    root: Path,
+    run_id: str | None = None,
+    purpose: str = "preparation",
+    admission_ticket: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    from . import admission
+
+    own_ticket = None
+    if purpose == "preparation" and admission_ticket is None:
+        bound = admission.root_for(engine)
+        if bound is not None:
+            own_ticket = admission.acquire(
+                engine, root, "research", 0, physical_bytes=SCRATCH + SPILL + OUTPUT
+            )
+            admission_ticket = own_ticket
+    try:
+        result = _reserve(engine, root, run_id, purpose, admission_ticket)
+        if own_ticket is not None:
+            admission.mark_path(engine, own_ticket, result["relative_path"])
+            with transaction(engine) as connection:
+                admission.activate(connection, own_ticket, run_id)
+            result["_admission"] = own_ticket
+        return result
+    except BaseException:
+        if own_ticket is not None:
+            admission.finish(engine, own_ticket, 0)
+        raise
+
+
+def _reserve(
+    engine: Engine,
+    root: Path,
+    run_id: str | None,
+    purpose: str,
+    admission_ticket: dict[str, Any] | None,
 ) -> dict[str, Any]:
     root = capacity_root(root)
+    from . import admission
+
+    with engine.connect() as connection:
+        if execute(connection, "SELECT to_regclass('v2_capacity_roots')").scalar_one() is not None:
+            admission.require(connection, root)
+            check_inventory = True
+        else:
+            admission.binding(connection, root)  # Detect a missing required migrated ledger.
+            check_inventory = False
+    if check_inventory:
+        admission.audit(engine, root)
     root.mkdir(parents=True, exist_ok=True)
     identifier, owner = uuid4(), uuid4()
     relative = f"research-v2-scratch/{identifier}"
     with transaction(engine) as connection:
         lock(connection, "v2-space:" + str(root))
+        if admission_ticket is not None:
+            from .admission import transfer
+
+            transfer(connection, admission_ticket)
         if shutil.disk_usage(root).free < outstanding(connection) + SCRATCH + SPILL + OUTPUT:
             raise V2Error("capacity_exceeded", "Insufficient reserved numerical capacity")
         execute(
@@ -85,6 +137,8 @@ def reserve(
             path=relative,
         )
     path = safe_path(root, relative)
+    if admission_ticket is not None:
+        admission.mark_auxiliary_path(engine, admission_ticket, relative)
     path.mkdir(parents=True, exist_ok=False)
     return {
         "reservation_id": str(identifier),
@@ -136,3 +190,7 @@ def release(engine: Engine, root: Path, reservation: dict[str, Any], success: bo
             id=reservation["reservation_id"],
             owner=reservation["owner"],
         )
+    if reservation.get("_admission") is not None:
+        from .admission import finish
+
+        finish(engine, reservation["_admission"], 0)

@@ -11,12 +11,14 @@ import {
   CopilotDetail,
 } from "./Pages";
 import { ResearchDetail } from "./Run";
+import { V2Workspace } from "./v2/Workspace";
 import { Icon, runName, type IconName } from "./ui";
 const WORDMARK = [
   "█▀▄▀█ ▄▀█ █▀█ █▄▀ █▀▀ ▀█▀ █   ▄▀█ █▄▄",
   "█ ▀ █ █▀█ █▀▄ █ █ ██▄  █  █▄▄ █▀█ █▄█",
 ].join("\n");
 const NAV: [string, IconName, string][] = [
+  ["/v2/catalog", "datasets", "Binance workspace"],
   ["/catalog", "datasets", "Datasets"],
   ["/ingestion/new", "ingestion", "Ingestion"],
   ["/jobs", "jobs", "Jobs"],
@@ -24,6 +26,7 @@ const NAV: [string, IconName, string][] = [
   ["/copilot/new", "copilot", "Copilot"],
 ];
 const SECTIONS: Record<string, [string, string]> = {
+  v2: ["Binance spot", "/v2/catalog"],
   catalog: ["datasets", "/catalog"],
   ingestion: ["ingestion", "/ingestion/new"],
   jobs: ["jobs", "/jobs"],
@@ -68,7 +71,8 @@ export default function App() {
   const route = useRoute();
   let content: ReactNode;
   const [family = "catalog", id] = route.split("/").filter(Boolean);
-  if (route === "/research/new") content = <ResearchForm />;
+  if (family === "v2") content = <V2Workspace route={route} />;
+  else if (route === "/research/new") content = <ResearchForm />;
   else if (route === "/ingestion/new") content = <Ingestion />;
   else if (route === "/copilot/new") content = <CopilotForm />;
   else if (family === "runs" && uuid.test(id ?? ""))

@@ -6,7 +6,7 @@ import re
 import threading
 import time
 from collections.abc import Callable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from typing import Any
 from uuid import uuid4
@@ -81,6 +81,7 @@ class Claim:
     token: int
     attempt: int
     lost: threading.Event = field(default_factory=threading.Event, compare=False)
+    admission: dict[str, Any] | None = field(default=None, compare=False)
 
 
 def validate_request(symbols: Sequence[str], start: date, before: date, key: str) -> list[str]:
@@ -176,6 +177,42 @@ def submit(
 def claim(
     engine: Engine, *, submission_id: str | None = None, job_id: str | None = None
 ) -> Claim | None:
+    from .v2 import admission
+    from .v2.common import V2Error
+
+    root = admission.root_for(engine, historical=True)
+    ticket = None
+    if root is not None:
+        try:
+            ticket = admission.acquire(
+                engine,
+                root,
+                "legacy",
+                admission.OUTPUT_LIMIT + 512 * 1024**2,
+                physical_bytes=admission.OUTPUT_LIMIT + 20 * 1024**3,
+            )
+        except V2Error as error:
+            if error.code == "capacity_exceeded":
+                return None
+            raise
+    try:
+        result = _claim(engine, submission_id=submission_id, job_id=job_id, admission_ticket=ticket)
+    except BaseException:
+        admission.finish(engine, ticket, 0)
+        raise
+    if result is None:
+        admission.finish(engine, ticket, 0)
+        return None
+    return replace(result, admission=ticket)
+
+
+def _claim(
+    engine: Engine,
+    *,
+    submission_id: str | None,
+    job_id: str | None,
+    admission_ticket: dict[str, Any] | None,
+) -> Claim | None:
     with engine.begin() as connection:
         now = sa.func.clock_timestamp()
         # Queued work is due from submission; re-reading wall time would miss it
@@ -235,6 +272,9 @@ def claim(
                 continue
             owner = str(uuid4())
             token, number = row["fencing_token"] + 1, row["attempt_count"] + 1
+            from .v2.admission import activate
+
+            activate(connection, admission_ticket, row["job_id"], number, token)
             connection.execute(
                 jobs.update()
                 .where(jobs.c.job_id == row["job_id"])
@@ -444,6 +484,10 @@ def execute(
     finally:
         stop.set()
         thread.join(timeout=20)
+        if not thread.is_alive() and current.admission is not None:
+            from .v2.admission import complete_legacy
+
+            complete_legacy(engine, current.admission)
 
 
 def work(

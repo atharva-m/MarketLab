@@ -87,6 +87,15 @@ def submit(engine: Engine, request: dict[str, Any], key: str) -> dict[str, Any]:
         replay = operation(connection, "submit", key, canonical)
         if replay is not None:
             return replay
+    from . import admission
+
+    root = admission.root_for(engine)
+    if root is not None:
+        admission.audit(engine, root)
+    with transaction(engine) as connection:
+        replay = operation(connection, "submit", key, canonical)
+        if replay is not None:
+            return replay
         sid, jobs = create_submission(connection, canonical, identities, first, before)
         return save_operation(
             connection,
@@ -166,6 +175,38 @@ def finish(
 
 
 def claim(engine: Engine, submission_id: str | None = None) -> dict[str, Any] | None:
+    from . import admission
+
+    root = admission.root_for(engine)
+    ticket = None
+    if root is not None:
+        try:
+            ticket = admission.acquire(
+                engine,
+                root,
+                "ingestion",
+                admission.OUTPUT_LIMIT + 512 * 1024**2 + 4096,
+                physical_bytes=admission.OUTPUT_LIMIT + 20 * 1024**3,
+            )
+        except V2Error as error:
+            if error.code == "capacity_exceeded":
+                return None
+            raise
+    try:
+        result = _claim(engine, submission_id, ticket)
+    except BaseException:
+        admission.finish(engine, ticket, 0)
+        raise
+    if result is None:
+        admission.finish(engine, ticket, 0)
+    else:
+        result["_admission"] = ticket
+    return result
+
+
+def _claim(
+    engine: Engine, submission_id: str | None, ticket: dict[str, Any] | None
+) -> dict[str, Any] | None:
     fingerprint = execution_identity()["execution_sha256"]
     with transaction(engine) as connection:
         values: dict[str, Any] = {"execution": fingerprint, "submission": None}
@@ -241,6 +282,11 @@ def claim(engine: Engine, submission_id: str | None = None) -> dict[str, Any] | 
             finish(connection, job, "failed", "expired", "attempts_exhausted")
             return None
         owner = uuid4()
+        from .admission import activate
+
+        activate(
+            connection, ticket, job["job_id"], job["attempt_count"] + 1, job["fencing_token"] + 1
+        )
         execute(
             connection,
             "UPDATE v2_ingestion_jobs SET state='running',attempt_count=attempt_count+1,"
