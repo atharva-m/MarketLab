@@ -1,5 +1,29 @@
 # V2 Phase 4 verification
 
+## Publication and hosted CI verified (October 31, 2026)
+
+Reviewed Phase 4 and its independently reviewed native-identity repair were
+published as `0ab09fe966ead3234936b24fe43029152caa8ce8`.
+[Hosted run 41221399573](https://github.com/atharva-m/MarketLab/actions/runs/41221399573)
+completed with conclusion `success` for that exact SHA. All five jobs completed
+successfully: integration, frontend, demo, `quality (ubuntu-latest)` and
+`quality (windows-latest)`. The API run/job/step observations are retained in
+`artifacts/v2-phase4-completion-20261031/ci-0ab09-snapshot02/result.json`.
+
+The failed initial published SHA `1760ee5c33b70d1562768c09def443c02103512e`,
+run `41219190349`, raw failure logs and scoped repair evidence remain preserved.
+Hosted success remains separate from the source-qualified local actual-data,
+independent numerical/oracle, memory/resource, recovery, database backup and
+ownership-cleanup evidence below; hosted CI does not replace those local gates.
+
+`publication-preservation-final` matched all 287 protected files and all five
+original service/image/endpoint observations after publication/CI. This is
+point-in-time preservation, not continuous uptime, and no original service was
+changed. The documentation-only outcome commit/push and its exact-SHA hosted
+result are pending at this checkpoint; root will check and report that separate
+SHA in the session. No Phase 5, unrelated repair or original-service deployment
+authority follows. Earlier pending and failed checkpoints remain historical.
+
 ## Publication authorization and pending hosted validation (October 31, 2026)
 
 The user explicitly authorized committing/pushing the locally completed reviewed

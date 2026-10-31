@@ -33,9 +33,12 @@ two package exports, ownership-checked cleanup and final preservation passed.
 Independent implementation/acceptance/backup/cleanup reviews found no unresolved
 blocking finding. Phase 4 is locally complete; see
 [verification](docs/v2/phase-4-verification.md). Historical failures remain retained.
-The user authorized Phase 4 publication on October 31; commit/push and exact-SHA
-hosted CI outcomes are pending in verification. Phases 5-9 remain proposed and
-require separate authorization.
+Phase 4 and its scoped native-identity repair were published as
+`0ab09fe966ead3234936b24fe43029152caa8ce8`;
+[all five exact-SHA hosted jobs](https://github.com/atharva-m/MarketLab/actions/runs/41221399573)
+passed. The failed first published run remains in verification, distinct from
+local acceptance. Documentation-only outcome publication/CI is pending at this
+entry. Phases 5-9 remain proposed and require separate authorization.
 No infrastructure purchase or original-service deployment is
 authorized. Historical ROADMAP.md and milestone contracts remain intact.
 
@@ -146,7 +149,10 @@ two package exports, original/protected preservation and exact owned cleanup
 passed; observed outcomes are in [verification](docs/v2/phase-4-verification.md).
 Redundant loose helper source/drafts were consolidated into a verified archive
 and unnecessary bytecode removed; evidence/data/dumps remain retained.
-Phase 4 publication is now authorized; exact-SHA hosted outcomes remain pending.
+Published SHA `0ab09fe966ead3234936b24fe43029152caa8ce8` passed all five jobs in
+[exact-SHA hosted run 41221399573](https://github.com/atharva-m/MarketLab/actions/runs/41221399573).
+The initial failed publication and repair history remain in verification;
+documentation-only outcome publication/CI is pending at this checkpoint.
 Original-service deployment is unauthorized. Earlier scope/status statements
 remain historical.
 

@@ -1,5 +1,24 @@
 # MarketLab contributor instructions
 
+## Phase 4 publication and hosted CI verified (October 31, 2026)
+
+Reviewed Phase 4 and the scoped native-identity CI repair were published as
+`0ab09fe966ead3234936b24fe43029152caa8ce8`.
+[Exact-SHA run 41221399573](https://github.com/atharva-m/MarketLab/actions/runs/41221399573)
+completed successfully: integration, frontend, demo, Ubuntu quality and Windows
+quality all passed. API run/job/step results are retained in
+`ci-0ab09-snapshot02/result.json` under completion artifacts. The failed first
+publication/run `1760ee5`/`41219190349` and its logs remain preserved.
+
+Hosted checks remain distinct from source-qualified local actual-data/numerical/
+resource/backup/cleanup acceptance. Final publication preservation again matched
+all 287 protected files and five original service/image/endpoint observations;
+this is point-in-time evidence, not continuous uptime. Original services were
+unchanged. The documentation-only outcome publication and its exact-SHA CI are
+pending at this entry; check that SHA separately and report it in the session.
+No original-service deployment, Phase 5 or unrelated authority follows. Earlier
+pending/failure entries below remain historical.
+
 ## Current authority: Phase 4 publication and exact-SHA CI (October 31, 2026)
 
 After verified local Phase 4 closeout, the user explicitly authorized committing
