@@ -1,5 +1,32 @@
 # V2 Phase 5 verification
 
+## Phase 5 publication and exact-SHA CI verified (November 4, 2026)
+
+Completed Phase 5 and the independently reviewed concurrent-inspection repair
+were published as `9e0f654cb8afb73d08d96372e045f7ea8393df50`.
+[Exact-SHA run 41849310726](https://github.com/atharva-m/MarketLab/actions/runs/41849310726)
+completed successfully: integration, frontend, demo, Ubuntu quality and Windows
+quality all passed. The exact commit/run/job/step results are retained in
+`ci-9e0f654-snapshot02/result.json` under the ignored Phase 5 evidence directory.
+The initial failed publication `5c896c8` / run `41846388818` and its logs remain
+preserved; it is not relabeled as a successful run.
+
+Only the observed concurrency defect was repaired. Its one focused PostgreSQL
+regression failed before and passed after the scoped inspection snapshot change;
+previously passed local suites and actual-model evaluations were not rerun.
+Independent code/test and publication reviews passed. Generated evidence/data,
+private credentials, debug logs, environments, weights and generated media were
+excluded from both commits. The existing README GIF remained byte-exact.
+Original services, retained data/dumps and all historical evidence are unchanged.
+Hosted results remain distinct from the original source-qualified local actual
+acceptance and cleanup receipts.
+
+This documentation-only follow-up records the observed successful implementation
+run. Its own exact-commit CI is checked separately and retained in publication
+artifacts; successful predecessor CI alone is not evidence for another commit.
+No original-service deployment, model/validator/limit change or Phase 6 work follows.
+Earlier pending publication checkpoints below are historical.
+
 ## First publication and scoped concurrent-inspection repair (November 4, 2026)
 
 The reviewed Phase 5 work was committed and pushed as

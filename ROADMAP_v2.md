@@ -1,5 +1,14 @@
 # Phased delivery: Binance spot MarketLab
 
+Phase 5 is published with its scoped concurrent-inspection repair at
+`9e0f654cb8afb73d08d96372e045f7ea8393df50` (November 4, 2026).
+[Exact-SHA CI run 41849310726](https://github.com/atharva-m/MarketLab/actions/runs/41849310726)
+passed all five jobs. Passed local checks and historical evidence remain retained;
+only the observed integration race received a focused red/green regression and
+coder/reviewer repair. This outcome-only documentation update receives its own
+exact-SHA CI check. No original-service rollout or Phase 6 work follows. Earlier
+publication checkpoints below are historical; see [verification](docs/v2/phase-5-verification.md).
+
 Phase 5 publication checkpoint (November 4, 2026): commit `5c896c8` was pushed.
 Its exact-SHA CI passed four jobs and failed one concurrent-answer integration
 case. The scoped inspection-snapshot correction passed independent review and a

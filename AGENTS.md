@@ -1,5 +1,24 @@
 # MarketLab contributor instructions
 
+## Phase 5 publication and hosted CI verified (November 4, 2026)
+
+Reviewed Phase 5 and the narrow concurrent-inspection repair were published as
+`9e0f654cb8afb73d08d96372e045f7ea8393df50`.
+[Exact-SHA run 41849310726](https://github.com/atharva-m/MarketLab/actions/runs/41849310726)
+passed all five jobs: integration, frontend, demo and Ubuntu/Windows quality.
+Exact API results are retained in `ci-9e0f654-snapshot02/result.json` under Phase 5
+evidence. Preserve the original failed `5c896c8` / `41846388818` run and its logs.
+The focused PostgreSQL red/green test and independent code/publication reviews
+passed; previously passed local suites were reused, not rerun.
+
+Original services, evidence, data/dumps and the README GIF remain preserved;
+excluded generated/private files were not published. Hosted validation remains
+distinct from source-qualified local actual acceptance. Check the exact SHA of
+this outcome-only documentation publication separately and report its hosted
+result in the session; predecessor success does not establish another SHA's CI.
+No original-service rollout, Phase 6 or unrelated authority follows. Earlier
+pending/failure entries remain historical.
+
 ## First Phase 5 publication and scoped CI repair (November 4, 2026)
 
 Phase 5 was published as `5c896c867efdb119679442669ab0684650ef4f71`.
