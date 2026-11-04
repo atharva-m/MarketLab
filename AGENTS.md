@@ -1,5 +1,19 @@
 # MarketLab contributor instructions
 
+## First Phase 5 publication and scoped CI repair (November 4, 2026)
+
+Phase 5 was published as `5c896c867efdb119679442669ab0684650ef4f71`.
+[Run 41846388818](https://github.com/atharva-m/MarketLab/actions/runs/41846388818)
+passed frontend, demo and both platform quality jobs; integration had one
+concurrent-answer conflict failure, 295 passes and four historical-input skips.
+Preserve that run and logs. A focused owned-PostgreSQL reproduction demonstrated
+an old request/new history snapshot race. The reviewed narrow fix applies
+REPEATABLE READ only to the inspection connection, preserving locked writes and
+all validators/settings/limits. The existing deterministic regression failed
+before and passed after; applicable local suites were reused. The owned test
+container/volume were removed, with evidence retained. Repair publication and
+its exact-SHA CI remain pending. No original-service rollout or Phase 6 follows.
+
 ## Current authority: Phase 5 publication and exact-SHA CI (November 4, 2026)
 
 After independently verified local Phase 5 closeout, the user authorized committing

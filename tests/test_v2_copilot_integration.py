@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from threading import Event
 
 import pytest
 import sqlalchemy as sa
@@ -447,7 +448,9 @@ async def test_incompatible_pending_copilot_does_not_starve_current_memo(
         await base.close()
 
 
-async def test_simultaneous_create_and_answer_are_single_append_operations(model_engine, tmp_path):
+async def test_simultaneous_create_and_answer_are_single_append_operations(
+    model_engine, tmp_path, monkeypatch
+):
     base, numerical, copilot, memo, body = await setup(model_engine, tmp_path)
     try:
         body["context"] = {}
@@ -464,13 +467,28 @@ async def test_simultaneous_create_and_answer_are_single_append_operations(model
             "text": "Confirm.",
             "context": {"workflow": "market_profile"},
         }
-        outcomes = await asyncio.gather(
-            copilot.answer(identity, answer, "first-answer"),
-            copilot.answer(identity, answer, "second-answer"),
-            return_exceptions=True,
-        )
-        assert sum(isinstance(v, tuple) for v in outcomes) == 1
-        assert sum(isinstance(v, V2Error) and v.code == "revision_conflict" for v in outcomes) == 1
+        request_read = Event()
+        answer_committed = Event()
+
+        def pause_first_inspection(connection, sql, **params):
+            row = one(connection, sql, **params)
+            if sql == "SELECT * FROM v2_copilot_requests WHERE request_id=:id" and not (
+                request_read.is_set()
+            ):
+                # The competing answer commits between the request and history reads.
+                request_read.set()
+                assert answer_committed.wait(10), "Competing answer did not commit"
+            return row
+
+        monkeypatch.setattr(store, "one", pause_first_inspection)
+        first = asyncio.create_task(copilot.answer(identity, answer, "first-answer"))
+        try:
+            assert await asyncio.to_thread(request_read.wait, 10), "First answer did not inspect"
+            assert await copilot.answer(identity, answer, "second-answer") == (identity, 1, False)
+        finally:
+            answer_committed.set()
+            (loser,) = await asyncio.gather(first, return_exceptions=True)
+        assert isinstance(loser, V2Error) and loser.code == "revision_conflict", repr(loser)
         assert len(store.inspect(model_engine, identity)["revisions"]) == 2
         assert copilot.model.calls == 1
     finally:

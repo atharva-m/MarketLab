@@ -1,5 +1,37 @@
 # V2 Phase 5 verification
 
+## First publication and scoped concurrent-inspection repair (November 4, 2026)
+
+The reviewed Phase 5 work was committed and pushed as
+`5c896c867efdb119679442669ab0684650ef4f71`.
+[Exact-SHA run 41846388818](https://github.com/atharva-m/MarketLab/actions/runs/41846388818)
+passed frontend, demo and Ubuntu/Windows quality. Integration had one failure,
+295 passes and four historical-input skips: the concurrent-answer test appended
+exactly one answer, but the loser did not report `revision_conflict`. The hosted
+log did not expose that losing exception; the failed run/logs remain retained in
+`ci-5c896c8-snapshot02` and `ci-5c896c8-integration-failure` under Phase 5 artifacts.
+
+A deterministic reproduction of the actual interleaving on a fresh owned
+PostgreSQL instance exposed `integrity_failure`: under READ COMMITTED, inspection
+could read the old request revision and newly committed revision history in
+separate SELECT snapshots. The narrowly scoped correction uses REPEATABLE READ
+only for that inspection connection. Existing locked append decisions, write
+isolation, validators, model/settings, schemas and limits remain unchanged.
+The existing regression test now forces the winner's commit between those reads
+and retains the single-append, exact-conflict, revision-count and call-count
+assertions. It failed before the change and passed afterward (one case, 2.13s).
+Independent code/test review passed; only affected Ruff/format/diff checks ran.
+No previously passed local suite or model evaluation was repeated.
+
+The disposable reproduction PostgreSQL container and its anonymous volume were
+removed after exact ownership checks; its logs, focused red/green results and
+cleanup receipt remain in `ci-race-fix-001`. The initial setup URL was rejected
+before migration and remains recorded; the corrected driver URL initialized the
+owned database normally. Original services and retained Phase 5 evidence were
+untouched. The repair changes the current runtime source identity; earlier
+acceptance receipts retain their original identities and are not relabeled.
+Repair publication and its own exact-SHA hosted results are pending here.
+
 ## Publication authorized; exact-SHA CI pending (November 4, 2026)
 
 The user authorized publication of the independently reviewed completed Phase 5

@@ -139,6 +139,8 @@ def answer(
 def inspect(engine: Engine, request_id: str) -> dict[str, Any]:
     uid(request_id)
     with engine.connect() as connection:
+        # Read the request, revisions and calls from the same committed snapshot.
+        connection.execution_options(isolation_level="REPEATABLE READ")
         row = one(
             connection, "SELECT * FROM v2_copilot_requests WHERE request_id=:id", id=request_id
         )

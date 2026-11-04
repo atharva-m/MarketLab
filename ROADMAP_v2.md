@@ -1,5 +1,12 @@
 # Phased delivery: Binance spot MarketLab
 
+Phase 5 publication checkpoint (November 4, 2026): commit `5c896c8` was pushed.
+Its exact-SHA CI passed four jobs and failed one concurrent-answer integration
+case. The scoped inspection-snapshot correction passed independent review and a
+focused PostgreSQL red/green regression; repair publication and CI are pending.
+See [verification](docs/v2/phase-5-verification.md). The local closeout below
+predates this explicitly authorized publication; its retained evidence is unchanged.
+
 Phase 5 is locally complete (November 4, 2026). Independent implementation,
 actual acceptance, backup and cleanup reviews passed. Both copilot/memo cohorts,
 clarification/grounding/faults, three browser engines, legacy/numerical/cache and
