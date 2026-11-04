@@ -13,6 +13,7 @@ export function useV2(path: string | null, poll = false) {
     null,
   );
   const [error, setError] = useState("");
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [epoch, setEpoch] = useState(0);
   useEffect(() => {
@@ -21,6 +22,7 @@ export function useV2(path: string | null, poll = false) {
     const controller = new AbortController();
     const started = Date.now();
     setError("");
+    setErrorStatus(null);
     setBusy(false);
     if (!path) return () => controller.abort();
     const load = async () => {
@@ -36,10 +38,12 @@ export function useV2(path: string | null, poll = false) {
         if (!live) return;
         setResult({ path, data });
         setError("");
+        setErrorStatus(null);
         if (poll && active(data)) timer = setTimeout(() => void load(), 2000);
       } catch (e) {
         if (!live || controller.signal.aborted) return;
         setError(errorText(e));
+        setErrorStatus(e instanceof V2Error ? e.status : null);
       } finally {
         if (live) setBusy(false);
       }
@@ -54,6 +58,7 @@ export function useV2(path: string | null, poll = false) {
   return {
     data: result?.path === path ? result.data : null,
     error,
+    errorStatus,
     busy,
     refresh: useCallback(() => setEpoch((v) => v + 1), []),
   };

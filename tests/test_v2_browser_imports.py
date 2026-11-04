@@ -126,7 +126,9 @@ async def test_capabilities_strict_hash_and_effective_limits():
         sha = value.pop("sha256")
         assert response.status_code == 200 and sha == digest(value)
         assert value["limits"]["canonical_bytes"] == 4 * 1024**3
-        assert value["auth_mode"] == "local" and not value["memo_available"]
+        assert value["auth_mode"] == "local" and value["memo_available"]
+        assert value["copilot_available"]
+        assert value["limits"]["model_input_bytes"] == 6000
         invalid = await client.get("/v2/capabilities?unknown=yes")
         assert invalid.status_code == 422
 

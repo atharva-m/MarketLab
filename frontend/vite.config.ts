@@ -5,7 +5,10 @@ const testPort = process.env.MARKETLAB_R7_TEST_API_PORT;
 if (testPort && testPort !== "58007")
   throw new Error("Unsupported owned test API port");
 const phase4 = process.env.MARKETLAB_PHASE4_TEST === "1";
-const phase4Port = phase4 ? "55175" : "5173";
+const phase5 = process.env.MARKETLAB_PHASE5_TEST === "1";
+if (phase5 && (phase4 || testPort))
+  throw new Error("Phase 5 requires its separate owned browser binding");
+const browserPort = phase5 ? "58184" : phase4 ? "55175" : "5173";
 const transportDeadline = 1_860_000;
 export default defineConfig({
   plugins: [
@@ -26,8 +29,8 @@ export default defineConfig({
             if (
               origin &&
               ![
-                `http://127.0.0.1:${phase4Port}`,
-                `http://localhost:${phase4Port}`,
+                `http://127.0.0.1:${browserPort}`,
+                `http://localhost:${browserPort}`,
               ].includes(origin)
             ) {
               res.statusCode = 403;
@@ -42,13 +45,13 @@ export default defineConfig({
   ],
   server: {
     host: "127.0.0.1",
-    port: 5173,
+    port: phase5 ? 58184 : 5173,
     strictPort: true,
     proxy: Object.fromEntries(
       ["/v1", "/v2", "/health"].map((prefix) => [
         prefix,
         {
-          target: `http://127.0.0.1:${phase4 ? "55176" : (testPort ?? "8000")}`,
+          target: `http://127.0.0.1:${phase5 ? "58185" : phase4 ? "55176" : (testPort ?? "8000")}`,
           changeOrigin: false,
           timeout: transportDeadline,
           proxyTimeout: transportDeadline,

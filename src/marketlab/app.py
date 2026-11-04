@@ -17,12 +17,17 @@ from marketlab.config import Settings
 from marketlab.copilot.model import Ollama
 from marketlab.copilot.routes import router as copilot_router
 from marketlab.copilot.service import CopilotService
+from marketlab.copilot.v2.model import CopilotModel as V2CopilotModel
+from marketlab.copilot.v2.routes import router as v2_model_router
+from marketlab.copilot.v2.service import CopilotService as V2CopilotService
 from marketlab.datasets.v2.browser_imports import BrowserImports
 from marketlab.datasets.v2.routes import router as v2_dataset_router
 from marketlab.health import build_checks, readiness
 from marketlab.memos.model import MemoModel
 from marketlab.memos.routes import router as memo_router
 from marketlab.memos.service import MemoService
+from marketlab.memos.v2.model import MemoModel as V2MemoModel
+from marketlab.memos.v2.service import MemoService as V2MemoService
 from marketlab.observability import RequestMetrics, RequestMiddleware, configure_logging
 from marketlab.research.routes import router as research_router
 from marketlab.research.service import ResearchService
@@ -63,6 +68,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         app.state.research_service = ResearchService(app.state.bar_service)
         app.state.v2_research_service = V2ResearchService(app.state.bar_service)
+        app.state.v2_copilot_service = V2CopilotService(
+            app.state.v2_research_service,
+            V2CopilotModel(
+                settings.ollama_url, settings.copilot_model, settings.copilot_model_digest
+            ),
+        )
+        app.state.v2_memo_service = V2MemoService(
+            app.state.v2_research_service,
+            V2MemoModel(settings.ollama_url, settings.copilot_model, settings.copilot_model_digest),
+        )
         app.state.workspace_service = WorkspaceService(app.state.bar_service)
         app.state.v2_import_service = BrowserImports(trade_engine, settings.storage_path)
         app.state.copilot_service = CopilotService(
@@ -102,6 +117,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(v2_dataset_router)
     app.include_router(copilot_router)
     app.include_router(memo_router)
+    app.include_router(v2_model_router)
 
     @app.exception_handler(Exception)
     async def unexpected_error(request: Request, exc: Exception) -> JSONResponse:

@@ -75,6 +75,10 @@ async def invoke(args: argparse.Namespace) -> object:
 
 
 def main() -> int:
+    if sys.argv[1:2] == ["v2"]:
+        from marketlab.copilot.v2.cli import main as v2_main
+
+        return v2_main("copilot", sys.argv[2:])
     args = parser().parse_args()
     try:
         print(

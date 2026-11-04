@@ -428,13 +428,15 @@ def test_actual_fresh_populated_migration_and_constraints(copilot_engine):
             assert connection.scalar(sa.text(f'SELECT count(*) FROM "{schema}".trades')) == 1
             assert (
                 connection.scalar(sa.text(f'SELECT version_num FROM "{schema}".alembic_version'))
-                == "0010_v2_browser_imports"
+                == "0011_v2_copilot_memos"
             )
             count = connection.scalar(
                 sa.text("""SELECT count(*) FROM pg_constraint c
                 JOIN pg_namespace n ON n.oid=c.connamespace
+                JOIN pg_class t ON t.oid=c.conrelid
                 WHERE n.nspname=:schema AND c.contype='f'
-                AND c.conrelid::regclass::text LIKE '%copilot%' """),
+                AND t.relname IN ('copilot_requests','copilot_revisions',
+                'copilot_jobs','copilot_attempts') """),
                 {"schema": schema},
             )
             assert count == 4

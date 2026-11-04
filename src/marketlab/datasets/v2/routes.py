@@ -9,9 +9,9 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from marketlab.workspace import local_mutation
 
-from . import admission, catalog, core, jobs
+from . import catalog, core, jobs
 from .browser_imports import BrowserImports
-from .common import V2Error, digest, exact_fields, parse_json
+from .common import V2Error, exact_fields, parse_json
 
 router = APIRouter(prefix="/v2", tags=["Binance spot catalog and imports"])
 
@@ -103,33 +103,9 @@ def page(values: dict[str, str]) -> dict[str, Any]:
 async def capabilities(request: Request) -> JSONResponse:
     try:
         query(request, set())
-        value: dict[str, Any] = {
-            "schema": "capabilities-v2",
-            "auth_mode": "local",
-            "storage_mode": "local",
-            "adapters": ["binance_daily", "canonical_file"],
-            "formats": ["csv", "parquet"],
-            "workflows": ["market_profile", "cross_asset", "volatility_cluster"],
-            "intervals": ["1m", "5m"],
-            "memo_available": False,
-            "copilot_available": False,
-            "limits": {
-                "partitions": 62,
-                "research_buckets": 17856,
-                "chart_buckets": 1440,
-                "chart_partitions": 5,
-                "canonical_bytes": 4294967296,
-                "canonical_rows": 20000000,
-                "csv_record_bytes": 4096,
-                "data_bytes": admission.DATA_LIMIT,
-                "staged_uploads": 4,
-                "running_jobs": 8,
-                "profile_warmup": 12,
-                "cluster_warmup": 300,
-            },
-        }
-        value["sha256"] = digest(value)
-        return JSONResponse(value)
+        from .capabilities import value
+
+        return JSONResponse(value())
     except (V2Error, ValueError) as error:
         return failure(request, error)
 

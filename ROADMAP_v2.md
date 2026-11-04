@@ -1,5 +1,91 @@
 # Phased delivery: Binance spot MarketLab
 
+Phase 5 is locally complete (November 4, 2026). Independent implementation,
+actual acceptance, backup and cleanup reviews passed. Both copilot/memo cohorts,
+clarification/grounding/faults, three browser engines, legacy/numerical/cache and
+packaged application/readers passed. Applicable prior checks were reused.
+All eighteen database dumps/restores, package exports and host roots were verified
+before exact owned cleanup; protected files and original services were preserved.
+See [Phase 5 verification](docs/v2/phase-5-verification.md) for source-qualified
+outcomes, retained failures and operational qualifications. No commit, push,
+original-service deployment or Phase 6 work occurred. Earlier checkpoints below
+are historical and do not supersede this completion status.
+
+V7 development, existing-root preparation and current-source binding passed.
+Both v7 copilot cohorts passed independent outcome review. Each achieved 18 of
+20 clear cases and zero handoffs across 40 negative cases. The isolated Ollama
+diagnostic passed three calls. The authorized memo cohort A recovery recorded
+20 valid entries using its 19 retained passes and one replacement. Independent
+outcome review passed. The user then authorized cohort B recovery. Its
+cold continuation recorded 20 valid entries using seven retained passes
+and 13 new calls. Independent outcome review passed. Other Phase 5
+gates and closeout remain incomplete.
+
+The corrected v6 bind passed. The first scored v6 copilot A invocation failed:
+three clear cases failed, leaving a maximum of 17 correct against the required
+18. It stopped cooperatively. Scored acceptance remains incomplete and no
+later scored cohort has run.
+
+The first v6 bind was stopped cooperatively. Its elapsed time included about
+2 hours 49 minutes of host sleep. The reviewed evaluator correction reuses verified
+selections within a single bind while checking current package hashes and
+catalog identity. Acceptance and closeout remain open.
+
+Phase 5 finish checkpoint (November 3, 2026): all eight v6 development probes
+and current preparation passed. Reuse the twelve registered dataset bindings,
+twenty retained numerical results and twenty fresh numerical results, plus the
+applicable 1,494 offline and 300 PostgreSQL passes. Current-source binding and
+P5-01 through P5-05, remaining integration and compatibility checks, and final
+backup, restore, preservation and owned cleanup remain open. Use existing
+acceptance tools under the coder/reviewer workflow. Track actual outcomes in
+[Phase 5 verification](docs/v2/phase-5-verification.md). No commit or push.
+
+Current Phase 5 checkpoint, amendment 004 (November 2, 2026): v5 full freeze
+passed, but unscored development safely failed its first evidence-grounding probe;
+independent clean closeout preserved twelve requests/eleven spent calls, one queued
+unexecuted handoff and twenty original queued memos. Exact revision003 of the
+[request-specific evidence grammar amendment](docs/v2/phase-5-evidence-grammar.md)
+passed independent pre-code review. Scope is the exact compact prompt, canonical
+per-request evidence grammar, explicit version/hash integration and one separately
+reviewed redundant `cross_asset comparison` lexical correction. All other
+independent rules, literal fixtures/cohorts/thresholds, model/settings and limits
+remain unchanged. Normative authority precedes prescribed implementation and
+independent review; full freeze/input/launch, eight actual development passes and
+every mandatory full acceptance gate remain separate. No inference, preparation,
+Phase 5 completion, commit/push or original-service change follows. Earlier
+statuses remain historical.
+
+Current Phase 5 checkpoint, amendment 003 (November 2, 2026): v4 unscored
+development passed its first text probe and safely failed its second context
+probe, preserving eleven cumulative requests/ten spent calls and one queued
+unexecuted handoff. The exact [uniform evidence-priority amendment](docs/v2/phase-5-evidence-priority.md)
+passed independent pre-code review. Scope is prompt-v5/version and minimal fresh
+binding, preserving all literals, full cohorts/thresholds, validators, model/settings
+and limits. Implementation/freeze/input/launch/outcome review and every mandatory
+acceptance gate remain separate. Preparation is held; no new inference or Phase 5
+completion is claimed. Earlier statuses remain historical.
+
+Current Phase 5 checkpoint, amendment 002 (November 2, 2026): separate unscored
+v3 development failed the first probe's evidence grounding. The exact versioned
+[evidence prompt amendment](docs/v2/phase-5-evidence-correction.md) passed
+independent pre-code review. Scope is prompt-v4/version and minimal new-directory
+development binding, with unchanged validators, eight development literals,
+full acceptance fixtures/thresholds, pinned model/settings and limits. Preserve
+nine requests/eight spent calls and twenty old-source queued memos. Implementation,
+normal full freeze/input, launch and actual acceptance remain separate required
+gates. No new inference or Phase 5 completion is claimed; earlier statuses remain
+historical.
+
+Current Phase 5 checkpoint (November 2, 2026): implementation and original frozen
+input review passed, but the first actual copilot cohort failed and was safely
+closed; Phase 5 remains incomplete. Independent pre-code review approved the
+[versioned prompt correction](docs/v2/phase-5-prompt-correction.md) before its
+implementation. Bounded unscored development requires independent implementation/
+launch review; unchanged full acceptance cohorts and all remaining gates still
+apply. Preserve failed model calls, queued intake/memos and prior source-qualified
+data/numerical evidence. No threshold/model/limit change, data/cache optimization,
+commit or push is authorized. Earlier pending statuses below remain historical.
+
 Status: Phase 1 documentation and read-only verification completed on October 28,
 2026, with independent review and no unresolved blocking finding. Phase 2 is
 authorized under the [pre-code contract](docs/v2/phase-2-ingestion.md).
@@ -38,7 +124,13 @@ Phase 4 and its scoped native-identity repair were published as
 [all five exact-SHA hosted jobs](https://github.com/atharva-m/MarketLab/actions/runs/41221399573)
 passed. The failed first published run remains in verification, distinct from
 local acceptance. Documentation-only outcome publication/CI is pending at this
-entry. Phases 5-9 remain proposed and require separate authorization.
+entry. Phase 5 was separately approved on November 2, 2026 under its
+[pre-code contract](docs/v2/phase-5-copilot-memos.md), with independent contract
+review before runtime changes/model dispatch, prescribed coder/reviewer and full
+local acceptance. Independent pre-code design review passed; implementation and
+literal frozen prompt/corpus review remain pending. No Phase 5
+acceptance is claimed. Phases 6-9 remain proposals requiring separate approval.
+NO COMMIT OR PUSH is authorized for Phase 5.
 No infrastructure purchase or original-service deployment is
 authorized. Historical ROADMAP.md and milestone contracts remain intact.
 
@@ -189,6 +281,25 @@ only affected checks. Current owned inventory, final dumps/restores/preservation
 and safe cleanup close the phase; global process/ancestry/thread forensics do not.
 
 ## Phase 5 — Generalized copilot and memos
+
+Status: LOCALLY COMPLETE (November 4, 2026). Independent implementation,
+actual acceptance and final backup/cleanup reviews passed. All mandatory P5-01
+through P5-05 gates, both full cohorts, browser and compatibility checks are
+recorded in [verification](docs/v2/phase-5-verification.md). Model/settings,
+validators and limits remain unchanged; all failures and data remain retained.
+No commit, push, original-service deployment or Phase 6 work is authorized.
+
+Original approval (November 2, 2026): the user authorized the [contract](docs/v2/phase-5-copilot-memos.md), contributor/roadmap
+updates, implementation through coder `gpt-6.1-sol/high` followed by independent
+read-only reviewer `gpt-6-astra/medium`, and full local acceptance/preservation.
+Resolve blocking contract findings before code or model dispatch. Deliver local
+API/CLI/browser adapters and bounded durable workers; no Phase 6+ or deployment.
+Use the fixed 9B digest/settings, existing limits and manual numerical service,
+preserve legacy outputs and exactly three application-rendered grounded memo
+paragraphs. Freeze literal fixtures before scored inference; both actual copilot
+60-case cohorts, both memo 20-run cohorts and all P5-01..05 gates remain mandatory.
+Source-qualified outcomes and unavailable prerequisites belong in
+[verification](docs/v2/phase-5-verification.md). NO COMMIT OR PUSH.
 
 Extend natural-language workflows to the supported catalog.
 

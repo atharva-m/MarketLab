@@ -20,6 +20,7 @@ from marketlab.copilot.model import ModelFailure
 from marketlab.copilot.spec import identity
 from marketlab.datasets.publication import _safe_path
 from marketlab.datasets.source import file_hash
+from marketlab.datasets.v2 import admission as storage_admission
 from marketlab.inference import admission, release_current
 from marketlab.research import store as research_store
 from marketlab.research.service import ResearchService, transient_failure
@@ -164,11 +165,20 @@ class MemoService:
             raise ResearchError("Memo artifact grounding failure")
         return manifest, raw.decode()
 
-    def stage(self, current: store.Claim, info: dict[str, Any], source: dict[str, Any]) -> Path:
+    def stage(
+        self,
+        current: store.Claim,
+        info: dict[str, Any],
+        source: dict[str, Any],
+        ticket: dict[str, Any] | None = None,
+    ) -> Path:
         parent = _safe_path(self.root, Path(".staging"))
         parent.mkdir(parents=True, exist_ok=True)
         directory = Path(tempfile.mkdtemp(prefix="memo-", dir=parent))
         try:
+            storage_admission.mark_auxiliary_path(
+                self.engine, ticket, directory.relative_to(self.root).as_posix()
+            )
             raw = render(info["draft"], source).encode()
             name = "research_memo_" + current.run_id + ".md"
             with self.engine.connect() as connection:
@@ -301,6 +311,7 @@ class MemoService:
         done = asyncio.Event()
         keeper = asyncio.create_task(self.keep(current, done))
         staging: Path | None = None
+        storage_ticket = None
         try:
             async with asyncio.timeout(self.attempt_timeout):
                 info = await drained(lambda: store.inspect(self.engine, current.run_id), current)
@@ -323,6 +334,27 @@ class MemoService:
                 ):
                     raise ResearchError("Memo numerical identity mismatch")
                 source = facts(summary)
+                bound_root = await drained(
+                    lambda: storage_admission.root_for(self.engine, historical=True), current
+                )
+                if bound_root is not None:
+                    storage_ticket = await drained(
+                        lambda: storage_admission.acquire(
+                            self.engine,
+                            self.root,
+                            "legacy",
+                            1024**2,
+                            current.run_id,
+                            physical_bytes=1024**2,
+                        ),
+                        current,
+                    )
+                    await drained(
+                        lambda: storage_admission.mark_path(
+                            self.engine, storage_ticket, f"research/{current.run_id}/memo"
+                        ),
+                        current,
+                    )
                 if info["draft"] is None:
                     pinned = info["provenance"]["model_digest"] if info["provenance"] else None
                     installed = await self.model.identify()
@@ -354,7 +386,9 @@ class MemoService:
                     )
                 await release_current(self.engine)
                 info = await drained(lambda: store.inspect(self.engine, current.run_id), current)
-                staging = await drained(lambda: self.stage(current, info, source), current)
+                staging = await drained(
+                    lambda: self.stage(current, info, source, storage_ticket), current
+                )
                 with self.publications.time():
                     await drained(lambda: self.publish(current, staging, info), current)
                 self.outcomes.labels("ready").inc()
@@ -380,9 +414,13 @@ class MemoService:
             await keeper
             if staging is not None and staging.exists():
                 await asyncio.to_thread(shutil.rmtree, staging)
+            if storage_ticket is not None:
+                await asyncio.to_thread(
+                    storage_admission.complete_legacy, self.engine, storage_ticket
+                )
 
     async def work(self, maximum: int, run_id: str | None = None) -> int:
-        from marketlab.copilot import store as copilot_store
+        from marketlab.copilot.v2.durable import pending as copilot_pending
 
         if type(maximum) is not int or not 1 <= maximum <= 62:
             raise ResearchError("Invalid bounded memo worker limit")
@@ -390,7 +428,7 @@ class MemoService:
             count = 0
             while count < maximum:
                 async with admission(self.engine) as acquired:
-                    if not acquired or await asyncio.to_thread(copilot_store.pending, self.engine):
+                    if not acquired or await asyncio.to_thread(copilot_pending, self.engine):
                         break
                     current = await asyncio.to_thread(store.claim, self.engine, run_id)
                     if current is None:

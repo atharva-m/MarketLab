@@ -52,64 +52,73 @@ def submit(
     fingerprint: dict[str, Any],
     rows: list[dict[str, Any]],
 ) -> tuple[str, bool]:
+    with transaction(engine) as connection:
+        return register(connection, key, spec, fingerprint, rows)
+
+
+def register(
+    connection: Connection,
+    key: str,
+    spec: ResearchSpec,
+    fingerprint: dict[str, Any],
+    rows: list[dict[str, Any]],
+) -> tuple[str, bool]:
+    """Same manual registration, composable with a fenced copilot handoff."""
     key_value(key)
     if not 1 <= len(rows) <= 62:
         raise V2Error("invalid_request", "Invalid prepared research selection")
     sid, rid = uuid4(), uuid4()
-    with transaction(engine) as connection:
-        lock(connection, "v2-research-submit:" + key)
-        old = one(
-            connection,
-            "SELECT s.request_sha256,r.run_id FROM v2_research_submissions s "
-            "JOIN v2_research_runs r USING(submission_id) WHERE idempotency_key=:key",
-            key=key,
-        )
-        if old:
-            if old["request_sha256"] != spec.digest:
-                raise V2Error("revision_conflict", "Research operation key conflict")
-            return str(old["run_id"]), True
-        execution = fingerprint["execution"]
+    lock(connection, "v2-research-submit:" + key)
+    old = one(
+        connection,
+        "SELECT s.request_sha256,r.run_id FROM v2_research_submissions s "
+        "JOIN v2_research_runs r USING(submission_id) WHERE idempotency_key=:key",
+        key=key,
+    )
+    if old:
+        if old["request_sha256"] != spec.digest:
+            raise V2Error("revision_conflict", "Research operation key conflict")
+        return str(old["run_id"]), True
+    execution = fingerprint["execution"]
+    execute(
+        connection,
+        "INSERT INTO v2_research_submissions VALUES "
+        "(:id,:key,:request,:spec,:contract,:fingerprint,:fingerprint_hash,:execution,:lock,"
+        "clock_timestamp())",
+        id=sid,
+        key=key,
+        request=spec.digest,
+        spec=canonical_json(spec.body()).decode(),
+        contract=SCHEMA,
+        fingerprint=canonical_json(fingerprint).decode(),
+        fingerprint_hash=digest(fingerprint),
+        execution=execution["source_sha256"],
+        lock=execution["lock_sha256"],
+    )
+    for row in rows:
+        metadata = fingerprint["instruments"][row["instrument_id"]]
         execute(
             connection,
-            "INSERT INTO v2_research_submissions VALUES "
-            "(:id,:key,:request,:spec,:contract,:fingerprint,:fingerprint_hash,:execution,:lock,"
-            "clock_timestamp())",
-            id=sid,
-            key=key,
-            request=spec.digest,
-            spec=canonical_json(spec.body()).decode(),
-            contract=SCHEMA,
-            fingerprint=canonical_json(fingerprint).decode(),
-            fingerprint_hash=digest(fingerprint),
-            execution=execution["source_sha256"],
-            lock=execution["lock_sha256"],
-        )
-        for row in rows:
-            metadata = fingerprint["instruments"][row["instrument_id"]]
-            execute(
-                connection,
-                "INSERT INTO v2_research_selections VALUES "
-                "(:submission,:instrument,:semantic,:day,:version,:legacy,:v2,:manifest,:metadata)",
-                submission=sid,
-                instrument=row["instrument_id"],
-                semantic=row["semantic_sha256"],
-                day=row["trade_date"],
-                version=row["dataset_version_id"],
-                legacy=row["dataset_version_id"]
-                if row["contract"] == "dataset-manifest-v1"
-                else None,
-                v2=row["dataset_version_id"] if row["contract"] == "dataset-manifest-v2" else None,
-                manifest=row["manifest_sha256"],
-                metadata=canonical_json(metadata).decode(),
-            )
-        execute(
-            connection,
-            "INSERT INTO v2_research_runs VALUES "
-            "(:id,:submission,'queued',0,0,0,NULL,NULL,clock_timestamp(),false,NULL,NULL,"
-            "clock_timestamp(),clock_timestamp())",
-            id=rid,
+            "INSERT INTO v2_research_selections VALUES "
+            "(:submission,:instrument,:semantic,:day,:version,:legacy,:v2,:manifest,:metadata)",
             submission=sid,
+            instrument=row["instrument_id"],
+            semantic=row["semantic_sha256"],
+            day=row["trade_date"],
+            version=row["dataset_version_id"],
+            legacy=row["dataset_version_id"] if row["contract"] == "dataset-manifest-v1" else None,
+            v2=row["dataset_version_id"] if row["contract"] == "dataset-manifest-v2" else None,
+            manifest=row["manifest_sha256"],
+            metadata=canonical_json(metadata).decode(),
         )
+    execute(
+        connection,
+        "INSERT INTO v2_research_runs VALUES "
+        "(:id,:submission,'queued',0,0,0,NULL,NULL,clock_timestamp(),false,NULL,NULL,"
+        "clock_timestamp(),clock_timestamp())",
+        id=rid,
+        submission=sid,
+    )
     return str(rid), False
 
 
@@ -133,6 +142,14 @@ def inspect(engine: Engine, run_id: str) -> dict[str, Any]:
                 id=identity,
             ).mappings()
         ]
+        memo_supported = (
+            execute(connection, "SELECT to_regclass('v2_memo_jobs')").scalar_one() is not None
+        )
+        memo = (
+            one(connection, "SELECT state FROM v2_memo_jobs WHERE run_id=:id", id=identity)
+            if memo_supported
+            else None
+        )
     row["spec"] = json.loads(row.pop("spec_json"))
     row["fingerprint"] = json.loads(row.pop("fingerprint_json"))
     if digest(row["fingerprint"]) != row.pop("fingerprint_sha256"):
@@ -140,8 +157,9 @@ def inspect(engine: Engine, run_id: str) -> dict[str, Any]:
     row.update(
         attempts=attempts,
         numerical_available=row["state"] == "succeeded",
-        memo_available=False,
-        memo_contract="unsupported",
+        memo_available=memo is not None and memo["state"] == "succeeded",
+        memo_contract="memo-facts-v2" if memo_supported else "unsupported",
+        memo_state=memo["state"] if memo else None,
     )
     return wire(row)  # type: ignore[no-any-return]
 

@@ -20,6 +20,7 @@ import {
   type Upload,
 } from "./api";
 import { errorText, useAction, useV2 } from "./hooks";
+import { Copilot, Memo } from "./Copilot";
 import {
   daysBetween,
   instrumentLabel,
@@ -39,6 +40,7 @@ const idPath = (value: string) => encodeURIComponent(value);
 const links = [
   ["/v2/catalog", "Catalog"],
   ["/v2/research/new", "Research"],
+  ["/v2/copilot/new", "Copilot"],
   ["/v2/ingestion/new", "Official ingestion"],
   ["/v2/imports/new", "File import"],
   ["/v2/instruments", "Instruments"],
@@ -197,8 +199,25 @@ export function V2Workspace({ route }: { route: string }) {
   let page: ReactNode;
   if (family === "research" && id === "new")
     page = <Research capabilities={capabilities.data} />;
+  else if (
+    family === "copilot" &&
+    (id === "new" || /^[a-f0-9-]{36}$/.test(id ?? ""))
+  )
+    page = (
+      <Copilot
+        key={id}
+        id={id === "new" ? undefined : id}
+        available={capabilities.data?.copilot_available === true}
+      />
+    );
   else if (family === "runs" && /^[a-f0-9-]{36}$/.test(id ?? ""))
-    page = <Run key={id} id={id} />;
+    page = (
+      <Run
+        key={id}
+        id={id}
+        memoAvailable={capabilities.data?.memo_available === true}
+      />
+    );
   else if (family === "ingestion") page = <Official />;
   else if (family === "submissions" && /^[a-f0-9-]{36}$/.test(id ?? ""))
     page = <Submission key={id} id={id} />;
@@ -218,7 +237,12 @@ export function V2Workspace({ route }: { route: string }) {
             trading history.
           </p>
           <DataView data={capabilities.data.limits} />
-          <p>Generalized copilot and memos are unavailable until Phase 5.</p>
+          <p>
+            Copilot creation:{" "}
+            {capabilities.data.copilot_available ? "available" : "unavailable"}{" "}
+            · supplemental memo enqueue:{" "}
+            {capabilities.data.memo_available ? "available" : "unavailable"}
+          </p>
         </details>
       )}
       {page}
@@ -409,6 +433,7 @@ function Catalog() {
             <PinList rows={pins} />
             <div className="actions">
               <a href="#/v2/research/new">Research this selection</a>
+              <a href="#/v2/copilot/new">Ask copilot about this selection</a>
               <button
                 type="button"
                 className="secondary"
@@ -1349,8 +1374,8 @@ function Research({ capabilities }: { capabilities: Data | null }) {
       <h2>New numerical research</h2>
       <p>
         Choose metadata, pin every daily version including warm-up, and confirm
-        the request. Numerical execution needs no model. Generalized copilot and
-        memos remain unavailable until Phase 5.
+        the request. Numerical execution needs no model. You can also{" "}
+        <a href="#/v2/copilot/new">ask copilot about your pinned selection</a>.
       </p>
       <form
         className="panel v2-form"
@@ -1737,7 +1762,7 @@ function NumericalData({
     <span className="exact">{String(value)}</span>
   );
 }
-function Run({ id }: { id: string }) {
+function Run({ id, memoAvailable }: { id: string; memoAvailable: boolean }) {
   const status = useV2(`/v2/research/runs/${id}`, true);
   const summary = useV2(
     status.data?.numerical_available ? `/v2/research/runs/${id}/summary` : null,
@@ -1791,8 +1816,8 @@ function Run({ id }: { id: string }) {
             {!["succeeded", "failed", "cancelled"].includes(info.state) && (
               <>
                 <p>
-                  Execution uses the local numerical worker; generalized
-                  model/memo work is not queued.
+                  Execution uses the local numerical worker. Supplemental memo
+                  status is separate from numerical completion.
                 </p>
                 <button
                   type="button"
@@ -1842,6 +1867,7 @@ function Run({ id }: { id: string }) {
                 {results.data && <NumericalData value={results.data} />}
               </section>
               <Bars info={info} />
+              <Memo id={id} available={memoAvailable} />
             </>
           )}
         </>

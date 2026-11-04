@@ -1,5 +1,224 @@
 # MarketLab contributor instructions
 
+## Current authority: Phase 5 publication and exact-SHA CI (November 4, 2026)
+
+After independently verified local Phase 5 closeout, the user authorized committing
+and pushing the completed reviewed work, checking hosted CI for the exact published
+commit, and fixing actual scoped CI failures through coder `gpt-6.1-sol/high` then
+independent read-only reviewer `gpt-6-astra/medium`. Reuse applicable passed local
+checks; do not repeat them for publication. Record actual publication and hosted
+outcomes in [Phase 5 verification](docs/v2/phase-5-verification.md). This supersedes
+earlier no-commit/push restrictions only for this reviewed publication scope.
+
+Preserve all evidence, historical failures, retained data/dumps, protected files
+and original services. Exclude artifacts, debug logs, data, archives, credentials,
+environments, weights and generated media from Git. Publication and exact-SHA CI
+are pending at this entry. No original-service rollout, model/dependency/limit
+change, Phase 6 or unrelated repair is authorized.
+
+## Phase 5 locally complete; independent technical closeout passed (November 4, 2026)
+
+The authorized Phase 5 implementation and all actual local acceptance gates are
+complete through coder `gpt-6.1-sol/high` and independent read-only reviewer
+`gpt-6-astra/medium`. Both copilot and memo cohorts, clarification/grounding/faults,
+three browser engines, legacy/numerical/cache/package/readers and verified final
+backup/cleanup passed. Applicable passed checks were reused; all historical
+failures and spent calls remain recorded in [verification](docs/v2/phase-5-verification.md).
+
+All eighteen database dumps/restores, both package-volume exports and four host
+roots were verified before exact cleanup of seven owned containers, four volumes,
+one network and one application image. Before/after preservation matched all 287
+protected hashes and five original services/images/endpoints (point observations).
+Only 85 independently reviewed disposable bytecode/scratch files were removed;
+data, dumps, exports, executed evidence and C-drive relocations remain retained.
+The redundant final semantic scan was explicitly interrupted and preserved as
+failed; its reviewed readback-only continuation checked exact prior proofs and
+current bytes while retaining every per-database metadata/output check.
+
+The pinned model/settings, validators, thresholds, limits and original services
+remain unchanged. No commit, push, hosted validation, original-service deployment
+or Phase 6 authority follows. Earlier incomplete checkpoints below are historical.
+
+## Current authority: complete remaining Phase 5 acceptance
+
+The user authorized finishing Phase 5 after the independently reviewed
+copilot and memo outcomes. Carry forward applicable passes. Run only the
+outstanding acceptance and closeout gates with the existing tools and
+coder/reviewer workflow. Keep the pinned model, settings, validators,
+fixtures and limits. Preserve failed evidence and original services.
+Use a reviewed isolated lifecycle for remaining model dispatch. No commit
+or push.
+
+## Current authority: bounded cohort B recovery
+
+After the independently reviewed cohort A recovery, the user directed work
+to move onto cohort B. Preserve the original failed cohort B invocation,
+its two valid memos and all spent calls. Keep the pinned model, settings,
+validators, limits and the 20-of-20 requirement. The proposed recovery
+requires independent review before dispatch. Use the existing isolated
+configuration, normal durable operations and a separate recovery receipt.
+No reset, refund, raw SQL mutation, original-service change, commit or push.
+
+The bounded cold continuation recorded 20 valid entries with seven retained
+passes and 13 new calls. The earlier failed invocation and recovery campaign
+remain recorded. Independent actual outcome review passed. The authorized
+cohort B recovery is complete. Other Phase 5 gates and closeout remain
+incomplete.
+
+## Current authority: isolated Ollama investigation and cohort A recovery
+
+The user authorized investigating the CUDA failures on an isolated Ollama
+server and making the minimum existing launcher changes needed for that
+work. Keep the original service untouched and use the same installed model,
+prompt, validators and limits. Use the coder/reviewer workflow. After
+reviewed runtime qualification, recover only cohort A's failed case with
+one identical replacement and one new memo call. Preserve prior passes,
+failures and spent calls. Cohort B recovery and reclaiming its interrupted
+job remain outside this authorization. No commit or push.
+
+The isolated diagnostic and the authorized cohort A recovery passed
+independent outcome review. The original failed cohort A invocation remains
+recorded. Phase 5 remains incomplete and cohort B is untouched.
+
+## Current authority: Phase 5 v7 outcome classification
+
+The user authorized the independently reviewed v7 outcome prompt correction.
+Keep model, grammar, validators, thresholds and limits. Run the eight reviewed
+development cases before fresh memo preparation and scored acceptance. Reuse
+applicable checks and the twenty job-free results. Preserve old jobs, calls and
+receipts. Use the existing evaluator and coder/reviewer workflow. No commit or push.
+
+## Current authority: Phase 5 binder bottleneck correction
+
+The user authorized diagnosing and fixing the actual bind bottleneck while
+continuing Phase 5 acceptance. Independent review approved invocation-local
+reuse of fully verified ordered selections in the existing evaluator. Keep
+catalog, registry and file integrity checks, request-specific validation and
+the approved single-file source derivation from current preparation. Preserve
+the cancelled bind and applicable passed evidence. No commit or push.
+
+## Current authority: Phase 5 acceptance and closeout (November 3, 2026)
+
+The user authorized finishing Phase 5 on frozen v6 with the existing tools.
+Keep coder `gpt-6.1-sol/high` and independent read-only reviewer
+`gpt-6-astra/medium`. Reuse the eight passed development probes, passed v6
+preparation and applicable regression and quality evidence. Bind once using the
+passed preparation, then execute outstanding acceptance and closeout gates.
+Keep existing fixtures, thresholds, model and limits. Preserve historical jobs,
+spent calls, failures, source receipts and original services. Use owned resources
+and retain final backup, restore, preservation and cleanup evidence. Add only
+required runner inputs and receipts. No commit, push or deployment. Earlier
+entries retain their historical scope and outcomes.
+
+## Current authority: Phase 5 request-specific evidence grammar (November 2, 2026)
+
+Independent pre-code review passed [amendment 004](docs/v2/phase-5-evidence-grammar.md),
+exact revision003 packet SHA256
+`33f46de8ab8f6d93f1df3e126def9ab7b02a1643bc44d737bf760602e0d38bc7`.
+Record this authority and normative contract before prescribed coder
+`gpt-6.1-sol/high` implementation, followed by independent read-only reviewer
+`gpt-6-astra/medium`. Scope is exact prompt-v6, request-specific canonical evidence
+grammar, explicit grammar/semantic/execution versions and identical counted/native/
+checkpoint schema bytes, plus only the explicit redundant `cross_asset comparison`
+lexical correction. Independent decide() and all other grounding/semantic rules,
+wire output shape, fixtures/cohorts/thresholds, pinned model/settings and limits
+remain unchanged. Preserve twelve requests/eleven spent calls, the queued
+unexecuted v4 handoff, twenty original queued memos and byte-exact historical
+helpers/plans/results, including failed v5 first-probe evidence. No repair of model
+values/evidence, fallback, truncation, reset/refund or optimization follows.
+Separate implementation/full-freeze/input/launch review precedes any inference;
+all eight actual development cases must pass before preparation. Parent owns
+async/PostgreSQL verification and access escalation. No operational helper,
+preparation/model release, commit/push, original-service change or Phase 5
+completion follows. Earlier entries remain historical.
+
+## Current authority: Phase 5 uniform evidence priority (November 2, 2026)
+
+Independent pre-code review passed [amendment 003](docs/v2/phase-5-evidence-priority.md),
+exact packet SHA256 `ee64c2b639602457f11ac4bacfd6c32ee188639d98926b3339ca033637e4fad9`.
+Record authority before exact prompt-v5/version implementation and a narrow fresh
+v5 development binding through coder `gpt-6.1-sol/high`, then independent read-only
+reviewer `gpt-6-astra/medium`. Preserve all eleven requests/ten spent calls, the
+queued unexecuted v4 handoff, twenty original queued memos and byte-exact helper/
+plan/result history. V4 development failed its second probe safely; no preparation
+release follows. Prefer matching named context evidence; text quotes must be actual
+cited turn text. Independent validators/schemas, eight development literals, full
+scored cohorts/thresholds, pinned model/settings and limits remain unchanged.
+Separate implementation/full-freeze/input/launch review precedes any inference;
+all eight actual development cases must pass before preparation. Parent owns all
+async/PostgreSQL verification and access escalation. No reset/refund, optimization,
+commit/push, original-service change or Phase 5 completion follows. Earlier entries
+remain historical.
+
+## Current authority: Phase 5 evidence prompt correction (November 2, 2026)
+
+The separate unscored v3 development invocation failed its first probe safely:
+correct intent values carried invalid context evidence. Keep all nine cumulative
+requests/eight spent calls, twenty old-source queued memo jobs, and byte-exact
+v3 helper/tests/plans/results. Independent pre-code review passed
+[amendment 002](docs/v2/phase-5-evidence-correction.md), packet SHA256
+`b9415e499a8b5cec28bf79cb484a7aa025c92fadb53aa21d48034de706791524`.
+Record this authority before implementing the exact copilot-prompt-v4 bytes/version
+and narrowly versioned development binding through coder `gpt-6.1-sol/high`, then
+independent read-only reviewer `gpt-6-astra/medium`. Keep all independent grounding,
+validators, schemas, eight literal development inputs, scored fixtures/thresholds,
+pinned model/settings and limits unchanged. Separate implementation, normal full
+freeze/input and launch review must precede inference; all eight development
+probes must pass before expensive preparation. Preserve original v2 and failed v3
+history against their separate immutable receipts. No replay/reset/refund, data/
+cache optimization, commit/push or Phase 5 completion follows. Earlier authority
+and failure checkpoints remain historical.
+
+## Current authority: Phase 5 versioned prompt correction (November 2, 2026)
+
+The original frozen Phase 5 cohort A failed and was cooperatively closed; retain
+all failed cases, seven spent model calls, the eighth queued intake and twenty
+old-source queued automatic memo jobs. Independent pre-code review approved the
+[versioned prompt amendment](docs/v2/phase-5-prompt-correction.md), exact review
+packet SHA256 `e60d631d4be7dd77b09b5119b166c3f1dd32645d0274f9bea99b898a25864923`.
+Record authority before implementing the exact copilot-prompt-v3 bytes/version
+through coder `gpt-6.1-sol/high`, followed by independent read-only reviewer
+`gpt-6-astra/medium`. Concrete bounded unscored development inputs/launch binding
+must pass independent review before inference. Keep all literal scored cohorts,
+thresholds, independent validators, pinned model/settings, schemas and limits.
+Preserve old queued jobs without upgrade, reset, replay-based replacement or refund.
+New source-qualified preparation/binding and both full copilot/memo cohorts remain
+required; development supplies no acceptance credit. No data/cache optimization,
+commit, push, original-service mutation or Phase 5 completion follows. Earlier
+status/authority entries remain historical.
+
+## Current authority: v2 Phase 5 copilot and memos (November 2, 2026)
+
+The user approved Phase 5 under ROADMAP_v2.md and the Phase 1 contract,
+compatibility and acceptance matrices: update contributor/roadmap status, write
+the [pre-code contract](docs/v2/phase-5-copilot-memos.md) BEFORE CODE, then implement
+through coder `gpt-6.1-sol/high` followed by independent read-only reviewer
+`gpt-6-astra/medium`. Resolve blocking independent contract findings before runtime
+changes or model dispatch; resolve implementation and acceptance findings before
+closeout. Record actual source-qualified outcomes in
+[Phase 5 verification](docs/v2/phase-5-verification.md). NO COMMIT OR PUSH.
+
+Deliver local API/CLI/browser generalized copilot and supplemental memos through
+bounded durable workers, explicit selected catalog context (at most two Binance
+spot instruments), the same validated manual numerical handoff, versioned
+identities and exactly three application-rendered grounded memo paragraphs. Keep
+the pinned 9B model/digest/settings, all existing limits, numerical independence,
+legacy outputs/readers and immutable terminal records. Freeze and independently
+review literal evaluation fixtures before scored inference; P5-01 through P5-05
+remain mandatory without cohort/threshold relaxation. Missing actual-data/model
+prerequisites leave acceptance incomplete.
+
+Use owned disposable resources with fresh source/protected/service inventories,
+verified forward-migration backup/restore rehearsal, full source-qualified local
+acceptance, final dumps/restores/preservation and ownership-checked cleanup. Keep
+all original services/images/configuration/endpoints, all historical evidence and
+failures, retained data/dumps and the README GIF byte-exact. No artifacts, data,
+archives, credentials, environments, weights or generated media belong in Git.
+No Phase 6+, dependency/lock/model upgrade, limit relaxation, original-service
+rollout, deployment, purchases or unrelated work is authorized. Historical entries
+below retain their original authority and outcomes; this entry supersedes their
+Phase 5 exclusions only within this approved scope.
+
 ## Phase 4 publication and hosted CI verified (October 31, 2026)
 
 Reviewed Phase 4 and the scoped native-identity CI repair were published as

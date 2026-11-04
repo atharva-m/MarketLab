@@ -44,7 +44,7 @@ def outstanding(connection: Connection) -> int:
             if version_table
             else None
         )
-        if revision in {"0009_v2_research", "0010_v2_browser_imports"}:
+        if revision in {"0009_v2_research", "0010_v2_browser_imports", "0011_v2_copilot_memos"}:
             raise V2Error("integrity_failure", "Research capacity ledger is missing")
     else:
         terms.append(

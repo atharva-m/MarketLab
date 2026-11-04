@@ -20,6 +20,7 @@ from .core import execute, lock, one, transaction
 
 DATA_LIMIT = 100 * 1024**3
 OUTPUT_LIMIT = 4 * 1024**3 + 128 * 1024
+MEMO_OUTPUT_LIMIT = 1024**2
 
 
 def safe_root(root: Path) -> Path:
@@ -31,12 +32,29 @@ def safe_root(root: Path) -> Path:
 
 
 def binding(connection: Connection, root: Path | None = None) -> dict[str, Any] | None:
+    if execute(connection, "SELECT to_regclass('alembic_version')").scalar_one() is not None:
+        revision = execute(
+            connection, "SELECT version_num FROM alembic_version"
+        ).scalar_one_or_none()
+        if revision == "0011_v2_copilot_memos":
+            for required in (
+                "v2_copilot_jobs",
+                "v2_copilot_calls",
+                "v2_memo_jobs",
+                "v2_memo_calls",
+                "v2_memo_results",
+            ):
+                if (
+                    execute(connection, "SELECT to_regclass(:name)", name=required).scalar_one()
+                    is None
+                ):
+                    raise V2Error("integrity_failure", "Required inference ledger is missing")
     if execute(connection, "SELECT to_regclass('v2_capacity_roots')").scalar_one() is None:
         if execute(connection, "SELECT to_regclass('alembic_version')").scalar_one() is not None:
             revision = execute(
                 connection, "SELECT version_num FROM alembic_version"
             ).scalar_one_or_none()
-            if revision == "0010_v2_browser_imports":
+            if revision in {"0010_v2_browser_imports", "0011_v2_copilot_memos"}:
                 raise V2Error("integrity_failure", "Required capacity ledger is missing")
         return None
     row = one(connection, "SELECT * FROM v2_capacity_roots WHERE singleton")
@@ -65,6 +83,11 @@ def _epoch(connection: Connection) -> str:
         ("v2_research_results", "run_id"),
         ("v2_storage_reservations", "reservation_id"),
         ("v2_research_reservations", "reservation_id"),
+        ("v2_memo_jobs", "run_id"),
+        ("v2_memo_results", "run_id"),
+        ("v2_memo_attempts", "run_id,attempt_number"),
+        ("v2_memo_calls", "run_id,call_number"),
+        ("v2_data_charges", "charge_id"),
     ):
         if execute(connection, "SELECT to_regclass(:name)", name=table).scalar_one():
             for item in execute(
@@ -190,6 +213,23 @@ def initialize(engine: Engine, root: Path) -> dict[str, Any]:
                         raise V2Error(
                             "integrity_failure", "Research artifact registration mismatch"
                         )
+        if execute(connection, "SELECT to_regclass('v2_memo_results')").scalar_one() is not None:
+            from marketlab.memos.v2.service import verify_directory as verify_memo
+            from marketlab.memos.v2.store import inspect as memo_inspect
+
+            for result in execute(connection, "SELECT * FROM v2_memo_results").mappings():
+                info = memo_inspect(engine, str(result["run_id"]))
+                manifest, _ = verify_memo(
+                    safe_path(root, result["relative_path"]), info, result["manifest_sha256"]
+                )
+                if any(
+                    manifest["artifacts"][name + "." + extension]["sha256"] != result[field]
+                    for name, extension, field in (
+                        ("memo", "txt", "memo_sha256"),
+                        ("facts", "json", "facts_sha256"),
+                    )
+                ):
+                    raise V2Error("integrity_failure", "Memo registration mismatch")
     total, count, inventory = 0, 0, hashlib.sha256()
     for relative, size, modified, sha in _files(root):
         total += size
@@ -527,6 +567,7 @@ def _audit(engine: Engine, root: Path, snapshot: Connection) -> None:
                             "ingestion": 20 * 1024**3 + OUTPUT_LIMIT,
                             "research": 22 * 1024**3 + 34 * 1024**2,
                             "legacy": max(owner["physical_bytes"], owner["data_ceiling"]),
+                            "memo": MEMO_OUTPUT_LIMIT,
                         }[owner["role"]]
                         key = str(owner["ticket_id"])
                         if active_bytes.get(key, 0) + size <= ceiling:
@@ -603,7 +644,11 @@ def acquire(
                     "updated_at=clock_timestamp() WHERE ticket_id=:id",
                     id=old["ticket_id"],
                 )
-        selected = "role='upload'" if role == "upload" else "role<>'upload'"
+        if role not in {"upload", "ingestion", "research", "legacy", "memo"}:
+            raise V2Error("invalid_request", "Unknown local admission role")
+        selected = (
+            "role='upload'" if role == "upload" else "role IN ('ingestion','research','legacy')"
+        )
         count = execute(
             connection,
             "SELECT count(*) FROM v2_admission_tickets WHERE root_id=:id "
@@ -618,7 +663,9 @@ def acquire(
                 id=row["root_id"],
             ).scalar_one()
         )
-        if count >= (4 if role == "upload" else 8) or used + data_bytes > DATA_LIMIT:
+        if (
+            role != "memo" and count >= (4 if role == "upload" else 8)
+        ) or used + data_bytes > DATA_LIMIT:
             raise V2Error("capacity_exceeded", "Local admission capacity is unavailable")
         from .capacity import outstanding
 

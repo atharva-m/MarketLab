@@ -185,6 +185,8 @@ class ResearchService:
         return rows, inputs
 
     async def submit(self, spec: ResearchSpec, key: str) -> tuple[str, bool]:
+        if key.startswith("copilot-v2."):
+            raise V2Error("invalid_request", "Reserved internal research key namespace")
         spec = ResearchSpec.create(spec.body())
         previous = await asyncio.to_thread(store.replay, self.engine, key, spec.digest)
         if previous:
@@ -258,6 +260,15 @@ class ResearchService:
             raise V2Error("integrity_failure", "Research orphan differs from deterministic output")
         checked_signature = signature(verified)
         manifest_hash = sha256_file(verified / "manifest.json")
+        with self.engine.connect() as connection:
+            memo_enabled = (
+                execute(connection, "SELECT to_regclass('v2_memo_jobs')").scalar_one() is not None
+            )
+        memo_execution = None
+        if memo_enabled:
+            from marketlab.copilot.v2.model import execution as model_execution
+
+            memo_execution = model_execution("memo")
         with transaction(self.engine) as connection:
             store.fence(connection, current)
             lock(connection, "v2-research-run:" + current.run_id)
@@ -281,6 +292,19 @@ class ResearchService:
                 summary_bytes=manifest["artifacts"]["summary.json"]["bytes"],
             )
             store.finish(connection, current)
+            if memo_execution is not None:
+                from marketlab.memos.v2.store import register as register_memo
+
+                register_memo(
+                    connection,
+                    current.run_id,
+                    {
+                        "manifest_sha256": manifest_hash,
+                        "summary_sha256": manifest["artifacts"]["summary.json"]["sha256"],
+                    },
+                    fingerprint,
+                    memo_execution,
+                )
 
     async def execute(self, current: store.Claim) -> None:
         from marketlab.datasets.v2.native_children import scope
