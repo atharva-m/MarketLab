@@ -53,7 +53,7 @@ def test_trade_migration() -> None:
                 .scalars()
                 .all()
             )
-        assert revision == "0011_v2_copilot_memos"
+        assert revision == "0012_v2_storage"
         assert set(tables) == {
             "alembic_version",
             "trades",
@@ -80,6 +80,9 @@ def test_trade_migration() -> None:
             "v2_ingestion_attempts",
             "v2_dataset_versions",
             "v2_storage_reservations",
+            "v2_storage_packages",
+            "v2_storage_copies",
+            "v2_storage_objects",
             "v2_research_submissions",
             "v2_research_selections",
             "v2_research_runs",

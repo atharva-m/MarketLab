@@ -44,7 +44,12 @@ def outstanding(connection: Connection) -> int:
             if version_table
             else None
         )
-        if revision in {"0009_v2_research", "0010_v2_browser_imports", "0011_v2_copilot_memos"}:
+        if revision in {
+            "0009_v2_research",
+            "0010_v2_browser_imports",
+            "0011_v2_copilot_memos",
+            "0012_v2_storage",
+        }:
             raise V2Error("integrity_failure", "Research capacity ledger is missing")
     else:
         terms.append(
@@ -136,6 +141,17 @@ def _reserve(
             output=OUTPUT,
             path=relative,
         )
+        if admission_ticket is not None:
+            from marketlab.storage.store import enabled
+
+            if enabled(connection):
+                execute(
+                    connection,
+                    "UPDATE v2_research_reservations SET data_charge_id=:charge "
+                    "WHERE reservation_id=:id",
+                    charge=admission_ticket["charge_id"],
+                    id=identifier,
+                )
     path = safe_path(root, relative)
     if admission_ticket is not None:
         admission.mark_auxiliary_path(engine, admission_ticket, relative)

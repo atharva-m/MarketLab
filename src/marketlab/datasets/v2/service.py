@@ -5,6 +5,7 @@ import shutil
 import stat
 import threading
 import time
+from contextlib import ExitStack
 from datetime import timedelta
 from pathlib import Path
 from typing import Any
@@ -78,6 +79,17 @@ def _reserve(
         ceiling=ceiling,
         path=relative,
     )
+    if admission_ticket is not None:
+        from marketlab.storage.store import enabled
+
+        if enabled(connection):
+            execute(
+                connection,
+                "UPDATE v2_storage_reservations SET data_charge_id=:charge "
+                "WHERE relative_path=:path",
+                charge=admission_ticket["charge_id"],
+                path=relative,
+            )
 
 
 def _source_account(connection: Connection, import_id: Any, retained: int) -> None:
@@ -173,13 +185,20 @@ def import_file(
                     if row is None or row["resource_id"] is None
                     else one(
                         connection,
-                        "SELECT source_relative_path,transport FROM v2_canonical_imports "
-                        "WHERE import_id=:id",
+                        "SELECT source_relative_path,transport,received_bytes "
+                        "FROM v2_canonical_imports WHERE import_id=:id",
                         id=row["resource_id"],
                     )
                 )
+                managed = bool(admission._storage_intents(connection, ticket["charge_id"]))
             path = None if imported is None else safe_path(root, imported["source_relative_path"])
-            retained = path.stat().st_size if path is not None and path.exists() else 0
+            retained = (
+                imported["received_bytes"]
+                if managed and imported is not None
+                else path.stat().st_size
+                if path is not None and path.exists()
+                else 0
+            )
             if imported is not None:
                 if row is None or imported["transport"] != "cli":
                     raise V2Error("integrity_failure", "CLI staging identity changed")
@@ -319,12 +338,27 @@ def _import_file(
     renewer.start()
     received = 0
     try:
-        target.parent.mkdir(parents=True, exist_ok=False)
+        from marketlab.storage import store as storage
+
+        group = storage.begin(
+            engine,
+            root,
+            admission_ticket,
+            str(iid),
+            1,
+            [(target.name, storage.media_schema(target), declared, metadata["source_sha256"])],
+        )
+        if group is None:
+            target.parent.mkdir(parents=True, exist_ok=False)
         descriptor = os.open(
             source, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0) | getattr(os, "O_BINARY", 0)
         )
         incoming = os.fdopen(descriptor, "rb")
-        with incoming, target.open("xb") as outgoing:
+        with incoming, ExitStack() as stack:
+            outgoing = stack.enter_context(target.open("xb")) if group is None else None
+            writer = group.begin_stream(lost.is_set) if group is not None else None
+            if writer is not None:
+                stack.callback(writer.close)
             if source.is_symlink() or not stat.S_ISREG(os.fstat(incoming.fileno()).st_mode):
                 raise V2Error("invalid_request", "Canonical input must remain a regular file")
             while chunk := incoming.read(1024 * 1024):
@@ -332,11 +366,21 @@ def _import_file(
                     raise V2Error("ownership_lost", "Canonical staging ownership lost")
                 if received + len(chunk) > declared:
                     raise V2Error("integrity_failure", "Canonical input length changed")
-                outgoing.write(chunk)
+                if writer is not None:
+                    writer.write(chunk)
+                else:
+                    assert outgoing is not None
+                    outgoing.write(chunk)
                 received += len(chunk)
-            outgoing.flush()
-            os.fsync(outgoing.fileno())
-        if received != declared or sha256_file(target) != metadata["source_sha256"]:
+            if writer is not None:
+                assert group is not None
+                group = group.complete_stream(writer)
+            if outgoing is not None:
+                outgoing.flush()
+                os.fsync(outgoing.fileno())
+        if received != declared or (
+            group is None and sha256_file(target) != metadata["source_sha256"]
+        ):
             raise V2Error("integrity_failure", "Canonical source hash or length mismatch")
         with transaction(engine) as connection:
             stage = one(
@@ -352,6 +396,8 @@ def _import_file(
                 or not stage["live"]
             ):
                 raise V2Error("ownership_lost", "Canonical staging ownership lost")
+            if group is not None:
+                storage.register(connection, group, "cli_import", str(iid))
             day = date_value(metadata["trade_date"])
             sid, jids = jobs.create_submission(
                 connection,
@@ -483,6 +529,7 @@ def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, 
 
     renewer = threading.Thread(target=renew, daemon=True)
     renewer.start()
+    source_pins = ExitStack()
     try:
         _job_reservations(engine, root, current, relative)
         attempt.mkdir(parents=True, exist_ok=False)
@@ -499,7 +546,24 @@ def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, 
                     id=current["import_id"],
                 )
             assert imported is not None
-            raw = safe_path(root, imported["source_relative_path"])
+            from marketlab.storage import store as storage
+            from marketlab.storage.materialize import materialize_package
+
+            logical = safe_path(root, imported["source_relative_path"])
+            browser = imported.get("transport") == "browser"
+            owner = "upload_generation" if browser else "cli_import"
+            source_id = str(imported["generation_id"] if browser else imported["import_id"])
+            refs = storage.get_registered(engine, owner, source_id, root=root)
+            folder = source_pins.enter_context(
+                materialize_package(
+                    engine,
+                    root,
+                    refs,
+                    lambda: logical.parent,
+                    cancelled=lost.is_set,
+                )
+            )
+            raw = folder / logical.name
             if (
                 not raw.is_file()
                 or raw.stat().st_size != imported["declared_bytes"]
@@ -560,6 +624,12 @@ def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, 
                 os.fsync(stream.fileno())
         verify_dataset(output, cancelled=lost.is_set)
         final_relative = f"datasets-v2/{version}"
+        from marketlab.storage import store as storage
+
+        if storage.current(engine):
+            return _publish_storage_dataset(
+                engine, root, current, output, attempt, lost, version, identity, quality, manifest
+            )
         if current.get("_admission") is not None:
             from .admission import mark_path
 
@@ -654,6 +724,7 @@ def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, 
         jobs.fail(engine, current, error)
         raise
     finally:
+        source_pins.close()
         done.set()
         renewer.join(timeout=15)
         if not renewer.is_alive() and current.get("_admission") is not None:
@@ -675,6 +746,100 @@ def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, 
             for path in paths:
                 retained += inventory_owned(engine, current["_admission"], path)
             finish(engine, current["_admission"], retained, relative)
+
+
+def _publish_storage_dataset(
+    engine: Engine,
+    root: Path,
+    current: dict[str, Any],
+    output: Path,
+    attempt: Path,
+    lost: threading.Event,
+    version: str,
+    identity: dict[str, Any],
+    quality: dict[str, Any],
+    manifest: dict[str, Any],
+) -> dict[str, Any]:
+    from marketlab.storage import store as storage
+
+    from .catalog import inspect_version
+
+    group = None
+    query = "SELECT * FROM v2_dataset_versions WHERE dataset_version_id=:id"
+    for _ in range(4):
+        with engine.connect() as connection:
+            registered = one(connection, query, id=version)
+            selected = storage.snapshot(connection, "v2_dataset", version) if registered else None
+        found = inspect_version(engine, root, version) if registered else None
+        if found is not None and any(
+            found["quality"][field] != quality[field]
+            for field in (
+                "raw_rows",
+                "accepted_rows",
+                "duplicate_rows",
+                "conflict_rows",
+                "logical_sha256",
+                "observed_from",
+                "observed_through",
+            )
+        ):
+            raise V2Error("integrity_failure", "Existing dataset differs from verified source")
+        if registered is None and group is None:
+            group = storage.prepare(
+                engine,
+                root,
+                current.get("_admission"),
+                str(current["job_id"]),
+                current["fencing_token"],
+                {name: output / name for name in storage.MEMBERS["v2_dataset"]},
+                lost.is_set,
+                manifest_sha256=digest(manifest),
+            )
+        scratch = sum(p.stat().st_size for p in attempt.rglob("*") if p.is_file())
+        with transaction(engine) as connection:
+            job = jobs.fence(connection, current)
+            lock(connection, "v2-version:" + version)
+            jobs.fence(connection, current)
+            winner = one(connection, query, id=version)
+            if winner is not None:
+                if (
+                    winner != registered
+                    or storage.snapshot(connection, "v2_dataset", version) != selected
+                ):
+                    continue
+            else:
+                if registered is not None or group is None:
+                    raise V2Error("integrity_failure", "Dataset publication receipt missing")
+                manifest_ref = next(
+                    item.ref for item in group.intents if item.ref.member == "manifest.json"
+                )
+                execute(
+                    connection,
+                    "INSERT INTO v2_dataset_versions VALUES "
+                    "(:id,:instrument,:semantic,:day,:source,:metadata,:logical,:manifest,"
+                    "'spot-trades-v2',:transform,:lock,:path,:rows,:first,:last,clock_timestamp())",
+                    id=version,
+                    instrument=current["instrument_id"],
+                    semantic=current["semantic_sha256"],
+                    day=current["trade_date"],
+                    source=identity["source_sha256"],
+                    metadata=identity["metadata_sha256"],
+                    logical=quality["logical_sha256"],
+                    manifest=manifest_ref.sha256,
+                    transform=TRANSFORM,
+                    lock=identity["lock_sha256"],
+                    path=f"datasets-v2/{version}/manifest.json",
+                    rows=quality["accepted_rows"],
+                    first=quality["observed_from"],
+                    last=quality["observed_through"],
+                )
+                storage.register(connection, group, "v2_dataset", version)
+            jobs.finish(connection, job, "succeeded", "succeeded", version=version)
+            # The verified storage object charge owns output bytes now.
+            _reconcile(connection, current, "output", 0)
+            _reconcile(connection, current, "scratch", scratch)
+        return found if found is not None else manifest
+    raise V2Error("integrity_failure", "Concurrent dataset publication did not settle")
 
 
 def work(

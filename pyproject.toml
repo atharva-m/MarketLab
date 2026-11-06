@@ -5,11 +5,19 @@ description = "Local market research infrastructure"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
-  "fastapi>=0.115,<1", "uvicorn[standard]>=0.34,<1",
-  "pydantic-settings>=2.7,<3", "sqlalchemy[asyncio]>=2.0,<3",
-  "alembic>=1.14,<2", "psycopg[binary]>=3.2,<4", "redis>=5.2,<7",
-  "httpx>=0.28,<1", "duckdb>=1.2,<2", "pyarrow>=19,<24",
-  "ollama>=0.4,<1", "prometheus-client>=0.21,<1",
+  "fastapi>=0.115,<1",
+  "uvicorn[standard]>=0.34,<1",
+  "pydantic-settings>=2.7,<3",
+  "sqlalchemy[asyncio]>=2.0,<3",
+  "alembic>=1.14,<2",
+  "psycopg[binary]>=3.2,<4",
+  "redis>=5.2,<7",
+  "httpx>=0.28,<1",
+  "duckdb>=1.2,<2",
+  "pyarrow>=19,<24",
+  "ollama>=0.4,<1",
+  "prometheus-client>=0.21,<1",
+  "botocore>=1.37,<2",
 ]
 
 [dependency-groups]
@@ -25,7 +33,10 @@ packages = ["src/marketlab"]
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
-markers = ["integration: requires a running PostgreSQL server"]
+markers = [
+  "integration: requires a running PostgreSQL server",
+  "s3: exercises S3 implementation (including with a stubbed client)",
+]
 
 [tool.ruff]
 target-version = "py313"

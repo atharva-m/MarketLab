@@ -5,7 +5,8 @@ import hashlib
 import json
 import sqlite3
 import tempfile
-from contextlib import closing
+from collections.abc import Iterator
+from contextlib import ExitStack, closing, contextmanager
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -13,8 +14,19 @@ from typing import Any
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 from sqlalchemy.engine import Engine
 
-from marketlab.datasets.publication import inspect_version as legacy_inspect
+from marketlab.datasets.publication import _verify_registered_dataset
+from marketlab.storage.materialize import (
+    CACHE,
+    DATASET_MEMBERS,
+    V2_DATASET_MEMBERS,
+    Scratch,
+    check_registered,
+    materialization_workspace,
+    materialize_package,
+    registered_members,
+)
 
+from .capacity import SCRATCH
 from .common import HASH, V2Error, canonical_json, date_value, digest, safe_path, utc_text
 from .core import execute, instrument, one, wire
 from .normalize import python_rows
@@ -135,6 +147,14 @@ def datasets(
 
 
 def inspect_version(engine: Engine, root: Path, version: str) -> dict[str, Any]:
+    with _inspected_version(engine, root, version) as (manifest, _):
+        return manifest
+
+
+@contextmanager
+def _inspected_version(
+    engine: Engine, root: Path, version: str, *, scratch: Scratch | None = None
+) -> Iterator[tuple[dict[str, Any], Path]]:
     from .artifacts import verify_dataset
 
     if not isinstance(version, str) or HASH.fullmatch(version) is None:
@@ -150,9 +170,22 @@ def inspect_version(engine: Engine, root: Path, version: str) -> dict[str, Any]:
             raise V2Error("integrity_failure", "Ambiguous dataset identity")
         if current is not None:
             instrument(connection, current["instrument_id"])
-            path = safe_path(root, current["manifest_relative_path"])
+        elif legacy is None:
+            raise V2Error("not_found", "Dataset version not found")
+        elif legacy["venue"] != "binance_spot":
+            raise V2Error("unsupported_source", "Unsupported legacy dataset source")
+        else:
+            instrument(connection, "binance:spot:" + legacy["symbol"])
+    if current is not None:
+        refs = registered_members(
+            engine, root, "v2_dataset", version, V2_DATASET_MEMBERS, current["manifest_sha256"]
+        )
+        relative = current["manifest_relative_path"]
+        with materialize_package(
+            engine, root, refs, lambda: safe_path(root, relative).parent, scratch=scratch
+        ) as directory:
             manifest = verify_dataset(
-                path.parent,
+                directory,
                 {"manifest_sha256": current["manifest_sha256"], "dataset_version_id": version},
             )
             if (
@@ -164,20 +197,25 @@ def inspect_version(engine: Engine, root: Path, version: str) -> dict[str, Any]:
                 or manifest["quality"]["logical_sha256"] != current["logical_sha256"]
             ):
                 raise V2Error("integrity_failure", "Dataset catalog integrity failure")
-            return manifest
-        if legacy is None:
-            raise V2Error("not_found", "Dataset version not found")
-        if legacy["venue"] != "binance_spot":
-            raise V2Error("unsupported_source", "Unsupported legacy dataset source")
-        instrument(connection, "binance:spot:" + legacy["symbol"])
-    old = legacy_inspect(engine, root, version)
-    if old is None:
-        raise V2Error("not_found", "Dataset version not found")
-    return {
-        "schema": "dataset-manifest-v1",
-        "instrument_id": "binance:spot:" + legacy["symbol"],
-        "legacy_manifest": old,
-    }
+            yield manifest, directory / "trades.parquet"
+        return
+    assert legacy is not None
+    refs = registered_members(
+        engine, root, "legacy_dataset", version, DATASET_MEMBERS, legacy["manifest_sha256"]
+    )
+    relative = legacy["manifest_path"]
+    with materialize_package(
+        engine, root, refs, lambda: safe_path(root, relative).parent, scratch=scratch
+    ) as directory:
+        old = _verify_registered_dataset(directory / "manifest.json", legacy)
+        yield (
+            {
+                "schema": "dataset-manifest-v1",
+                "instrument_id": "binance:spot:" + legacy["symbol"],
+                "legacy_manifest": old,
+            },
+            directory / "trades.parquet",
+        )
 
 
 def _observed(value: object, day: date) -> str:
@@ -229,9 +267,23 @@ def coverage(
                         id=item["dataset_version_id"],
                     )
                 assert row is not None
-                path = safe_path(root, row["manifest_path"])
-                with path.open("rb") as stream:
-                    raw = stream.read(1024 * 1024 + 1)
+                refs = registered_members(
+                    engine,
+                    root,
+                    "legacy_dataset",
+                    item["dataset_version_id"],
+                    DATASET_MEMBERS,
+                    row["manifest_sha256"],
+                )
+                if refs is None:
+                    path = safe_path(root, row["manifest_path"])
+                    with path.open("rb") as stream:
+                        raw = stream.read(1024 * 1024 + 1)
+                else:
+                    manifest_ref = next(ref for ref in refs if ref.member == "manifest.json")
+                    check_registered(root, tuple(ref for ref in refs if ref != manifest_ref))
+                    with CACHE.pin(engine, root, manifest_ref, Scratch()) as path:
+                        raw = path.read_bytes()
                 if (
                     len(raw) > 1024 * 1024
                     or hashlib.sha256(raw).hexdigest() != row["manifest_sha256"]
@@ -245,6 +297,24 @@ def coverage(
                     raise V2Error("integrity_failure", "Legacy coverage metadata mismatch")
                 item["observed_start"] = m["quality"]["observed_from"]
                 item["observed_end"] = m["quality"]["observed_through"]
+            else:
+                with engine.connect() as connection:
+                    manifest_hash = execute(
+                        connection,
+                        "SELECT manifest_sha256 FROM v2_dataset_versions "
+                        "WHERE dataset_version_id=:id",
+                        id=item["dataset_version_id"],
+                    ).scalar_one()
+                refs = registered_members(
+                    engine,
+                    root,
+                    "v2_dataset",
+                    item["dataset_version_id"],
+                    V2_DATASET_MEMBERS,
+                    manifest_hash,
+                )
+                if refs is not None:
+                    check_registered(root, refs)
         for item in result["items"]:
             item["observed_start"] = _observed(item["observed_start"], day)
             item["observed_end"] = _observed(item["observed_end"], day)
@@ -280,68 +350,84 @@ def validate_selection(
 ) -> dict[str, Any]:
     if not 1 <= len(versions) <= 62 or len(set(versions)) != len(versions):
         raise V2Error("invalid_request", "Invalid dataset selection")
-    selection_root = safe_path(root, "selection-v2")
-    selection_root.mkdir(parents=True, exist_ok=True)
     days: set[str] = set()
     rows = 0
-    with tempfile.TemporaryDirectory(dir=selection_root) as folder:
-        database = Path(folder) / "identities.sqlite"
-        with closing(sqlite3.connect(database)) as connection:
+    with _selection_workspace(engine, root) as folder:
+        scratch = Scratch(directory=folder)
+        with _selection_index(folder) as connection:
+            connection.execute("PRAGMA journal_mode=OFF")
             connection.execute("PRAGMA temp_store=FILE")
             connection.execute("PRAGMA cache_size=-8192")
+            page_size = connection.execute("PRAGMA page_size").fetchone()[0]
             connection.execute(
                 "CREATE TABLE identities(id INTEGER PRIMARY KEY,payload BLOB NOT NULL)"
             )
             for version in versions:
-                manifest = inspect_version(engine, root, version)
-                legacy = manifest["schema"] == "dataset-manifest-v1"
-                if legacy:
-                    m = manifest["legacy_manifest"]
-                    current_identity, day = manifest["instrument_id"], m["trade_date"]
-                    with engine.connect() as c:
-                        registered = one(
-                            c,
-                            "SELECT manifest_path FROM dataset_versions WHERE "
-                            "dataset_version_id=:id",
-                            id=version,
-                        )
-                    assert registered is not None
-                    path = safe_path(root, registered["manifest_path"]).parent / "trades.parquet"
-                else:
-                    m = manifest
-                    current_identity, day = (
-                        m["instrument"]["instrument_id"],
-                        m["identity"]["trade_date"],
-                    )
-                    path = safe_path(root, f"datasets-v2/{version}/trades.parquet")
-                if current_identity != identity or day in days:
-                    raise V2Error("revision_conflict", "Instrument/day alternatives conflict")
-                days.add(day)
-                for batch in pq.ParquetFile(path).iter_batches(batch_size=16_384):
-                    for record in python_rows(batch):
-                        identifier = int(record["source_trade_id"])
-                        payload = canonical_json(
-                            [
-                                utc_text(record["executed_at"]),
-                                *(
-                                    format(record[k], ".18f")
-                                    for k in ("price", "quantity", "quote_quantity")
-                                ),
-                                record["is_buyer_maker"],
-                                record["is_best_match"],
-                            ]
-                        )
-                        old = connection.execute(
-                            "SELECT payload FROM identities WHERE id=?", (identifier,)
-                        ).fetchone()
-                        if old is not None and old[0] != payload:
-                            raise V2Error("revision_conflict", "Selected trade identities conflict")
-                        if old is None:
-                            connection.execute(
-                                "INSERT INTO identities VALUES (?,?)", (identifier, payload)
-                            )
-                        rows += 1
-                    if database.stat().st_size > 20 * 1024**3:
+                prior_size = scratch.used = (
+                    page_size * connection.execute("PRAGMA page_count").fetchone()[0]
+                )
+                with _inspected_version(engine, root, version, scratch=scratch) as (manifest, path):
+                    pages = (SCRATCH - (scratch.used - prior_size)) // page_size
+                    if connection.execute("PRAGMA page_count").fetchone()[0] > pages:
                         raise V2Error("capacity_exceeded", "Selection scratch exceeds limit")
+                    connection.execute(f"PRAGMA max_page_count={pages}")
+                    if manifest["schema"] == "dataset-manifest-v1":
+                        current_identity = manifest["instrument_id"]
+                        day = manifest["legacy_manifest"]["trade_date"]
+                    else:
+                        current_identity = manifest["instrument"]["instrument_id"]
+                        day = manifest["identity"]["trade_date"]
+                    if current_identity != identity or day in days:
+                        raise V2Error("revision_conflict", "Instrument/day alternatives conflict")
+                    days.add(day)
+                    with pq.ParquetFile(path) as parquet:
+                        for batch in parquet.iter_batches(batch_size=16_384):
+                            for record in python_rows(batch):
+                                identifier = int(record["source_trade_id"])
+                                payload = canonical_json(
+                                    [
+                                        utc_text(record["executed_at"]),
+                                        *(
+                                            format(record[k], ".18f")
+                                            for k in ("price", "quantity", "quote_quantity")
+                                        ),
+                                        record["is_buyer_maker"],
+                                        record["is_best_match"],
+                                    ]
+                                )
+                                old = connection.execute(
+                                    "SELECT payload FROM identities WHERE id=?", (identifier,)
+                                ).fetchone()
+                                if old is not None and old[0] != payload:
+                                    raise V2Error(
+                                        "revision_conflict", "Selected trade identities conflict"
+                                    )
+                                if old is None:
+                                    connection.execute(
+                                        "INSERT INTO identities VALUES (?,?)", (identifier, payload)
+                                    )
+                                rows += 1
             connection.commit()
     return {"instrument_id": identity, "versions": versions, "verified_rows": rows}
+
+
+@contextmanager
+def _selection_workspace(engine: Engine, root: Path) -> Iterator[Path]:
+    from marketlab.storage.store import current
+
+    with ExitStack() as stack:
+        if current(engine):
+            directory, _ = stack.enter_context(materialization_workspace(engine, root, SCRATCH))
+        else:
+            # Historical schema readers predate shared storage reservations.
+            directory = Path(stack.enter_context(tempfile.TemporaryDirectory()))
+        yield directory
+
+
+@contextmanager
+def _selection_index(folder: Path) -> Iterator[sqlite3.Connection]:
+    try:
+        with closing(sqlite3.connect(folder / "identities.sqlite")) as connection:
+            yield connection
+    except sqlite3.Error as error:
+        raise V2Error("capacity_exceeded", "Selection scratch storage unavailable") from error

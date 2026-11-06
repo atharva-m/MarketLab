@@ -2,7 +2,9 @@
 
 import asyncio
 import copy
+import hashlib
 import threading
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 
@@ -10,6 +12,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pytest
 from sqlalchemy import create_engine
+from test_storage_materialize import offline_space
 
 from marketlab.analytics.bars import BarError
 from marketlab.analytics.bars import BarService as LegacyBarService
@@ -22,8 +25,12 @@ from marketlab.analytics.v2.bars import (
 )
 from marketlab.datasets.normalize import SCHEMA as LEGACY_SCHEMA
 from marketlab.datasets.normalize import VerificationCancelled
+from marketlab.datasets.v2 import catalog
+from marketlab.datasets.v2.common import V2Error
 from marketlab.datasets.v2.core import registry_request
 from marketlab.datasets.v2.normalize import SCHEMA
+from marketlab.storage import materialize
+from marketlab.storage.backend import ObjectRef
 
 START = datetime(2025, 3, 1, tzinfo=UTC)
 VERSION = "a" * 64
@@ -259,6 +266,64 @@ def test_cancelled_identity_merge_stops_and_query_drains(tmp_path):
     with pytest.raises(BarError):
         bars._query(request(), [selected(path)], stop)
     assert bars.base.reader.compute.snapshot()["active"] == 0
+
+
+def test_registered_local_partitions_query_and_compare_across_pin_windows(tmp_path, monkeypatch):
+    monkeypatch.setattr(materialize, "reserve_space", offline_space)
+    bars = service(tmp_path)
+    rows = []
+    for index in range(6):
+        path = partition(
+            tmp_path, [(2, 0, "1" if index < 5 else "2", "1", "1")], name=f"trades-{index}"
+        )
+        row = selected(path, version=str(index) * 64)
+        raw = path.read_bytes()
+        row["refs"] = (
+            ObjectRef(
+                "local",
+                path.name,
+                None,
+                len(raw),
+                hashlib.sha256(raw).hexdigest(),
+                "trades.parquet",
+                "application/vnd.apache.parquet",
+            ),
+        )
+        # Prepared references carry catalog identity and no authoritative path.
+        del row["path"]
+        rows.append(row)
+    rows[0]["dataset_version_id"] = VERSION
+    assert bars._query(request(), rows[:1], threading.Event())["returned_buckets"] == 1
+    bars._check_overlaps(rows[:-1], threading.Event())
+    with pytest.raises(BarError, match="trade identities conflict"):
+        bars._check_overlaps(rows, threading.Event())
+    materialize.CACHE.close()
+
+
+def test_selection_sqlite_page_limit_returns_capacity_error(tmp_path, monkeypatch):
+    path = partition(tmp_path, [(index, index, "1", "1", "1") for index in range(500)])
+
+    @contextmanager
+    def workspace(*args, **kwargs):
+        yield tmp_path
+
+    @contextmanager
+    def verified(*args, **kwargs):
+        yield (
+            {
+                "schema": "dataset-manifest-v2",
+                "instrument": {"instrument_id": IDENTITY},
+                "identity": {"trade_date": "2025-03-01"},
+            },
+            path,
+        )
+
+    monkeypatch.setattr(catalog, "_selection_workspace", workspace)
+    monkeypatch.setattr(catalog, "_inspected_version", verified)
+    monkeypatch.setattr(catalog, "SCRATCH", 8192)
+    with pytest.raises(V2Error, match="Selection scratch storage unavailable") as caught:
+        catalog.validate_selection(service(tmp_path).engine, tmp_path, IDENTITY, [VERSION])
+    assert caught.value.code == "capacity_exceeded"
 
 
 def test_changed_prepared_signature_rejected_before_cache(tmp_path, monkeypatch):

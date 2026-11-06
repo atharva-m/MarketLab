@@ -1,5 +1,182 @@
 # MarketLab contributor instructions
 
+## Current authority: Phase 6 publication and exact-SHA CI (November 6, 2026)
+
+The user authorized secret-safe publication of reviewed Phase 6, commit/push and
+hosted CI verification for the exact published SHA. Fix actual scoped CI failures
+through coder `gpt-6.1-sol/high` and independent read-only reviewer
+`gpt-6-astra/medium`. Reuse qualified passed checks; preserve all historical
+failures and the existing acceptance limitations. Publication and exact-SHA CI
+are pending at this entry. This supersedes earlier no-commit/push restrictions
+only for the reviewed Phase 6 publication scope.
+
+Stage only the reviewed explicit source/documentation allowlist. Exclude private
+credentials, local configuration, generated outputs, artifacts, data, weights,
+archives and logs. Preserve their working files. The existing tracked
+`.env.example` is retained only as its unchanged, previously committed blob;
+do not read or stage its working contents or claim its content was secret-audited.
+Preserve original services, protected files, all databases/dumps, remote objects
+and evidence. No AWS settings change, original-service rollout, limit relaxation,
+new inference or Phase 7 work follows. Record actual publication/CI outcomes in
+[verification](docs/v2/phase-6-verification.md).
+
+## Phase 6 remaining S3 gates passed; qualified closeout (November 6, 2026)
+
+The affected-only reruns passed through the prescribed coder and independent
+reviewer. Boundary 008 verified exact 4 GiB upload/readback, over-limit rejection,
+cancellation and retained charges, with the writer completing in 1,506.066 seconds
+under the unchanged 1,800-second deadline. Owner 008 verified one empty load/unload, pinned
+model identity and death of every observed model/discovery/later-console process
+before deliberate termination of the exact idle baseline. No text generation or
+functional replay occurred. Retain all earlier failures and three spent empty
+loads across attempts 006–008; functional counts remain one copilot and one memo.
+
+Applicable passed checks were reused. Five fresh database dumps/restores passed
+independent verification while preserving every prior database and restore.
+Only the exact owned PG/Redis containers were stopped, both exit zero without
+OOM; containers, volumes, data, S3 objects/versions and evidence remain retained.
+Original services/endpoints/GIF matched point observations. Protected scope is
+283 exact files plus two authorized dependency changes; two dotenv files remain
+unverified under the privacy guard, so full preservation is not claimed. D:'s
+floor alone remains waived, not passed. See [verification](docs/v2/phase-6-verification.md).
+No runtime optimization, limit change, AWS settings change, original-service
+rollout, commit or push occurred or follows. Earlier checkpoints remain historical.
+
+## Current authority: investigate and rerun the two failed gates (November 6, 2026)
+
+The user authorized investigating and rerunning the failed 4 GiB S3 browser
+boundary and isolated model-owner shutdown checks. Use the prescribed coder and
+independent reviewer; diagnose retained evidence before minimal corrections and
+concrete rerun review. Reuse qualified functional results and all unaffected
+checks. Preserve previous failures, spent calls, bytes, charges and backups.
+Keep existing limits and the D:-only free-space waiver. Use only owned retained
+resources after exact identity checks; do not change AWS settings or original
+services, commit or push. Credential access remains limited to the reviewed
+four-value loader without displaying or logging values. Record actual outcomes
+and repeat the necessary backup/preservation/stop-only closeout after reruns.
+
+## Phase 6 S3 testing checkpoint; acceptance incomplete (November 6, 2026)
+
+The prescribed coder/reviewer workflow qualified capability, 24 live PG/S3 cases,
+nine canonical/official browser flows and model functionality. The model used
+one copilot and one memo call; a reviewed read-only completion verified retained
+outputs with zero additional calls. Earlier failed invocations remain failed.
+
+The exact 4 GiB upload/readback deadline and normal isolated-model-owner drain
+remain failed gates. Do not mark Phase 6 complete, relax limits, reset/refund
+charges/calls or repeat inference merely for a green outcome. Five owned database
+dumps/restores and reversible stop-only closeout passed independent review.
+Retain owned containers/volumes, all databases/restores, host data, remote objects
+and evidence. Original services/endpoints/GIF matched point observations; the
+qualified protected-file scope is 283 exact plus two authorized dependency
+changes. Two dotenv files remain unverified under the privacy guard; the full
+preservation comparison is not a pass. D:'s free-space floor alone was waived.
+The agent made no AWS settings changes. No commit or push occurred. See
+[verification](docs/v2/phase-6-verification.md) for exact outcomes and limitations.
+
+## Current authority: complete remaining S3 tests (November 6, 2026)
+
+The user explicitly waived only D:'s 50 GiB free-space preflight floor and
+directed the browser tests to run. Record observed D: space and the waiver;
+do not report that check as passed. Keep C:'s fixture-space requirement and all
+other resource, upload, accounting and runtime limits unchanged.
+
+The user subsequently directed: "Yes, do all the tests." Proceed with remaining
+S3 acceptance through the prescribed coder/reviewer workflow, reusing passed
+checks and reviewed isolated execution with network access. This authorizes
+test operations without repeated permission requests, superseding the prior
+per-action approval boundary for that scope. It does not authorize AWS settings
+changes, original-service changes, commit or push. Preserve all prior evidence,
+private values and owned test data; fail closed on unmet prerequisites.
+
+## Current authority: local Phase 6 continuation (November 6, 2026)
+
+After the first capability attempt failed at HeadBucket with an indeterminate
+sanitized error, the user authorized fixing diagnostic handling and running
+focused offline tests through the prescribed coder/reviewer workflow. Preserve
+the executed source and failed evidence. Prepare a reviewed read-only retry with
+network access, then ask before executing it. This authorization permits no AWS
+action, AWS settings change, commit or push.
+
+Continue the remaining local implementation and acceptance preparation through
+the prescribed coder/reviewer workflow. Ask the user before every further AWS
+action; do not change any AWS settings. The earlier S3 testing authorization
+does not override this narrower boundary. No commit or push. Preserve original
+services, private values and all evidence; reuse applicable passed checks.
+
+The user applied the bucket policy in the console. The separately authorized
+read-only verification and independent receipt review passed: versioning enabled,
+region matched and policy exactly matched the reviewed template. This establishes
+observed prerequisites only, not actual write behavior or full S3 acceptance.
+Prepare only the minimum reviewed next capability check and offline tests before
+requesting explicit approval for its concrete AWS actions.
+
+## Current authority: deferred Phase 6 S3 testing (November 5, 2026)
+
+The user authorized proceeding with the deferred S3 tests, without commit or
+push. Use the prescribed coder/reviewer workflow, reuse applicable passed
+checks and preserve original services and all prior evidence. AWS credentials
+must be accessed only through the named variables `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION` and `S3_BUCKET_NAME`; never display
+or log their values. After the initial process-variable check found all four
+absent, the user explicitly allowed programmatically loading only those four
+values from `.env`, without displaying or logging them. Do not display the
+file, parse unrelated values, interpolate other secrets, or permit implicit
+application dotenv loading. Isolated SDK stub checks use no live credentials
+or endpoint contact. Live AWS work begins with reviewed read-only preflight
+and fresh owned prefixes. Existing bucket-wide
+configuration must not be changed as a substitute for reviewed isolated test
+bindings. Full acceptance remains pending actual results.
+
+## Phase 6 implemented; local acceptance passed; S3 acceptance deferred (November 5, 2026)
+
+Implementation under the [reviewed contract](docs/v2/phase-6-storage.md), including
+the required SDK/lockfile changes, passed the prescribed coder/reviewer workflow.
+All blocking findings in the completed non-S3 scope are resolved. Final offline
+checks passed 1,511 tests; applicable PostgreSQL, frontend, numerical,
+packaged-reader and quality checks passed with explicit source qualifications
+in [verification](docs/v2/phase-6-verification.md).
+
+Eleven database dumps and isolated restores passed review before fresh checks
+of all 22 databases and exact cleanup of three owned containers, two volumes
+and one image. Host data, dumps, evidence and historical failures remain
+retained. The inherited unresolved reservation remains unchanged and charged
+in verified backups. Original services/images/endpoints and the README GIF
+were preserved; only the independently reviewed dependency files differ in the
+protected inventory. Preservation is point-in-time evidence.
+
+S3 implementation and tests are authored, but no S3 test was executed or
+collected and no S3 endpoint was contacted for validation. Full Phase 6
+acceptance remains incomplete pending the user's S3 testing instructions.
+No commit, push, original-service rollout or Phase 7 authority follows.
+
+## Current authority: Phase 6 implementation with S3 testing deferred
+
+The user authorized implementation under the reviewed
+[storage contract](docs/v2/phase-6-storage.md), including the required S3 SDK
+and lockfile changes, through coder `gpt-6.1-sol/high` and independent read-only
+reviewer `gpt-6-astra/medium`. Implement S3 features and their tests, but do not
+execute S3-related tests, including mocked/unit tests, or contact an S3 endpoint
+for validation until further user instructions. Run applicable non-S3 checks.
+This specific deferral takes precedence over the request to complete acceptance:
+mandatory S3 gates remain unexecuted and Phase 6 cannot be declared complete.
+Record actual outcomes and deferred gates in
+[verification](docs/v2/phase-6-verification.md). Preserve original services,
+protected artifacts, retained data/dumps and historical failures. No commit,
+push, original-service rollout or Phase 7 work is authorized.
+
+## Current authority: Phase 6 pre-code contract (November 4, 2026)
+
+The user authorized only the [Phase 6 storage contract](docs/v2/phase-6-storage.md),
+roadmap and contributor updates, and independent read-only review by
+`gpt-6-astra/medium`. The independent review passed after three blocking findings
+were resolved. The exact reviewed SHA-256 is recorded in the contract.
+Phase 6 covers local and S3-compatible artifact storage under the Phase 1 contract and
+P6-01 through P6-04. Runtime implementation requires separate authorization.
+No runtime or dependency changes, service operations, commit or push are
+authorized. Preserve existing artifacts, historical evidence and original
+services. Phase 5 publication authority does not extend to Phase 6.
+
 ## Phase 5 publication and hosted CI verified (November 4, 2026)
 
 Reviewed Phase 5 and the narrow concurrent-inspection repair were published as

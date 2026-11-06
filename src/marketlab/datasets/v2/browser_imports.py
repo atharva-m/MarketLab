@@ -235,6 +235,16 @@ class BrowserImports:
             path=relative,
         )
         assert reservation is not None
+        from marketlab.storage.store import enabled
+
+        if enabled(connection):
+            execute(
+                connection,
+                "UPDATE v2_storage_reservations SET data_charge_id=:charge "
+                "WHERE reservation_id=:id",
+                charge=ticket["charge_id"],
+                id=reservation["reservation_id"],
+            )
         token = secrets.token_urlsafe(32)
         row = one(
             connection,
@@ -426,6 +436,9 @@ class BrowserImports:
                 return
 
     async def receive(self, identity: str, request: Request) -> dict[str, Any]:
+        from marketlab.storage import store as storage
+        from marketlab.storage.backend import StreamWriter
+
         headers = request.headers
         if (
             len(headers.getlist("content-length")) != 1
@@ -445,10 +458,31 @@ class BrowserImports:
         worker.start()
         target = safe_path(self.root, generation["relative_path"])
         stream, received, success = None, 0, False
+        writer: StreamWriter | None = None
+        group: storage.WriteGroup | None = None
         hasher = hashlib.sha256()
         try:
-            await _io(target.parent.mkdir, parents=True, exist_ok=False)
-            stream = await _io(target.open, "xb")
+            group = await _io(
+                storage.begin,
+                self.engine,
+                self.root,
+                generation["ticket"],
+                str(generation["import_id"]),
+                generation["ordinal"],
+                [
+                    (
+                        target.name,
+                        storage.media_schema(target),
+                        generation["declared_bytes"],
+                        generation["source_sha256"],
+                    )
+                ],
+            )
+            if group is None:
+                await _io(target.parent.mkdir, parents=True, exist_ok=False)
+                stream = await _io(target.open, "xb")
+            else:
+                writer = await _io(group.begin_stream, lost.is_set)
             incoming = request.stream().__aiter__()
             while True:
                 try:
@@ -463,30 +497,45 @@ class BrowserImports:
                     chunk = part[offset : offset + 1024 * 1024]
                     # Until the write completes, the full unwritten reservation
                     # remains outstanding. A crash can overcharge, never undercharge.
-                    await _io(stream.write, chunk)
+                    if writer is not None:
+                        await _io(writer.write, chunk)
+                    else:
+                        assert stream is not None
+                        await _io(stream.write, chunk)
                     received += len(chunk)
                     await _io(self._account, generation, received)
                     hasher.update(chunk)
-            await _io(stream.flush)
-            await _io(os.fsync, stream.fileno())
-            await _io(stream.close)
-            stream = None
+            if stream is not None:
+                await _io(stream.flush)
+                await _io(os.fsync, stream.fileno())
+                await _io(stream.close)
+                stream = None
             if (
                 received != generation["declared_bytes"]
                 or hasher.hexdigest() != generation["source_sha256"]
             ):
                 raise V2Error("integrity_failure", "Upload length or hash mismatch")
-            await _io(self._uploaded, generation)
+            if group is not None and writer is not None:
+                group = await _io(group.complete_stream, writer)
+            await _io(self._uploaded, generation, group)
             success = True
         finally:
             if stream is not None:
                 await _io(stream.close)
+            if writer is not None:
+                await _io(writer.close)
             done.set()
             await _io(worker.join, 15)
             with self._streams_lock:
                 self._streams.pop(identity, None)
             if worker.is_alive():
                 lost.set()  # Retain ticket until exact thread drain is verified.
+            elif group is not None:
+                if not success:
+                    await _io(self._failed, generation, received)
+                else:
+                    await _io(self._drained_source, generation, received)
+                await _io(admission.finish, self.engine, generation["ticket"])
             else:
                 # Python's counter may lag a partial successful native write.
                 # Reconcile only the fully drained owned file's actual size.
@@ -508,7 +557,9 @@ class BrowserImports:
                 )
         return await asyncio.to_thread(self.inspect, identity)
 
-    def _uploaded(self, generation: dict[str, Any]) -> None:
+    def _uploaded(self, generation: dict[str, Any], group: Any = None) -> None:
+        from marketlab.storage import store as storage
+
         with transaction(self.engine) as connection:
             row = self._current(connection, str(generation["import_id"]), locked=True)
             if (
@@ -525,6 +576,10 @@ class BrowserImports:
             ).scalar_one()
             if not live:
                 raise V2Error("ownership_lost", "Upload lease expired")
+            if group is not None:
+                storage.register(
+                    connection, group, "upload_generation", str(generation["generation_id"])
+                )
             execute(
                 connection,
                 "UPDATE v2_upload_generations SET state='uploaded',owner=NULL,lease_until=NULL,"
@@ -667,6 +722,9 @@ class BrowserImports:
             raise
 
     def finalize(self, identity: str, body: dict[str, Any], key: str) -> dict[str, Any]:
+        from marketlab.storage import store as storage
+        from marketlab.storage.materialize import materialize_package, without_cache
+
         revision = _revision(body, True)
         request = dict(body, id=identity)
         with transaction(self.engine) as connection:
@@ -674,12 +732,23 @@ class BrowserImports:
             if old is not None:
                 return old
             row = self._current(connection, identity)
+            binding = (
+                storage.snapshot(connection, "upload_generation", str(row["generation_id"]))
+                if row["state"] == "uploaded" and storage.enabled(connection)
+                else None
+            )
         if row["state"] != "uploaded" or str(row["generation_id"]) != body["generation"]:
             raise V2Error("revision_conflict", "Verified current upload required")
         path = safe_path(self.root, row["source_relative_path"])
-        stat = _signature(path)
-        if stat[2] != row["declared_bytes"] or sha256_file(path) != row["source_sha256"]:
-            raise V2Error("integrity_failure", "Uploaded source changed")
+        refs = binding.refs if binding is not None else None
+        with (
+            without_cache(),
+            materialize_package(self.engine, self.root, refs, lambda: path.parent) as directory,
+        ):
+            resolved = directory / path.name
+            stat = _signature(resolved)
+            if stat[2] != row["declared_bytes"] or sha256_file(resolved) != row["source_sha256"]:
+                raise V2Error("integrity_failure", "Uploaded source changed")
         with transaction(self.engine) as connection:
             old = operation(connection, "browser-finalize", key, request)
             if old is not None:
@@ -689,7 +758,14 @@ class BrowserImports:
                 current["revision"] != revision
                 or current["state"] != "uploaded"
                 or current["generation_id"] != row["generation_id"]
-                or _signature(path) != stat
+                or (refs is None and _signature(path) != stat)
+                or (
+                    binding is not None
+                    and storage.snapshot(
+                        connection, "upload_generation", str(current["generation_id"])
+                    )
+                    != binding
+                )
             ):
                 raise V2Error("revision_conflict", "Import changed before finalization")
             day = current["trade_date"]

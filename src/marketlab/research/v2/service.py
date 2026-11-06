@@ -16,6 +16,7 @@ from marketlab.analytics.v2 import BarService, BarsRequest
 from marketlab.datasets.normalize import VerificationCancelled
 from marketlab.datasets.v2.common import V2Error, canonical_json, digest, safe_path, sha256_file
 from marketlab.datasets.v2.core import execute, lock, one, transaction
+from marketlab.storage.materialize import materialize_package, registered_members
 
 from . import capacity, store
 from .errors import code as error_code
@@ -167,7 +168,12 @@ class ResearchService:
         pinned: dict[str, Any] | None = None,
     ) -> tuple[list[dict[str, Any]], dict[str, list[dict[str, Any]]]]:
         rows = await self.bars.prepare_selection(
-            spec.instrument_ids, spec.dataset_versions, spec.history_start, spec.end, cancelled
+            spec.instrument_ids,
+            spec.dataset_versions,
+            spec.history_start,
+            spec.end,
+            cancelled,
+            scratch_root=Path(reservation["path"]),
         )
         if pinned is not None:
             for row in rows:
@@ -250,16 +256,33 @@ class ResearchService:
         return path
 
     def publish(self, current: store.Claim, staging: Path, fingerprint: dict[str, Any]) -> None:
+        from marketlab.storage import store as storage
+
         parent = safe_path(self.root, "research-v2")
         parent.mkdir(parents=True, exist_ok=True)
         final = safe_path(self.root, f"research-v2/{current.run_id}")
-        verified = final if final.exists() else staging
+        managed = storage.current(self.engine)
+        verified = final if not managed and final.exists() else staging
         staged_manifest = verify_directory(staging, current.run_id, fingerprint)
         manifest = verify_directory(verified, current.run_id, fingerprint)
         if manifest["artifacts"] != staged_manifest["artifacts"]:
             raise V2Error("integrity_failure", "Research orphan differs from deterministic output")
         checked_signature = signature(verified)
         manifest_hash = sha256_file(verified / "manifest.json")
+        group = (
+            storage.prepare(
+                self.engine,
+                self.root,
+                current.admission,
+                current.run_id,
+                current.token,
+                {name: staging / name for name in storage.MEMBERS["v2_research"]},
+                current.lost.is_set,
+                manifest_sha256=manifest_hash,
+            )
+            if managed
+            else None
+        )
         with self.engine.connect() as connection:
             memo_enabled = (
                 execute(connection, "SELECT to_regclass('v2_memo_jobs')").scalar_one() is not None
@@ -273,11 +296,11 @@ class ResearchService:
             store.fence(connection, current)
             lock(connection, "v2-research-run:" + current.run_id)
             store.fence(connection, current)
-            if current.lost.is_set() or signature(verified) != checked_signature:
+            if current.lost.is_set() or (not managed and signature(verified) != checked_signature):
                 raise V2Error("revision_conflict", "Research publication ownership lost")
-            if final.exists() and verified != final:
+            if not managed and final.exists() and verified != final:
                 raise V2Error("unavailable", "Research publication requires verified adoption")
-            if verified == staging:
+            if not managed and verified == staging:
                 staging.rename(final)
             execute(
                 connection,
@@ -291,6 +314,8 @@ class ResearchService:
                 result_bytes=manifest["artifacts"]["results.json"]["bytes"],
                 summary_bytes=manifest["artifacts"]["summary.json"]["bytes"],
             )
+            if group is not None:
+                storage.register(connection, group, "v2_research", current.run_id)
             store.finish(connection, current)
             if memo_execution is not None:
                 from marketlab.memos.v2.store import register as register_memo
@@ -466,12 +491,27 @@ class ResearchService:
         expected = f"research-v2/{run_id}/manifest.json"
         if row is None or row["manifest_relative_path"] != expected:
             raise V2Error("integrity_failure", "Numerical registration integrity failure")
-        path = safe_path(self.root, f"research-v2/{run_id}")
-        manifest = verify_directory(path, run_id, info["fingerprint"], row["manifest_sha256"])
-        for name in ("results", "summary"):
-            if manifest["artifacts"][name + ".json"]["sha256"] != row[name + "_sha256"]:
-                raise V2Error("integrity_failure", "Numerical registration integrity failure")
-        return json.loads((path / (kind + ".json")).read_bytes()), row[kind + "_sha256"]
+        refs = registered_members(
+            self.engine,
+            self.root,
+            "v2_research",
+            run_id,
+            {
+                "manifest.json": 1024**2,
+                "spec.json": 65536,
+                "results.json": MAX_RESULT,
+                "summary.json": MAX_RESULT,
+            },
+            row["manifest_sha256"],
+        )
+        with materialize_package(
+            self.engine, self.root, refs, lambda: safe_path(self.root, f"research-v2/{run_id}")
+        ) as path:
+            manifest = verify_directory(path, run_id, info["fingerprint"], row["manifest_sha256"])
+            for name in ("results", "summary"):
+                if manifest["artifacts"][name + ".json"]["sha256"] != row[name + "_sha256"]:
+                    raise V2Error("integrity_failure", "Numerical registration integrity failure")
+            return json.loads((path / (kind + ".json")).read_bytes()), row[kind + "_sha256"]
 
     async def _summary(self, run_id: str) -> tuple[dict[str, Any], CacheStatus]:
         body, expected = await asyncio.to_thread(self.read, run_id, "summary")

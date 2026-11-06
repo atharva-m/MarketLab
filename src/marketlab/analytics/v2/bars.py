@@ -2,11 +2,13 @@
 
 import asyncio
 import heapq
+import sqlite3
 import tempfile
 import threading
 import time
 from collections import OrderedDict
-from collections.abc import Generator
+from collections.abc import Generator, Iterator
+from contextlib import ExitStack, closing, contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -35,9 +37,21 @@ from marketlab.analytics.bars import (
 from marketlab.analytics.cache import CacheStatus, cache_key
 from marketlab.analytics.verification import VerificationRequest, VerificationUnavailable
 from marketlab.datasets.normalize import VerificationCancelled
+from marketlab.datasets.source import DatasetError
 from marketlab.datasets.v2.artifacts import verify_dataset
+from marketlab.datasets.v2.capacity import SCRATCH
 from marketlab.datasets.v2.common import HASH, SYMBOL, V2Error, canonical_json, safe_path, utc_text
 from marketlab.datasets.v2.core import instrument, one, semantic_hash, wire
+from marketlab.storage.materialize import (
+    CACHE,
+    DATASET_MEMBERS,
+    V2_DATASET_MEMBERS,
+    Scratch,
+    check_registered,
+    materialization_workspace,
+    materialize_package,
+    registered_members,
+)
 from marketlab.trades.schemas import normalize_timestamp
 
 DEFINITION = "bars-v2"
@@ -320,11 +334,6 @@ class BarService:
                     if row["venue"] != "binance_spot" or row["status"] != "published":
                         raise BarError("Unsupported dataset source")
                     relative = row["manifest_path"]
-                manifest_path = safe_path(self.root, relative)
-                path = safe_path(self.root, str(Path(relative).parent / "trades.parquet"))
-                files = [manifest_path, path]
-                if current:
-                    files.append(safe_path(self.root, str(Path(relative).parent / "quality.json")))
                 rows.append(
                     {
                         **row,
@@ -332,13 +341,118 @@ class BarService:
                         "metadata": wire(metadata),
                         "semantic_sha256": metadata["semantic_sha256"],
                         "contract": "dataset-manifest-v2" if current else "dataset-manifest-v1",
-                        "manifest_path": manifest_path,
-                        "path": path,
-                        "signature": self.base.reader.signature(files),
+                        "logical_manifest": relative,
                         "catalog_identity": tuple(row.items()),
                     }
                 )
+        for item in rows:
+            legacy = item["contract"] == "dataset-manifest-v1"
+            refs = item["refs"] = registered_members(
+                self.engine,
+                self.root,
+                "legacy_dataset" if legacy else "v2_dataset",
+                item["dataset_version_id"],
+                DATASET_MEMBERS if legacy else V2_DATASET_MEMBERS,
+                item["manifest_sha256"],
+            )
+            if refs is None:
+                relative = item["logical_manifest"]
+                manifest_path = item["manifest_path"] = safe_path(self.root, relative)
+                path = item["path"] = safe_path(
+                    self.root, str(Path(relative).parent / "trades.parquet")
+                )
+                files = [manifest_path, path]
+                if not legacy:
+                    files.append(safe_path(self.root, str(Path(relative).parent / "quality.json")))
+                item["signature"] = self.base.reader.signature(files)
+            else:
+                item["signature"] = refs
         return sorted(rows, key=lambda r: (r["instrument_id"], r["trade_date"]))
+
+    @contextmanager
+    def _trade_path(
+        self, row: dict[str, Any], scratch: Scratch, cancelled: threading.Event
+    ) -> Iterator[Path]:
+        refs = row.get("refs")
+        if refs is None:
+            yield row["path"]
+            return
+        ref = next(ref for ref in refs if ref.member == "trades.parquet")
+        with CACHE.pin(self.engine, self.root, ref, scratch, cancelled.is_set) as path:
+            yield path
+
+    def _check_overlaps(
+        self,
+        rows: list[dict[str, Any]],
+        cancelled: threading.Event,
+        scratch_root: Path | None = None,
+    ) -> None:
+        for group in overlapping_groups(rows):
+            if len(group) <= 5 and all(row.get("refs") is None for row in group):
+                check_overlaps(group, cancelled)
+                continue
+            if len(group) <= 5:
+                with ExitStack() as pins:
+                    scratch = Scratch(directory=scratch_root)
+                    paths = [
+                        dict(
+                            row, path=pins.enter_context(self._trade_path(row, scratch, cancelled))
+                        )
+                        for row in group
+                    ]
+                    check_overlaps(paths, cancelled)
+                continue
+            # A full group can span all 62 partitions. Preserve exact
+            # comparisons in a bounded disk index while releasing each pin
+            # before opening the next native reader.
+            with materialization_workspace(self.engine, self.root, SCRATCH, owned=scratch_root) as (
+                folder,
+                _,
+            ):
+                scratch = Scratch(directory=folder)
+                database = folder / "identities.sqlite"
+                with closing(sqlite3.connect(database)) as connection:
+                    connection.execute("PRAGMA journal_mode=OFF")
+                    connection.execute("PRAGMA temp_store=FILE")
+                    connection.execute("PRAGMA cache_size=-8192")
+                    page_size = connection.execute("PRAGMA page_size").fetchone()[0]
+                    connection.execute(
+                        "CREATE TABLE identities(id INTEGER PRIMARY KEY,payload BLOB NOT NULL)"
+                    )
+                    try:
+                        for row in group:
+                            previous_size = (
+                                page_size * connection.execute("PRAGMA page_count").fetchone()[0]
+                            )
+                            scratch.used = previous_size
+                            with self._trade_path(row, scratch, cancelled) as path:
+                                pages = (SCRATCH - (scratch.used - previous_size)) // page_size
+                                if connection.execute("PRAGMA page_count").fetchone()[0] > pages:
+                                    raise BarError("Overlap scratch exceeds limit")
+                                connection.execute(f"PRAGMA max_page_count={pages}")
+                                with closing(_records(path, 16_384, cancelled)) as records:
+                                    for record in records:
+                                        _check(cancelled)
+                                        identifier = int(record["source_trade_id"])
+                                        value = payload(record)
+                                        previous = connection.execute(
+                                            "SELECT payload FROM identities WHERE id=?",
+                                            (identifier,),
+                                        ).fetchone()
+                                        if previous is None:
+                                            connection.execute(
+                                                "INSERT INTO identities VALUES (?,?)",
+                                                (identifier, value),
+                                            )
+                                        elif previous[0] != value:
+                                            raise BarError(
+                                                "Selected trade identities conflict", 409
+                                            )
+                        connection.commit()
+                    except sqlite3.Error as error:
+                        raise BarError(
+                            "Overlap verification exceeds storage capacity", 429
+                        ) from error
 
     def resolve_selection(
         self,
@@ -347,6 +461,7 @@ class BarService:
         start: datetime,
         end: datetime,
         cancelled: threading.Event,
+        scratch_root: Path | None = None,
     ) -> list[dict[str, Any]]:
         try:
             if (
@@ -381,14 +496,17 @@ class BarService:
             missing_legacy = []
             for row in rows:
                 _check(cancelled)
+                refs = row.get("refs")
                 with self.lock:
                     cached = self.verified.get(row["dataset_version_id"])
                 if cached and (cached["catalog_identity"], cached["signature"]) == (
                     row["catalog_identity"],
                     row["signature"],
                 ):
+                    if refs is not None:
+                        check_registered(self.root, refs, cancelled.is_set)
                     row.update(manifest=cached["manifest"], id_bounds=cached["id_bounds"])
-                elif row["contract"] == "dataset-manifest-v1":
+                elif refs is None and row["contract"] == "dataset-manifest-v1":
                     missing_legacy.append(
                         VerificationRequest(
                             str(self.root),
@@ -409,11 +527,40 @@ class BarService:
                         missing_legacy[offset : offset + 5], cancelled
                     )
                 )
+            scratch = Scratch(directory=scratch_root)
             for row in rows:
                 _check(cancelled)
-                if "manifest" not in row:
+                if "manifest" in row:
+                    continue
+                refs = row.get("refs")
+                implicit = row["manifest_path"].parent if refs is None else self.root
+                with materialize_package(
+                    self.engine,
+                    self.root,
+                    refs,
+                    implicit,
+                    scratch=scratch,
+                    cancelled=cancelled.is_set,
+                    children_pending=row["contract"] == "dataset-manifest-v1",
+                ) as directory:
                     if row["contract"] == "dataset-manifest-v1":
-                        manifest = manifests[row["dataset_version_id"]]
+                        if refs is None:
+                            manifest = manifests[row["dataset_version_id"]]
+                        else:
+                            verified = self.base.reader.verifier.verify_many(
+                                [
+                                    VerificationRequest(
+                                        str(directory),
+                                        "manifest.json",
+                                        row["dataset_version_id"],
+                                        row["manifest_sha256"],
+                                        row["catalog_identity"],
+                                        row["signature"],
+                                    )
+                                ],
+                                cancelled,
+                            )
+                            manifest = verified[row["dataset_version_id"]]
                         if (
                             manifest["source"]["actual_sha256"] != row["source_sha256"]
                             or manifest["quality"]["accepted_rows"] != row["row_count"]
@@ -425,7 +572,7 @@ class BarService:
                     else:
                         with self.base.reader.compute.query(cancelled, self.base.admission_timeout):
                             manifest = verify_dataset(
-                                row["manifest_path"].parent,
+                                directory,
                                 {
                                     "dataset_version_id": row["dataset_version_id"],
                                     "manifest_sha256": row["manifest_sha256"],
@@ -444,7 +591,10 @@ class BarService:
                             raise BarError("Dataset catalog integrity failure")
                     row["manifest"] = manifest
                     with self.base.reader.compute.query(cancelled, self.base.admission_timeout):
-                        row["id_bounds"] = numeric_bounds(row["path"], cancelled)
+                        row["id_bounds"] = numeric_bounds(
+                            directory / "trades.parquet" if refs is not None else row["path"],
+                            cancelled,
+                        )
             current = self._catalog(tuple(versions))
             for row, now in zip(rows, current, strict=True):
                 if (row["catalog_identity"], row["signature"]) != (
@@ -453,7 +603,7 @@ class BarService:
                 ):
                     raise BarError("Dataset changed during verification")
             with self.base.reader.compute.query(cancelled, self.base.admission_timeout):
-                check_overlaps(rows, cancelled)
+                self._check_overlaps(rows, cancelled, scratch_root)
             _check(cancelled)
             with self.lock:
                 for row in rows:
@@ -468,7 +618,11 @@ class BarService:
             raise BarError("Dataset verification unavailable", 503) from error
         except sa.exc.SQLAlchemyError as error:
             raise BarError("Dataset catalog unavailable", 503) from error
-        except (V2Error, OSError, ValueError, TypeError, KeyError) as error:
+        except V2Error as error:
+            if error.code in {"unavailable", "capacity_exceeded"}:
+                raise BarError("Dataset verification unavailable", 503) from error
+            raise BarError("Dataset artifact integrity failure") from error
+        except (DatasetError, OSError, ValueError, TypeError, KeyError) as error:
             raise BarError("Dataset artifact integrity failure") from error
 
     async def prepare_selection(
@@ -478,11 +632,15 @@ class BarService:
         start: datetime,
         end: datetime,
         cancelled: threading.Event,
+        *,
+        scratch_root: Path | None = None,
     ) -> list[dict[str, Any]]:
         return cast(
             list[dict[str, Any]],
             await self.base._thread(
-                lambda: self.resolve_selection(instrument_ids, versions, start, end, cancelled),
+                lambda: self.resolve_selection(
+                    instrument_ids, versions, start, end, cancelled, scratch_root
+                ),
                 cancelled,
             ),
         )
@@ -499,6 +657,10 @@ class BarService:
         except (VerificationCancelled, VerificationUnavailable) as error:
             self.base.metrics.overload.inc()
             raise BarError("Bar query capacity unavailable", 503) from error
+        except V2Error as error:
+            if error.code in {"unavailable", "capacity_exceeded"}:
+                raise BarError("Dataset verification unavailable", 503) from error
+            raise BarError("Dataset artifact integrity failure") from error
 
     def _bounded_query(
         self,
@@ -507,8 +669,12 @@ class BarService:
         cancelled: threading.Event,
         scratch_root: Path | None = None,
     ) -> dict[str, Any]:
-        with self.base.reader.compute.query(cancelled, self.base.admission_timeout):
-            paths = [r["path"] for r in rows]
+        with ExitStack() as pins:
+            scratch = Scratch(directory=scratch_root)
+            paths = [pins.enter_context(self._trade_path(row, scratch, cancelled)) for row in rows]
+            pins.enter_context(
+                self.base.reader.compute.query(cancelled, self.base.admission_timeout)
+            )
             versions = [r["dataset_version_id"] for r in rows]
             metadata = rows[0]["metadata"]
             with tempfile.TemporaryDirectory(prefix="v2-bars-", dir=scratch_root) as temporary:
@@ -635,8 +801,17 @@ class BarService:
                     now["signature"],
                 ):
                     raise BarError("Prepared dataset changed after verification")
+                if now.get("refs") is not None:
+                    check_registered(self.root, now["refs"], stop.is_set)
 
-        await self.base._thread(check_binding, stop)
+        try:
+            await self.base._thread(check_binding, stop)
+        except VerificationCancelled as error:
+            raise BarError("Dataset verification unavailable", 503) from error
+        except V2Error as error:
+            if error.code == "unavailable":
+                raise BarError("Dataset verification unavailable", 503) from error
+            raise BarError("Dataset artifact integrity failure") from error
         metadata = selected[0]["metadata"]
         versions = [r["dataset_version_id"] for r in selected]
         key = cache_key(
@@ -683,7 +858,12 @@ class BarService:
 
                 with scope(self.engine, reservation.get("_admission")):
                     rows = await self.prepare_selection(
-                        (request.instrument_id,), request.versions, request.start, request.end, stop
+                        (request.instrument_id,),
+                        request.versions,
+                        request.start,
+                        request.end,
+                        stop,
+                        scratch_root=Path(reservation["path"]),
                     )
                     return await self.read_prepared(
                         request, rows, stop, scratch_root=Path(reservation["path"])

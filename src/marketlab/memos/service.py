@@ -21,10 +21,12 @@ from marketlab.copilot.spec import identity
 from marketlab.datasets.publication import _safe_path
 from marketlab.datasets.source import file_hash
 from marketlab.datasets.v2 import admission as storage_admission
+from marketlab.datasets.v2.common import V2Error
 from marketlab.inference import admission, release_current
 from marketlab.research import store as research_store
 from marketlab.research.service import ResearchService, transient_failure
 from marketlab.research.spec import ResearchError
+from marketlab.storage.materialize import materialize_package, registered_members
 
 from . import store
 from .model import MemoModel
@@ -220,19 +222,45 @@ class MemoService:
             shutil.rmtree(directory)
             raise
 
-    def publish(self, current: store.Claim, staging: Path, info: dict[str, Any]) -> None:
+    def publish(
+        self,
+        current: store.Claim,
+        staging: Path,
+        info: dict[str, Any],
+        ticket: dict[str, Any] | None = None,
+    ) -> None:
+        from marketlab.storage import store as storage
+
         final = _safe_path(self.root, Path("research") / current.run_id / "memo")
-        verified = final if final.exists() else staging
+        managed = storage.current(self.engine)
+        verified = final if not managed and final.exists() else staging
         manifest, _ = self.verify(verified, info)
         digest = file_hash(verified / "manifest.json")
+        group = (
+            storage.prepare(
+                self.engine,
+                self.root,
+                ticket,
+                current.run_id,
+                current.token,
+                {
+                    name: staging / name
+                    for name in ("manifest.json", f"research_memo_{current.run_id}.md")
+                },
+                current.lost.is_set,
+                manifest_sha256=digest,
+            )
+            if managed
+            else None
+        )
         with self.engine.begin() as connection:
             research_store.bounded(connection)
             store.fence(connection, current)
             research_store.advisory(connection, "memo:" + current.run_id)
-            if final.exists() and verified != final:
+            if not managed and final.exists() and verified != final:
                 raise ResearchError("Memo publication requires verified adoption", 503)
             store.fence(connection, current)
-            if not final.exists():
+            if not managed and not final.exists():
                 staging.rename(final)
             connection.execute(
                 store.results.insert().values(
@@ -246,6 +274,8 @@ class MemoService:
                     registered_at=sa.func.clock_timestamp(),
                 )
             )
+            if group is not None:
+                storage.register(connection, group, "legacy_memo", current.run_id)
             store.finish(connection, current, manifest["artifact"]["sha256"])
 
     def inspect(self, run_id: str) -> dict[str, Any]:
@@ -278,8 +308,29 @@ class MemoService:
             or row["summary_sha256"] != info["summary_sha256"]
         ):
             raise ResearchError("Memo registration integrity failure")
-        directory = _safe_path(self.root, Path("research") / run_id / "memo")
-        manifest, content = self.verify(directory, info, row["manifest_sha256"])
+        try:
+            refs = registered_members(
+                self.engine,
+                self.root,
+                "legacy_memo",
+                run_id,
+                {"manifest.json": 131072, f"research_memo_{run_id}.md": 16384},
+                row["manifest_sha256"],
+            )
+            with materialize_package(
+                self.engine,
+                self.root,
+                refs,
+                lambda: _safe_path(self.root, Path("research") / run_id / "memo"),
+            ) as directory:
+                manifest, content = self.verify(directory, info, row["manifest_sha256"])
+        except V2Error as error:
+            raise ResearchError(
+                "Memo artifact unavailable"
+                if error.code == "unavailable"
+                else "Memo artifact integrity failure",
+                503 if error.code == "unavailable" else 422,
+            ) from error
         if (
             row["memo_sha256"] != manifest["artifact"]["sha256"]
             or row["memo_sha256"] != info["result_sha256"]
@@ -390,7 +441,9 @@ class MemoService:
                     lambda: self.stage(current, info, source, storage_ticket), current
                 )
                 with self.publications.time():
-                    await drained(lambda: self.publish(current, staging, info), current)
+                    await drained(
+                        lambda: self.publish(current, staging, info, storage_ticket), current
+                    )
                 self.outcomes.labels("ready").inc()
         except asyncio.CancelledError:
             current.lost.set()

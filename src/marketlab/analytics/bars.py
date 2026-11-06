@@ -6,6 +6,8 @@ import tempfile
 import threading
 import time
 from collections import OrderedDict
+from contextlib import ExitStack
+from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import ROUND_HALF_EVEN, Decimal, localcontext
@@ -24,6 +26,15 @@ from marketlab.datasets.publication import (
     dataset_versions,
 )
 from marketlab.datasets.source import DatasetError
+from marketlab.datasets.v2.common import V2Error
+from marketlab.storage.backend import ObjectRef
+from marketlab.storage.materialize import (
+    CACHE,
+    DATASET_MEMBERS,
+    Scratch,
+    materialize_package,
+    registered_members,
+)
 from marketlab.trades.schemas import normalize_timestamp
 
 from .cache import AnalyticsMetrics, CacheStatus, ResponseCache, cache_key
@@ -38,6 +49,7 @@ DEFINITION = "bars-v1"
 EPOCH = datetime(1970, 1, 1, tzinfo=UTC)
 DECIMAL = re.compile(r"(?:0|[1-9][0-9]{0,19})\.[0-9]{18}\Z")
 VWAP_DECIMAL = re.compile(r"(?:0|[1-9][0-9]{0,37})\.[0-9]{18}\Z")
+_READ_PINS: ContextVar[ExitStack | None] = ContextVar("artifact_read_pins", default=None)
 
 
 class BarError(Exception):
@@ -161,8 +173,12 @@ class VersionReader:
         return tuple(result)
 
     def resolve(
-        self, request: BarsRequest, cancelled: threading.Event
+        self,
+        request: BarsRequest,
+        cancelled: threading.Event,
+        pins: ExitStack | None = None,
     ) -> tuple[list[Path], list[str]]:
+        pins = pins if pins is not None else _READ_PINS.get()
         try:
             with self.engine.connect() as connection:
                 rows = (
@@ -194,15 +210,46 @@ class VersionReader:
                 raise BarError("Dataset coverage mismatch", 409)
             entries: list[tuple[Any, Path, Path, tuple[Any, ...], tuple[Any, ...]]] = []
             missing: list[VerificationRequest] = []
+            mappings: dict[str, tuple[ObjectRef, ...] | None] = {}
+            scratch = Scratch()
             for row in sorted(rows, key=lambda item: item["trade_date"]):
                 if cancelled.is_set():
                     raise VerificationCancelled("bar request cancelled")
                 version = row["dataset_version_id"]
-                manifest_path = _safe_path(self.root, Path(row["manifest_path"]))
-                artifact = _safe_path(
-                    self.root, Path(row["manifest_path"]).parent / "trades.parquet"
+                refs = mappings[version] = registered_members(
+                    self.engine,
+                    self.root,
+                    "legacy_dataset",
+                    version,
+                    DATASET_MEMBERS,
+                    row["manifest_sha256"],
                 )
-                signature = self.signature([manifest_path, artifact])
+                if refs is None:
+                    manifest_path = _safe_path(self.root, Path(row["manifest_path"]))
+                    artifact = _safe_path(
+                        self.root, Path(row["manifest_path"]).parent / "trades.parquet"
+                    )
+                    verify_root, verify_relative = self.root, row["manifest_path"]
+                else:
+                    if pins is None:
+                        raise BarError("Dataset native read lifetime is unavailable", 503)
+                    directory = pins.enter_context(
+                        materialize_package(
+                            self.engine,
+                            self.root,
+                            refs,
+                            lambda: self.root,
+                            scratch=scratch,
+                            cancelled=cancelled.is_set,
+                            children_pending=True,
+                        )
+                    )
+                    manifest_path, artifact = (
+                        directory / "manifest.json",
+                        directory / "trades.parquet",
+                    )
+                    verify_root, verify_relative = directory, "manifest.json"
+                signature = refs if refs is not None else self.signature([manifest_path, artifact])
                 identity = tuple(row.values())
                 entries.append((row, manifest_path, artifact, signature, identity))
                 with self.lock:
@@ -210,8 +257,8 @@ class VersionReader:
                 if previous is None or previous[:2] != (identity, signature):
                     missing.append(
                         VerificationRequest(
-                            str(self.root),
-                            row["manifest_path"],
+                            str(verify_root),
+                            verify_relative,
                             version,
                             row["manifest_sha256"],
                             identity,
@@ -237,7 +284,15 @@ class VersionReader:
                     version = row["dataset_version_id"]
                     if current.get(version) != identity:
                         raise BarError("Dataset catalog changed during verification")
-                    if signature != self.signature([manifest_path, artifact]):
+                    refs = mappings[version]
+                    if refs != registered_members(
+                        self.engine,
+                        self.root,
+                        "legacy_dataset",
+                        version,
+                        DATASET_MEMBERS,
+                        row["manifest_sha256"],
+                    ) or (refs is None and signature != self.signature([manifest_path, artifact])):
                         raise BarError("Dataset changed during verification")
                     if cancelled.is_set():
                         raise VerificationCancelled("bar request cancelled")
@@ -279,6 +334,10 @@ class VersionReader:
             raise BarError("Dataset verification unavailable", 503) from error
         except sa.exc.SQLAlchemyError as error:
             raise BarError("Dataset catalog unavailable", 503) from error
+        except V2Error as error:
+            if error.code in {"unavailable", "capacity_exceeded"}:
+                raise BarError("Dataset verification unavailable", 503) from error
+            raise BarError("Dataset artifact integrity failure") from error
         except (DatasetError, OSError, ValueError, TypeError) as error:
             raise BarError("Dataset artifact integrity failure") from error
 
@@ -519,6 +578,8 @@ class BarService:
             raise BarError("Bar query capacity unavailable", 503) from error
         self.metrics.active.inc()
         cancelled = threading.Event()
+        pins = ExitStack()
+        pin_context = _READ_PINS.set(pins)
         try:
             paths, versions = await self._thread(
                 lambda: self.reader.resolve(request, cancelled), cancelled
@@ -537,8 +598,12 @@ class BarService:
             stored = available and await self.cache.put(key, body, "bars")
             return body, "MISS" if stored else "BYPASS"
         finally:
-            self.metrics.active.dec()
-            self.capacity.release()
+            try:
+                _READ_PINS.reset(pin_context)
+                pins.close()
+            finally:
+                self.metrics.active.dec()
+                self.capacity.release()
 
     async def read(self, request: BarsRequest) -> tuple[dict[str, Any], CacheStatus]:
         # Validate even manually constructed dataclasses before touching a database.
@@ -594,7 +659,10 @@ class BarService:
                 try:
                     await asyncio.to_thread(self.reader.verifier.close)
                 finally:
-                    await self.cache.close()
+                    try:
+                        await asyncio.to_thread(CACHE.close, self.reader.engine)
+                    finally:
+                        await self.cache.close()
 
         if self._closing is None:
             self._closing = asyncio.create_task(finish())

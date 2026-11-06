@@ -20,6 +20,15 @@ class Settings(BaseSettings):
         "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90"
     )
     storage_path: Path = Path("./data")
+    storage_backend: str = "local"
+    storage_s3_alias: str = "s3"
+    storage_s3_endpoint: str | None = None
+    storage_s3_region: str = "us-east-1"
+    storage_s3_bucket: str | None = None
+    storage_s3_prefix: str = "marketlab"
+    storage_s3_access_key: SecretStr | None = None
+    storage_s3_secret_key: SecretStr | None = None
+    storage_s3_session_token: SecretStr | None = None
     dependency_timeout_seconds: float = Field(default=3.0, gt=0, le=30)
     database_connect_timeout_seconds: int = Field(default=5, ge=2, le=30)
     metrics_port: int = Field(default=0, ge=0, le=65535)

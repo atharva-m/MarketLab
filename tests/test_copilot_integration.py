@@ -428,7 +428,7 @@ def test_actual_fresh_populated_migration_and_constraints(copilot_engine):
             assert connection.scalar(sa.text(f'SELECT count(*) FROM "{schema}".trades')) == 1
             assert (
                 connection.scalar(sa.text(f'SELECT version_num FROM "{schema}".alembic_version'))
-                == "0011_v2_copilot_memos"
+                == "0012_v2_storage"
             )
             count = connection.scalar(
                 sa.text("""SELECT count(*) FROM pg_constraint c

@@ -23,6 +23,10 @@ htmlcov/
 secrets/
 *.pem
 *.key
+/.aws/
+/.ssh/
+/.netrc
+/_netrc
 
 # R7 local browser workspace outputs
 frontend/node_modules/
@@ -37,3 +41,7 @@ frontend/.vite/
 .impeccable/
 .taste-skill/
 skills-lock.json
+
+# Private generated workspace outputs
+/debug.log
+/%SystemDrive%/

@@ -18,6 +18,8 @@ from marketlab.analytics.bars import BarError, BarService, BarsRequest
 from marketlab.analytics.cache import CacheStatus, cache_key, canonical
 from marketlab.datasets.publication import _build, _safe_path, _storage_root, dataset_versions
 from marketlab.datasets.source import file_hash
+from marketlab.datasets.v2.common import V2Error
+from marketlab.storage.materialize import materialize_package, registered_members
 
 from . import store
 from .numerics import calculate
@@ -27,6 +29,8 @@ MAX_RESULT = 16 * 1024 * 1024
 
 
 def transient_failure(error: Exception) -> bool:
+    if isinstance(error, V2Error):
+        return bool(getattr(error, "transient", False))
     if isinstance(error, DBAPIError):
         return getattr(error.orig, "sqlstate", None) in {
             "40001",
@@ -249,21 +253,38 @@ class ResearchService:
             raise
 
     def publish(self, current: store.Claim, staging: Path, fingerprint: dict[str, Any]) -> None:
+        from marketlab.storage import store as storage
+
         parent = _safe_path(self.root, Path("research"))
         parent.mkdir(parents=True, exist_ok=True)
         final = _safe_path(self.root, Path("research") / current.run_id)
-        verified = final if final.exists() else staging
+        managed = storage.current(self.engine)
+        verified = final if not managed and final.exists() else staging
         manifest = verify_directory(verified, current.run_id, fingerprint)
         digest = file_hash(verified / "manifest.json")
         try:
+            group = (
+                storage.prepare(
+                    self.engine,
+                    self.root,
+                    current.admission,
+                    current.run_id,
+                    current.token,
+                    {name: staging / name for name in storage.MEMBERS["legacy_research"]},
+                    current.lost.is_set,
+                    manifest_sha256=digest,
+                )
+                if managed
+                else None
+            )
             with self.engine.begin() as connection:
                 store.bounded(connection)
                 store.fence(connection, current)
                 store.advisory(connection, "run:" + current.run_id)
-                if final.exists() and verified != final:
+                if not managed and final.exists() and verified != final:
                     raise ResearchError("Research publication requires verified adoption", 503)
                 store.fence(connection, current)
-                if not final.exists():
+                if not managed and not final.exists():
                     staging.rename(final)
                 connection.execute(
                     store.results.insert().values(
@@ -277,6 +298,8 @@ class ResearchService:
                         registered_at=sa.func.clock_timestamp(),
                     )
                 )
+                if group is not None:
+                    storage.register(connection, group, "legacy_research", current.run_id)
                 from marketlab.memos.store import enqueue
 
                 enqueue(
@@ -395,12 +418,45 @@ class ResearchService:
         expected = (Path("research") / run_id / "manifest.json").as_posix()
         if row["manifest_path"] != expected:
             raise ResearchError("Research artifact integrity failure")
-        directory = _safe_path(self.root, Path("research") / run_id)
-        manifest = verify_directory(directory, run_id, info["fingerprint"], row["manifest_sha256"])
-        for artifact in ("results", "summary"):
-            if manifest["artifacts"][artifact + ".json"]["sha256"] != row[artifact + "_sha256"]:
-                raise ResearchError("Research artifact integrity failure")
-        return json.loads((directory / (kind + ".json")).read_bytes()), row[kind + "_sha256"]
+        try:
+            refs = registered_members(
+                self.engine,
+                self.root,
+                "legacy_research",
+                run_id,
+                {
+                    "manifest.json": 1024**2,
+                    "spec.json": MAX_RESULT,
+                    "results.json": MAX_RESULT,
+                    "summary.json": MAX_RESULT,
+                },
+                row["manifest_sha256"],
+            )
+            with materialize_package(
+                self.engine,
+                self.root,
+                refs,
+                lambda: _safe_path(self.root, Path("research") / run_id),
+            ) as directory:
+                manifest = verify_directory(
+                    directory, run_id, info["fingerprint"], row["manifest_sha256"]
+                )
+                for artifact in ("results", "summary"):
+                    if (
+                        manifest["artifacts"][artifact + ".json"]["sha256"]
+                        != row[artifact + "_sha256"]
+                    ):
+                        raise ResearchError("Research artifact integrity failure")
+                return json.loads((directory / (kind + ".json")).read_bytes()), row[
+                    kind + "_sha256"
+                ]
+        except V2Error as error:
+            raise ResearchError(
+                "Research artifact unavailable"
+                if error.code == "unavailable"
+                else "Research artifact integrity failure",
+                503 if error.code == "unavailable" else 422,
+            ) from error
 
     async def _summary(self, run_id: str) -> tuple[dict[str, Any], CacheStatus]:
         body, digest = await asyncio.to_thread(self.read, run_id, "summary")

@@ -245,6 +245,8 @@ def update_instrument(
 def execution_identity() -> dict[str, str]:
     project = Path(__file__).resolve().parents[4]
     paths = sorted((project / "src/marketlab/datasets").rglob("*.py"))
+    paths += sorted((project / "src/marketlab/storage").rglob("*.py"))
+    paths += [project / "src/marketlab/config.py"]
     paths += [project / "src/marketlab/dataset_cli.py", project / "uv.lock"]
     inventory = {p.relative_to(project).as_posix(): sha256_file(p) for p in paths}
     return {"execution_sha256": digest(inventory), "lock_sha256": inventory["uv.lock"]}

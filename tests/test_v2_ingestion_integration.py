@@ -21,7 +21,7 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.fixture
-def v2_engine() -> Iterator[Engine]:
+def v2_engine(request: pytest.FixtureRequest) -> Iterator[Engine]:
     if "MARKETLAB_DATABASE_URL" not in os.environ:
         pytest.skip("requires owned PostgreSQL")
     settings = Settings()
@@ -48,8 +48,12 @@ def v2_engine() -> Iterator[Engine]:
         yield engine
     finally:
         engine.dispose()
-        with base.begin() as connection:
-            connection.execute(sa.text(f'DROP SCHEMA "{schema}" CASCADE'))
+        # S3 fault evidence includes unresolved durable charges and object receipts.
+        # Retain every such owned schema, including setup/capture failures, until
+        # the separately reviewed final full-database backup/restore and cleanup.
+        if request.node.get_closest_marker("s3") is None:
+            with base.begin() as connection:
+                connection.execute(sa.text(f'DROP SCHEMA "{schema}" CASCADE'))
         base.dispose()
 
 
@@ -323,6 +327,27 @@ def test_cross_day_conflict_and_instrument_isolation(v2_engine: Engine, tmp_path
     from marketlab.datasets.v2 import catalog
 
     root = tmp_path / "store"
+
+    def assert_selection_drained():
+        previous = root / "selection-v2"
+        assert not previous.exists() or list(previous.iterdir()) == []
+        with v2_engine.connect() as connection:
+            if (
+                connection.execute(
+                    sa.text("SELECT to_regclass('v2_research_reservations')")
+                ).scalar_one()
+                is not None
+            ):
+                assert (
+                    connection.execute(
+                        sa.text(
+                            "SELECT count(*) FROM v2_research_reservations WHERE state='active' "
+                            "AND relative_root='.materializations/'||reservation_id::text"
+                        )
+                    ).scalar_one()
+                    == 0
+                )
+
     published = []
     for day in ("2025-03-01", "2025-03-02"):
         source, metadata = canonical_input(tmp_path)
@@ -338,14 +363,14 @@ def test_cross_day_conflict_and_instrument_isolation(v2_engine: Engine, tmp_path
         )
     with pytest.raises(V2Error, match="identities conflict"):
         catalog.validate_selection(v2_engine, root, "binance:spot:BTCUSDT", published)
-    assert list((root / "selection-v2").iterdir()) == []
+    assert_selection_drained()
     assert (
         catalog.validate_selection(v2_engine, root, "binance:spot:BTCUSDT", published[:1])[
             "verified_rows"
         ]
         == 1
     )
-    assert list((root / "selection-v2").iterdir()) == []
+    assert_selection_drained()
     core.add_instrument(
         v2_engine,
         dict(

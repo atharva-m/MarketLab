@@ -18,6 +18,7 @@ from marketlab.datasets.v2.core import execute, lock, one, transaction
 from marketlab.inference import admission as inference_admission
 from marketlab.inference import release_current
 from marketlab.research.v2.service import ResearchService
+from marketlab.storage.materialize import materialize_package, registered_members
 
 from . import store
 from .model import MemoModel
@@ -142,8 +143,24 @@ class MemoService:
             row = one(connection, "SELECT * FROM v2_memo_results WHERE run_id=:id", id=run_id)
         if row is None or row["summary_sha256"] != info["summary_sha256"]:
             raise V2Error("integrity_failure", "Memo result registration mismatch")
-        path = safe_path(self.root, row["relative_path"])
-        manifest, memo = verify_directory(path, info, row["manifest_sha256"])
+        refs = registered_members(
+            self.engine,
+            self.root,
+            "v2_memo",
+            run_id,
+            {
+                "manifest.json": 131072,
+                "facts.json": 32768,
+                "draft.json": 32768,
+                "provenance.json": 131072,
+                "memo.txt": 16384,
+            },
+            row["manifest_sha256"],
+        )
+        with materialize_package(
+            self.engine, self.root, refs, lambda: safe_path(self.root, row["relative_path"])
+        ) as path:
+            manifest, memo = verify_directory(path, info, row["manifest_sha256"])
         summary, numerical, fingerprint = self.numerical(run_id)
         if (
             numerical["manifest_sha256"] != info["numerical_manifest_sha256"]
@@ -207,8 +224,20 @@ class MemoService:
         size: int,
         ticket: dict[str, Any],
     ) -> None:
+        from marketlab.storage import store as storage
+
         manifest_hash = sha256_file(path / "manifest.json")
         verify_directory(path, info, manifest_hash)
+        group = storage.prepare(
+            self.engine,
+            self.root,
+            ticket,
+            current.identity,
+            current.token,
+            {name: path / name for name in storage.MEMBERS["v2_memo"]},
+            current.lost.is_set,
+            manifest_sha256=manifest_hash,
+        )
         with transaction(self.engine) as connection:
             durable.fence(connection, current)
             row = one(
@@ -224,18 +253,19 @@ class MemoService:
                 raise V2Error("integrity_failure", "Memo numerical publication mismatch")
             lock(connection, "v2-space:" + ticket["root"])
             admission.require(connection, self.root)
-            charged = execute(
-                connection,
-                "UPDATE v2_data_charges SET charged_bytes=:bytes,state='retained',"
-                "updated_at=clock_timestamp() WHERE charge_id=:charge AND ticket_id=:ticket "
-                "AND state='reserved' AND ceiling_bytes>=:bytes RETURNING charge_id",
-                bytes=size,
-                charge=ticket["charge_id"],
-                ticket=ticket["ticket_id"],
-            ).first()
-            if charged is None:
-                raise V2Error("integrity_failure", "Memo publication charge is missing")
-            admission.changed(connection, ticket)
+            if group is None:
+                charged = execute(
+                    connection,
+                    "UPDATE v2_data_charges SET charged_bytes=:bytes,state='retained',"
+                    "updated_at=clock_timestamp() WHERE charge_id=:charge AND ticket_id=:ticket "
+                    "AND state='reserved' AND ceiling_bytes>=:bytes RETURNING charge_id",
+                    bytes=size,
+                    charge=ticket["charge_id"],
+                    ticket=ticket["ticket_id"],
+                ).first()
+                if charged is None:
+                    raise V2Error("integrity_failure", "Memo publication charge is missing")
+                admission.changed(connection, ticket)
             execute(
                 connection,
                 "INSERT INTO v2_memo_results "
@@ -251,6 +281,8 @@ class MemoService:
                 summary=info["summary_sha256"],
                 bytes=size,
             )
+            if group is not None:
+                storage.register(connection, group, "v2_memo", current.identity)
             durable.complete(connection, current)
 
     async def execute(self, current: durable.Claim) -> None:
@@ -342,7 +374,9 @@ class MemoService:
             current.lost.set()
             raise
         except Exception as error:
-            transient = isinstance(error, (httpx.TransportError, TimeoutError))
+            transient = isinstance(error, (httpx.TransportError, TimeoutError)) or bool(
+                getattr(error, "transient", False)
+            )
             if not current.lost.is_set():
                 try:
                     await drained(lambda: durable.fail(self.engine, current, transient), current)

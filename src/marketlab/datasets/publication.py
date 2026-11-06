@@ -204,6 +204,12 @@ def _verify_manifest(
 
 
 def inspect_version(engine: Engine, root: Path, version_id: str) -> dict[str, object] | None:
+    from marketlab.storage.materialize import (
+        DATASET_MEMBERS,
+        materialize_package,
+        registered_members,
+    )
+
     if re.fullmatch(r"[0-9a-f]{64}", version_id) is None:
         raise DatasetError("invalid dataset version")
     try:
@@ -219,20 +225,32 @@ def inspect_version(engine: Engine, root: Path, version_id: str) -> dict[str, ob
             )
         if row is None:
             return None
-        path = _safe_path(_storage_root(root), Path(row["manifest_path"]))
-        manifest = _verify_manifest(path, version_id, row["manifest_sha256"])
-        if (
-            row["status"] != "published"
-            or row["source_sha256"] != manifest["source"]["actual_sha256"]
-            or row["row_count"] != manifest["quality"]["accepted_rows"]
-            or row["venue"] != manifest["venue"]
-            or row["symbol"] != manifest["symbol"]
-            or row["trade_date"].isoformat() != manifest["trade_date"]
-        ):
-            raise DatasetError("dataset catalog integrity failure")
-        return manifest
+        refs = registered_members(
+            engine, root, "legacy_dataset", version_id, DATASET_MEMBERS, row["manifest_sha256"]
+        )
+        with materialize_package(
+            engine,
+            root,
+            refs,
+            lambda: _safe_path(_storage_root(root), Path(row["manifest_path"])).parent,
+        ) as directory:
+            return _verify_registered_dataset(directory / "manifest.json", row)
     except sa.exc.SQLAlchemyError as error:
         raise DatasetError("dataset catalog unavailable") from error
+
+
+def _verify_registered_dataset(path: Path, row: Any) -> dict[str, Any]:
+    manifest = _verify_manifest(path, row["dataset_version_id"], row["manifest_sha256"])
+    if (
+        row["status"] != "published"
+        or row["source_sha256"] != manifest["source"]["actual_sha256"]
+        or row["row_count"] != manifest["quality"]["accepted_rows"]
+        or row["venue"] != manifest["venue"]
+        or row["symbol"] != manifest["symbol"]
+        or row["trade_date"].isoformat() != manifest["trade_date"]
+    ):
+        raise DatasetError("dataset catalog integrity failure")
+    return manifest
 
 
 def _ingest_archive(
@@ -305,6 +323,20 @@ def _ingest_archive(
         if checkpoint is not None:
             checkpoint("artifacts_complete")
         relative = _relative(version, symbol, trade_date)
+        from marketlab.storage import store as storage
+
+        if storage.current(engine):
+            return _publish_storage_dataset(
+                engine,
+                root,
+                current,
+                version,
+                source_hash,
+                relative,
+                staging,
+                manifest,
+                checkpoint,
+            )
         if current.admission is not None:
             from .v2.admission import mark_path
 
@@ -387,6 +419,89 @@ def _ingest_archive(
         # Temporary tree was generated inside the verified root; never remove final artifacts.
         if staging.exists():
             shutil.rmtree(staging)
+
+
+def _publish_storage_dataset(
+    engine: Engine,
+    root: Path,
+    current: Claim,
+    version: str,
+    source_hash: str,
+    relative: Path,
+    staging: Path,
+    manifest: dict[str, object],
+    checkpoint: Callable[[str], None] | None,
+) -> dict[str, object]:
+    from marketlab.storage import store as storage
+
+    from .v2.common import V2Error
+    from .v2.core import transaction
+
+    group = None
+    query = sa.select(dataset_versions).where(dataset_versions.c.dataset_version_id == version)
+    for _ in range(4):
+        with engine.connect() as connection:
+            registered = connection.execute(query).mappings().one_or_none()
+            selected = (
+                storage.snapshot(connection, "legacy_dataset", version) if registered else None
+            )
+        published = inspect_version(engine, root, version) if registered else None
+        if registered and published is None:
+            raise DatasetError("Registered dataset disappeared")
+        if not registered and group is None:
+            if not (staging / "manifest.json").is_file():
+                raise DatasetError("Verified dataset staging missing")
+            group = storage.prepare(
+                engine,
+                root,
+                current.admission,
+                current.job_id,
+                current.token,
+                {name: staging / name for name in storage.MEMBERS["legacy_dataset"]},
+                current.lost.is_set,
+                manifest_sha256=hashlib.sha256(_json(manifest)).hexdigest(),
+            )
+        with transaction(engine) as connection:
+            fence(connection, current)
+            key = int.from_bytes(bytes.fromhex(version[:16]), "big", signed=True)
+            connection.execute(sa.text("SELECT pg_advisory_xact_lock(:key)"), {"key": key})
+            fence(connection, current)
+            winner = connection.execute(query).mappings().one_or_none()
+            if winner is not None:
+                if (
+                    winner != registered
+                    or storage.snapshot(connection, "legacy_dataset", version) != selected
+                ):
+                    continue
+            else:
+                if registered is not None or group is None:
+                    raise V2Error("integrity_failure", "Dataset publication receipt missing")
+                manifest_ref = next(
+                    item.ref for item in group.intents if item.ref.member == "manifest.json"
+                )
+                quality = cast(dict[str, Any], manifest["quality"])
+                connection.execute(
+                    dataset_versions.insert().values(
+                        dataset_version_id=version,
+                        source_sha256=source_hash,
+                        manifest_sha256=manifest_ref.sha256,
+                        manifest_path=(relative / "manifest.json").as_posix(),
+                        venue=VENUE,
+                        symbol=current.symbol,
+                        trade_date=current.trade_date,
+                        row_count=quality["accepted_rows"],
+                        status="published",
+                        published_at=sa.func.clock_timestamp(),
+                    )
+                )
+                storage.register(connection, group, "legacy_dataset", version)
+            succeed(connection, current, version)
+            if checkpoint is not None:
+                checkpoint("before_catalog_commit")
+        if checkpoint is not None:
+            checkpoint("after_catalog_commit")
+        return published if published is not None else manifest
+    raise DatasetError("Concurrent publication did not settle")
 
 
 def _ingest_day(

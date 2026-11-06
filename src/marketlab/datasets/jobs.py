@@ -369,7 +369,7 @@ def succeed(connection: Connection, current: Claim, version: str) -> None:
 def fail(engine: Engine, current: Claim, error: Exception) -> None:
     from .source import TransientSourceError
 
-    transient = isinstance(error, TransientSourceError)
+    transient = isinstance(error, TransientSourceError) or bool(getattr(error, "transient", False))
     cause: BaseException | None = error
     while cause is not None:
         if isinstance(cause, sa.exc.DBAPIError):

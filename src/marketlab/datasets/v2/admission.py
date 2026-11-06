@@ -7,6 +7,7 @@ import shutil
 import stat as stat_mode
 from collections.abc import Iterable
 from contextlib import nullcontext
+from functools import partial
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -36,25 +37,37 @@ def binding(connection: Connection, root: Path | None = None) -> dict[str, Any] 
         revision = execute(
             connection, "SELECT version_num FROM alembic_version"
         ).scalar_one_or_none()
-        if revision == "0011_v2_copilot_memos":
-            for required in (
+        if revision in {"0011_v2_copilot_memos", "0012_v2_storage"}:
+            tables: tuple[str, ...] = (
                 "v2_copilot_jobs",
                 "v2_copilot_calls",
                 "v2_memo_jobs",
                 "v2_memo_calls",
                 "v2_memo_results",
-            ):
+            )
+            if revision == "0012_v2_storage":
+                tables += (
+                    "v2_capacity_roots",
+                    "v2_capacity_files",
+                    "v2_admission_tickets",
+                    "v2_data_charges",
+                    "v2_upload_generations",
+                    "v2_storage_packages",
+                    "v2_storage_copies",
+                    "v2_storage_objects",
+                )
+            for required in tables:
                 if (
                     execute(connection, "SELECT to_regclass(:name)", name=required).scalar_one()
                     is None
                 ):
-                    raise V2Error("integrity_failure", "Required inference ledger is missing")
+                    raise V2Error("integrity_failure", "Required application ledger is missing")
     if execute(connection, "SELECT to_regclass('v2_capacity_roots')").scalar_one() is None:
         if execute(connection, "SELECT to_regclass('alembic_version')").scalar_one() is not None:
             revision = execute(
                 connection, "SELECT version_num FROM alembic_version"
             ).scalar_one_or_none()
-            if revision in {"0010_v2_browser_imports", "0011_v2_copilot_memos"}:
+            if revision in {"0010_v2_browser_imports", "0011_v2_copilot_memos", "0012_v2_storage"}:
                 raise V2Error("integrity_failure", "Required capacity ledger is missing")
         return None
     row = one(connection, "SELECT * FROM v2_capacity_roots WHERE singleton")
@@ -88,10 +101,20 @@ def _epoch(connection: Connection) -> str:
         ("v2_memo_attempts", "run_id,attempt_number"),
         ("v2_memo_calls", "run_id,call_number"),
         ("v2_data_charges", "charge_id"),
+        ("v2_storage_packages", "package_id"),
+        ("v2_storage_copies", "copy_id"),
+        ("v2_storage_objects", "object_id"),
     ):
         if execute(connection, "SELECT to_regclass(:name)", name=table).scalar_one():
+            predicate = (
+                " WHERE NOT (state='released' AND relative_root="
+                "'.materializations/'||reservation_id::text)"
+                if table == "v2_research_reservations"
+                else ""
+            )
             for item in execute(
-                connection, f"SELECT row_to_json(t)::text FROM {table} t ORDER BY {order}"
+                connection,
+                f"SELECT row_to_json(t)::text FROM {table} t{predicate} ORDER BY {order}",
             ).yield_per(100):
                 values.update(canonical_json([table, item[0]]))
     return values.hexdigest()
@@ -138,8 +161,21 @@ def _files(root: Path, *, hashes: bool = True, missing: Any = None) -> Any:
 
 def initialize(engine: Engine, root: Path) -> dict[str, Any]:
     """Explicit quiesced operator reconciliation; never silently rebind a DB."""
+    from marketlab.config import Settings
+    from marketlab.storage.backend import ObjectConfig, S3Backend, managed_backend
+    from marketlab.storage.store import enabled, verify_namespace
+
     root = safe_root(root)
     root.mkdir(parents=True, exist_ok=True)
+    settings = Settings()
+    config = ObjectConfig.from_settings(settings)
+    with engine.connect() as connection:
+        storage = enabled(connection)
+    if config is not None:
+        if not storage:
+            raise V2Error("unavailable", "Object storage requires the current schema")
+        with managed_backend(S3Backend.configured(config, settings)) as backend:
+            backend.require_versioning()
     reconcile_dead(engine, root)
     with transaction(engine) as connection:
         lock(connection, "v2-space:" + str(root))
@@ -157,6 +193,18 @@ def initialize(engine: Engine, root: Path) -> dict[str, Any]:
             )
             row = binding(connection, root)
         assert row is not None
+        if storage:
+            if config is not None and row["object_alias"] is None:
+                execute(
+                    connection,
+                    "UPDATE v2_capacity_roots SET object_alias=:alias,"
+                    "object_namespace_sha256=:sha WHERE root_id=:id",
+                    alias=config.alias,
+                    sha=config.fingerprint,
+                    id=row["root_id"],
+                )
+            else:
+                verify_namespace(row, config)
         execute(
             connection,
             "UPDATE v2_capacity_roots SET ready=false,epoch=epoch+1,"
@@ -168,14 +216,23 @@ def initialize(engine: Engine, root: Path) -> dict[str, Any]:
             "SELECT count(*) FROM v2_admission_tickets WHERE root_id=:id AND state<>'released'",
             id=row["root_id"],
         ).scalar_one()
+        if storage:
+            active += execute(
+                connection,
+                "SELECT count(*) FROM v2_research_reservations "
+                "WHERE state='active' AND left(relative_root,18)='.materializations/'",
+            ).scalar_one()
         initialization_epoch = row["epoch"] + 1
         epoch = _epoch(connection)
     if active:
         raise V2Error("capacity_exceeded", "Owned storage writers must drain before inventory")
     # Check all registered artifacts before trusting a data-byte baseline.
+    from marketlab.storage.materialize import materialize_package, without_cache
+    from marketlab.storage.store import get_registered
+
     from .catalog import inspect_version
 
-    with engine.connect() as connection:
+    with without_cache(), engine.connect() as connection:
         for table in ("dataset_versions", "v2_dataset_versions"):
             for result in execute(connection, f"SELECT dataset_version_id FROM {table}").yield_per(
                 100
@@ -192,19 +249,29 @@ def initialize(engine: Engine, root: Path) -> dict[str, Any]:
                     from marketlab.research.v2.service import verify_directory as verify_v2
 
                     info = v2_store.inspect(engine, identity)
-                    path = safe_path(root, f"research-v2/{identity}")
-                    manifest = verify_v2(path, identity, info["fingerprint"])
+                    logical = f"research-v2/{identity}"
                 else:
                     from marketlab.research import store as legacy_store
                     from marketlab.research.service import verify_directory as verify_legacy
 
                     info = legacy_store.inspect(engine, identity)
-                    path = safe_path(root, f"research/{identity}")
-                    manifest = verify_legacy(path, identity, info["fingerprint"])
+                    logical = f"research/{identity}"
                 registered = one(connection, f"SELECT * FROM {table} WHERE run_id=:id", id=identity)
                 assert registered is not None
-                if sha256_file(path / "manifest.json") != registered["manifest_sha256"]:
-                    raise V2Error("integrity_failure", "Research manifest registration mismatch")
+                owner = "v2_research" if prefix else "legacy_research"
+                refs = get_registered(engine, owner, identity, root=root)
+                with materialize_package(
+                    engine, root, refs, partial(safe_path, root, logical)
+                ) as path:
+                    manifest = (
+                        verify_v2(path, identity, info["fingerprint"])
+                        if prefix
+                        else verify_legacy(path, identity, info["fingerprint"])
+                    )
+                    if sha256_file(path / "manifest.json") != registered["manifest_sha256"]:
+                        raise V2Error(
+                            "integrity_failure", "Research manifest registration mismatch"
+                        )
                 for kind in ("results", "summary"):
                     if (
                         manifest["artifacts"][kind + ".json"]["sha256"]
@@ -219,9 +286,11 @@ def initialize(engine: Engine, root: Path) -> dict[str, Any]:
 
             for result in execute(connection, "SELECT * FROM v2_memo_results").mappings():
                 info = memo_inspect(engine, str(result["run_id"]))
-                manifest, _ = verify_memo(
-                    safe_path(root, result["relative_path"]), info, result["manifest_sha256"]
-                )
+                refs = get_registered(engine, "v2_memo", str(result["run_id"]), root=root)
+                with materialize_package(
+                    engine, root, refs, partial(safe_path, root, result["relative_path"])
+                ) as path:
+                    manifest, _ = verify_memo(path, info, result["manifest_sha256"])
                 if any(
                     manifest["artifacts"][name + "." + extension]["sha256"] != result[field]
                     for name, extension, field in (
@@ -269,19 +338,30 @@ def initialize(engine: Engine, root: Path) -> dict[str, Any]:
             stat = safe_path(root, item["relative_path"]).stat()
             if stat.st_size != item["file_bytes"] or stat.st_mtime_ns != item["mtime_ns"]:
                 raise V2Error("unavailable", "Storage inventory changed during reconciliation")
-        # Existing unconsumed DATA reservations are conservative until next audit.
+        if storage:
+            total -= _reconcile_storage_charges(connection, row["root_id"], initialization_epoch)
+        # Explicit links preserve pending legacy reservations without charging
+        # them twice when an outstanding data charge already covers the bytes.
+        covered = (
+            " AND NOT EXISTS(SELECT 1 FROM v2_data_charges c "
+            "WHERE c.charge_id=r.data_charge_id AND c.state IN ('reserved','retained') "
+            "AND c.charged_bytes>=r.reserved_bytes)"
+            if storage
+            else ""
+        )
         pending = int(
             execute(
                 connection,
                 "SELECT coalesce(sum(reserved_bytes),0) FROM "
-                "v2_storage_reservations WHERE state<>'released' AND kind<>'scratch'",
+                "v2_storage_reservations r WHERE state<>'released' AND kind<>'scratch'" + covered,
             ).scalar_one()
         )
         pending += int(
             execute(
                 connection,
                 "SELECT coalesce(sum(output_bytes),0) FROM "
-                "v2_research_reservations WHERE state<>'released'",
+                "v2_research_reservations r WHERE state<>'released'"
+                + covered.replace("r.reserved_bytes", "r.output_bytes"),
             ).scalar_one()
         )
         receipt = {
@@ -295,12 +375,14 @@ def initialize(engine: Engine, root: Path) -> dict[str, Any]:
             "catalog_epoch": epoch,
             "epoch": latest["epoch"],
         }
-        execute(
-            connection,
-            "UPDATE v2_data_charges SET state='absorbed' WHERE root_id=:id "
-            "AND state IN ('reserved','retained')",
-            id=row["root_id"],
-        )
+        if not storage:
+            execute(
+                connection,
+                "UPDATE v2_data_charges SET state='absorbed' WHERE root_id=:id "
+                "AND state IN ('reserved','retained')",
+                id=row["root_id"],
+            )
+        receipt["retained_bytes"] = total
         execute(
             connection,
             "UPDATE v2_capacity_roots SET ready=true,baseline_bytes=:bytes,"
@@ -312,6 +394,106 @@ def initialize(engine: Engine, root: Path) -> dict[str, Any]:
             receipt=canonical_json(receipt).decode(),
         )
     return receipt
+
+
+def _reconcile_storage_charges(connection: Connection, root_id: Any, epoch: int) -> int:
+    """Only exact inventoried local data can move out of the durable write ledger."""
+    exclude = 0
+    charges = (
+        execute(
+            connection,
+            "SELECT * FROM v2_data_charges WHERE root_id=:id AND backend_alias='local' "
+            "AND state IN ('reserved','retained') FOR UPDATE",
+            id=root_id,
+        )
+        .mappings()
+        .all()
+    )
+    for charge in charges:
+        objects = (
+            execute(
+                connection,
+                "SELECT o.*,f.file_bytes,f.content_sha256,p.file_bytes AS partial_bytes "
+                "FROM v2_storage_objects o LEFT JOIN v2_capacity_files f ON "
+                "f.root_id=o.root_id AND f.inventory_epoch=:epoch AND f.relative_path=o.object_key "
+                "LEFT JOIN v2_capacity_files p ON p.root_id=o.root_id AND p.inventory_epoch=:epoch "
+                "AND p.relative_path=regexp_replace(o.object_key,'([^/]+)$','.\\1.partial') "
+                "WHERE o.charge_id=:charge",
+                epoch=epoch,
+                charge=charge["charge_id"],
+            )
+            .mappings()
+            .all()
+        )
+        if objects:
+            accounted = sum(
+                (item["file_bytes"] or 0) + (item["partial_bytes"] or 0) for item in objects
+            )
+            if (
+                charge["state"] != "retained"
+                or accounted != charge["charged_bytes"]
+                or any(
+                    item["state"] != "verified"
+                    or item["file_bytes"] != item["byte_length"]
+                    or item["content_sha256"] != item["sha256"]
+                    or item["partial_bytes"] is not None
+                    for item in objects
+                )
+            ):
+                exclude += accounted
+                continue
+        elif charge["charged_bytes"]:
+            linked = (
+                execute(
+                    connection,
+                    "SELECT r.relative_path,r.reserved_bytes,r.retained_bytes,f.file_bytes "
+                    "FROM v2_storage_reservations r LEFT JOIN v2_capacity_files f ON "
+                    "f.root_id=:root AND f.inventory_epoch=:epoch "
+                    "AND f.relative_path=r.relative_path "
+                    "WHERE r.data_charge_id=:charge AND r.kind='source' AND r.state<>'released'",
+                    root=root_id,
+                    epoch=epoch,
+                    charge=charge["charge_id"],
+                )
+                .mappings()
+                .all()
+            )
+            if charge["state"] == "reserved" and linked:
+                # Absorb only a full exact local source proof. Its pending remainder
+                # then moves into the same baseline instead of being counted again.
+                if sum(
+                    item["reserved_bytes"] + item["retained_bytes"] for item in linked
+                ) != charge["charged_bytes"] or any(
+                    (item["file_bytes"] or 0) != item["retained_bytes"] for item in linked
+                ):
+                    continue
+                execute(
+                    connection,
+                    "UPDATE v2_data_charges SET state='absorbed' WHERE charge_id=:charge",
+                    charge=charge["charge_id"],
+                )
+                continue
+            # Retain unresolved historical amounts unless the exact paths are inventoried.
+            path = charge["relative_path"]
+            if charge["state"] != "retained" or path is None:
+                continue
+            total = execute(
+                connection,
+                "SELECT coalesce(sum(file_bytes),0) FROM v2_capacity_files "
+                "WHERE root_id=:id AND inventory_epoch=:epoch AND "
+                "(relative_path=:path OR left(relative_path,length(:path)+1)=:path||'/')",
+                id=root_id,
+                epoch=epoch,
+                path=path,
+            ).scalar_one()
+            if total != charge["charged_bytes"]:
+                continue
+        execute(
+            connection,
+            "UPDATE v2_data_charges SET state='absorbed' WHERE charge_id=:charge",
+            charge=charge["charge_id"],
+        )
+    return exclude
 
 
 def audit(engine: Engine, root: Path) -> None:
@@ -421,6 +603,7 @@ def reconcile_dead(engine: Engine, root: Path) -> None:
                 "SELECT * FROM v2_upload_generations WHERE ticket_id=:id",
                 id=candidate["ticket_id"],
             )
+            intents = _storage_intents(connection, charge["charge_id"]) if charge else []
         if charge is None:
             raise V2Error("integrity_failure", "Dead admission charge is missing")
         ticket = {
@@ -431,7 +614,7 @@ def reconcile_dead(engine: Engine, root: Path) -> None:
             "root": str(root),
         }
         retained_source = None
-        if generation is not None:
+        if generation is not None and not intents:
             paths.add(generation["relative_path"])
             path = safe_path(root, generation["relative_path"])
             retained_source = path.stat().st_size if path.exists() else 0
@@ -439,6 +622,7 @@ def reconcile_dead(engine: Engine, root: Path) -> None:
                 raise V2Error("integrity_failure", "Dead upload exceeds its reserved ceiling")
         if candidate["role"] == "ingestion" and candidate["resource_id"] is not None:
             paths.add(f"attempts-v2/{candidate['resource_id']}/{candidate['fencing_token']}")
+        paths.update(_local_intent_paths(intents))
         for path in paths:
             inventory_owned(engine, ticket, path)
         with transaction(engine) as connection:
@@ -488,6 +672,16 @@ def _audit(engine: Engine, root: Path, snapshot: Connection) -> None:
     with nullcontext(snapshot) as connection:
         row = require(connection, root)
     file_epoch = _file_epoch(row)
+    from marketlab.storage.store import enabled
+
+    storage_owner = ""
+    storage = enabled(snapshot)
+    if storage:
+        storage_owner = (
+            " OR EXISTS(SELECT 1 FROM v2_storage_objects o WHERE o.charge_id=c.charge_id "
+            "AND o.backend_alias='local' AND (:path=o.object_key OR "
+            ":path=regexp_replace(o.object_key,'([^/]+)$','.\\1.partial')))"
+        )
 
     def removed(relative: str) -> bool:
         known = one(
@@ -500,6 +694,8 @@ def _audit(engine: Engine, root: Path, snapshot: Connection) -> None:
         )
         if known is not None:
             return False  # Missing immutable/retained files are never transient.
+        if storage and _materialization(snapshot, relative) is not None:
+            return True
         owners = execute(
             snapshot,
             "SELECT t.native_identity FROM v2_admission_tickets t "
@@ -510,8 +706,9 @@ def _audit(engine: Engine, root: Path, snapshot: Connection) -> None:
             ":path LIKE 'attempts-v2/'||t.resource_id::text||'/'||t.fencing_token::text||'/%') OR "
             "(t.role='research' AND EXISTS(SELECT 1 FROM v2_research_reservations r WHERE "
             "r.run_id=t.resource_id AND r.state='active' AND :path LIKE r.relative_root||'/%')) OR "
-            "(t.role='legacy' AND (:path LIKE '.staging/%' OR :path LIKE '.downloads/%'))) "
-            "LIMIT 12",
+            "(t.role='legacy' AND (:path LIKE '.staging/%' OR :path LIKE '.downloads/%'))"
+            + storage_owner
+            + ") LIMIT 12",
             id=row["root_id"],
             path=relative,
         ).scalars()
@@ -521,6 +718,14 @@ def _audit(engine: Engine, root: Path, snapshot: Connection) -> None:
         seen = 0
         active_bytes: dict[str, int] = {}
         for relative, size, modified, _ in _files(root, hashes=False, missing=removed):
+            if storage and (temp := _materialization(snapshot, relative)) is not None:
+                key, ceiling = temp
+                active_bytes[key] = active_bytes.get(key, 0) + size
+                if active_bytes[key] > ceiling:
+                    raise V2Error(
+                        "integrity_failure", "Materialized bytes exceed their reservation"
+                    )
+                continue
             with nullcontext(snapshot) as connection:
                 expected = one(
                     connection,
@@ -553,8 +758,9 @@ def _audit(engine: Engine, root: Path, snapshot: Connection) -> None:
                         "(t.role='research' AND EXISTS(SELECT 1 FROM v2_research_reservations r "
                         "WHERE r.run_id=t.resource_id AND r.state='active' "
                         "AND :path LIKE r.relative_root||'/%')) OR (t.role='legacy' AND "
-                        "(:path LIKE '.staging/%' OR :path LIKE '.downloads/%'))) "
-                        "ORDER BY t.ticket_id LIMIT 12",
+                        "(:path LIKE '.staging/%' OR :path LIKE '.downloads/%'))"
+                        + storage_owner
+                        + ") ORDER BY t.ticket_id LIMIT 12",
                         id=row["root_id"],
                         path=relative,
                     ).mappings()
@@ -601,6 +807,22 @@ def _audit(engine: Engine, root: Path, snapshot: Connection) -> None:
                 id=row["root_id"],
             )
         raise
+
+
+def _materialization(connection: Connection, relative: str) -> tuple[str, int] | None:
+    prefix, sep, remainder = relative.partition("/")
+    owner, separator, _ = remainder.partition("/")
+    if prefix != ".materializations" or not sep or not separator or len(owner) != 36:
+        return None
+    reservation = one(
+        connection,
+        "SELECT scratch_bytes FROM v2_research_reservations WHERE relative_root=:path "
+        "AND state='active' AND purpose='preparation' AND run_id IS NULL "
+        "AND spill_bytes=0 AND output_bytes=0 AND reservation_id::text=:owner",
+        path=f".materializations/{owner}",
+        owner=owner,
+    )
+    return None if reservation is None else (owner, int(reservation["scratch_bytes"]))
 
 
 def acquire(
@@ -879,6 +1101,10 @@ def finish(
         return
     if not native_identity.same(ticket["identity"]):
         raise V2Error("ownership_lost", "Admission native owner mismatch")
+    with engine.connect() as connection:
+        intents = _storage_intents(connection, ticket["charge_id"])
+    for path in _local_intent_paths(intents):
+        inventory_owned(engine, ticket, path)
     with transaction(engine) as connection:
         lock(connection, "v2-space:" + ticket["root"])
         row = one(
@@ -897,7 +1123,7 @@ def finish(
                 id=ticket["ticket_id"],
             )
             return  # Ambiguous child launch never releases a live/unknown native slot.
-        if retained is not None:
+        if retained is not None and not intents:
             execute(
                 connection,
                 "UPDATE v2_data_charges SET charged_bytes=:bytes,state=:state,"
@@ -916,3 +1142,28 @@ def finish(
             id=ticket["ticket_id"],
         )
         changed(connection, ticket)
+
+
+def _storage_intents(connection: Connection, charge_id: Any) -> list[dict[str, Any]]:
+    from marketlab.storage.store import enabled
+
+    if not enabled(connection):
+        return []
+    return [
+        dict(row)
+        for row in execute(
+            connection,
+            "SELECT backend_alias,object_key,state FROM v2_storage_objects WHERE charge_id=:id",
+            id=charge_id,
+        ).mappings()
+    ]
+
+
+def _local_intent_paths(intents: list[dict[str, Any]]) -> set[str]:
+    paths: set[str] = set()
+    for intent in intents:
+        if intent["backend_alias"] == "local":
+            relative = intent["object_key"]
+            directory, member = relative.rsplit("/", 1)
+            paths.update((relative, f"{directory}/.{member}.partial"))
+    return paths
