@@ -51,7 +51,10 @@ def v2_engine(request: pytest.FixtureRequest) -> Iterator[Engine]:
         # S3 fault evidence includes unresolved durable charges and object receipts.
         # Retain every such owned schema, including setup/capture failures, until
         # the separately reviewed final full-database backup/restore and cleanup.
-        if request.node.get_closest_marker("s3") is None:
+        if not (
+            request.node.get_closest_marker("s3") is not None
+            and os.environ.get("MARKETLAB_PHASE6_OWNED_S3") == "confirmed-disposable-prefix"
+        ):
             with base.begin() as connection:
                 connection.execute(sa.text(f'DROP SCHEMA "{schema}" CASCADE'))
         base.dispose()

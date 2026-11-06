@@ -46,7 +46,7 @@ function worker(kind, id) {
   }[kind];
   const result = spawnSync(
     process.env.MARKETLAB_PHASE6_PYTHON,
-    ["-I", "-S", path.join(root, "artifacts/v2-phase6-s3-acceptance/guarded_python.py"),
+    ["-I", "-S", path.join(root, "tests/s3/guarded_python.py"),
       "--", "-m", flags[0], "v2", "worker", flags[1], "1", flags[2], id],
     { cwd: root, env: process.env, windowsHide: true, encoding: "utf8", timeout: 1860000, maxBuffer: 16 * 1024 ** 2 },
   );

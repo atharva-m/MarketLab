@@ -1,5 +1,61 @@
 # Phase 6 implementation and verification
 
+## Published pytest failures and scoped local repair (November 6, 2026)
+
+Formatting repair `49244f33b1c994e34db046b6206de949a399a5f9` was published.
+[Run 42278134122](https://github.com/atharva-m/MarketLab/actions/runs/42278134122)
+passed hosted formatting/typing and frontend/demo; integration and Ubuntu quality
+failed at pytest, and Windows quality was cancelled by fail-fast. The earlier
+`78cbf5a` run also failed integration. Public annotations supplied only generic
+failure exits; the following diagnoses come from local reproductions, not observed
+hosted stack traces. Both published failures remain retained.
+
+The working checkout passed 51 offline S3 cases because its ignored bootstrap
+existed. A source-only view without private artifacts reproduced three missing-
+bootstrap failures and five passes. The repair publishes a credential-free
+`tests/s3/guarded_python.py` and updates all public callers. Interpreter-prefix
+`sysconfig` discovery works under isolated no-site startup on Windows and Linux;
+dotenv/network guards, disabled shared credential discovery, Settings overrides
+and guarded child spawning remain intact. Historical private helpers are unchanged.
+
+Five ordinary PostgreSQL restore guards reproduced five passing bodies plus five
+teardown errors: S3-marker-only capture demanded a live campaign proof and retained
+ordinary schemas. Exact owned-campaign opt-in now gates both capture and retention;
+malformed opted-in proofs remain blocking and retain evidence. Seven offline
+regressions cover unset/wrong opt-in values, normal cleanup and opted-in failure.
+The same five actual PG guards then passed without errors and cleaned their new
+schemas; all prior catalog entries and failed-red schemas remained preserved.
+Red result SHA-256 is
+`d7915612c10a5ce95196128b0cf92f56aed5edcf7579f6df5044dece460e5359`;
+green is `4d0fcb5e65e243c284b7579117d66b2bc56f28075a8dbfb3136499ca5a4486e1`.
+
+The fresh 212-file public source view passed 59 offline S3 tests with 35 live/
+integration deselections, zero skips/failures and unchanged sources in 12.42
+seconds. Invocation receipt SHA-256 is
+`7878a2e544bd3b49b1f26692565c626a0be746824d3c93fb6b622a64a8c2fa4f`.
+The first repaired-checkout attempt retained 58 passes and one new assertion
+failure because Windows emitted CRLF; its child guards succeeded, and comparing
+lines corrected the assertion. That failed log and exact executed source remain
+retained. A separate read-only, network-isolated Linux child/spawn smoke passed,
+result SHA-256 `6d6f60906f401e2602fa67c5716d5baf94495c2659e302b6bedf144536ff7b88`.
+Focused Ruff, repository formatting (328 files), JavaScript syntax and whitespace
+checks passed. No runtime code or live S3/model acceptance was replayed.
+
+Both new diagnostic databases passed fresh dump/restore parity, preserving their
+source snapshots, earlier failed schemas and all prior databases. Closeout result
+SHA-256 is `09a22c939777c90d6844510a480d0ca02b2e6ece6b9c0ab5741f5e6703f4943f`.
+The final twenty-entry catalog, dumps and new restores remain retained. After
+exact ownership/configuration and zero-client checks, only the owned PG container
+was stopped, exit zero without OOM. Stop receipt SHA-256 is
+`97c5189e825ca89e62120c9322ad0f9a4afb9bb2293721d92b77512619f73d5c`.
+No AWS action, original-service change, model inference or data deletion occurred.
+Fresh guarded preservation again matched the qualified 283-file scope, the two
+authorized dependency differences, original services/endpoints and README GIF.
+The full result remains false solely because both dotenv files were denied by
+the privacy guard; no full-preservation pass is claimed.
+Independent final outcome review, repair publication and its exact-SHA hosted
+checks remain pending.
+
 ## First publication and scoped formatting repair (November 6, 2026)
 
 Reviewed Phase 6 was published as `78cbf5a27d08b8a07d7a304bdb6bfd490fa72d39`.

@@ -130,9 +130,7 @@ class MemoryCapture:
 
 
 def python_command(args):
-    bootstrap = (
-        Path(__file__).resolve().parents[2] / "artifacts/v2-phase6-s3-acceptance/guarded_python.py"
-    )
+    bootstrap = Path(__file__).with_name("guarded_python.py")
     if os.environ.get("MARKETLAB_PHASE6_BOOTSTRAP_ACTIVE") != "guarded-python-v1":
         raise AssertionError("Owned Python entrypoint was not explicitly guarded")
     return [sys.executable, "-I", "-S", str(bootstrap), "--", *args]

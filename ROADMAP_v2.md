@@ -1,5 +1,17 @@
 # Phased delivery: Binance spot MarketLab
 
+Phase 6 CI continuation: formatting repair `49244f33b1c994e34db046b6206de949a399a5f9`
+passed hosted formatting/typing, but [run 42278134122](https://github.com/atharva-m/MarketLab/actions/runs/42278134122)
+failed integration and Ubuntu pytest; frontend/demo passed and Windows was
+cancelled. Local reproductions identified a missing published test bootstrap and
+ordinary local guards incorrectly subjected to owned-S3 capture/retention.
+The scoped test-support repair passes 59 offline S3 cases in a clean source view,
+five owned-PG guard cases and a Linux guarded-spawn check. Live S3 gates and runtime
+code remain unchanged. Preserve all failures and reuse other qualified passes.
+Both diagnostic databases passed fresh dump/restore verification; all twenty
+catalog entries and owned resources remain retained, with PG stopped cleanly.
+Independent final review, publication and new exact-SHA CI remain pending.
+
 First Phase 6 publication: `78cbf5a27d08b8a07d7a304bdb6bfd490fa72d39`.
 [Exact-SHA run 42277023048](https://github.com/atharva-m/MarketLab/actions/runs/42277023048)
 failed Ubuntu quality formatting; Windows quality was cancelled by fail-fast.

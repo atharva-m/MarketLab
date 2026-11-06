@@ -9,7 +9,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 import pytest
-from s3_safe_output import MemoryCapture, redact_text
+from s3_safe_output import MemoryCapture, redact_text, run_python
 
 import marketlab
 
@@ -98,7 +98,7 @@ def test_capture_read_error_drops_buffer_even_after_drain():
 
 def test_explicit_bootstrap_guards_before_settings_and_child_entrypoint(tmp_path):
     root = Path(marketlab.__file__).resolve().parents[2]
-    bootstrap = root / "artifacts/v2-phase6-s3-acceptance/guarded_python.py"
+    bootstrap = root / "tests/s3/guarded_python.py"
     code = """
 import os
 from marketlab.config import Settings
@@ -125,7 +125,7 @@ Settings()
 
 def test_explicit_bootstrap_wraps_real_spawn_child_and_drains(tmp_path):
     root = Path(marketlab.__file__).resolve().parents[2]
-    bootstrap = root / "artifacts/v2-phase6-s3-acceptance/guarded_python.py"
+    bootstrap = root / "tests/s3/guarded_python.py"
     code = f"""
 import multiprocessing as mp
 import sys
@@ -162,7 +162,7 @@ finally:
 
 def test_bootstrap_missing_isolated_flag_fails_closed_before_entrypoint(tmp_path):
     root = Path(marketlab.__file__).resolve().parents[2]
-    bootstrap = root / "artifacts/v2-phase6-s3-acceptance/guarded_python.py"
+    bootstrap = root / "tests/s3/guarded_python.py"
     # Keep -S even in this negative case: never execute site/.pth startup just to
     # test a missing flag. The shared fail-closed condition also requires -S.
     result = subprocess.run(
@@ -183,3 +183,22 @@ def test_bootstrap_missing_isolated_flag_fails_closed_before_entrypoint(tmp_path
     assert result.returncode != 0
     assert b"requires isolated no-site startup" in result.stderr
     assert b"entrypoint ran" not in result.stderr and result.stdout == b""
+
+
+def test_public_python_command_guards_actual_child_and_drains(monkeypatch):
+    monkeypatch.setenv("MARKETLAB_PHASE6_BOOTSTRAP_ACTIVE", "guarded-python-v1")
+    monkeypatch.setenv("MARKETLAB_PHASE6_OFFLINE_GUARD", "1")
+    result = run_python(
+        [
+            "-c",
+            "import sys, socket; from marketlab.config import Settings; "
+            "assert sys.flags.isolated and sys.flags.no_site; "
+            "assert Settings.model_config['env_file'] is None; "
+            "exec(\"try:\\n socket.getaddrinfo('example.invalid', 443)\\n"
+            "except PermissionError:\\n print('guarded-public-child')\\n"
+            "else:\\n raise AssertionError('network denial missing')\")",
+        ],
+        timeout=15,
+    )
+    assert result.returncode == 0 and result.stdout.splitlines() == ["guarded-public-child"]
+    assert result.stderr == ""

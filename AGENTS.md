@@ -1,5 +1,26 @@
 # MarketLab contributor instructions
 
+## Phase 6 CI pytest repair; publication pending (November 6, 2026)
+
+Formatting repair `49244f33b1c994e34db046b6206de949a399a5f9` passed hosted
+formatting and typing in [run 42278134122](https://github.com/atharva-m/MarketLab/actions/runs/42278134122).
+Frontend/demo passed; integration and Ubuntu quality failed at pytest, while
+Windows quality was cancelled. Hosted failure traces were unavailable; local
+reproductions established two defects: an offline bootstrap existed only in
+ignored artifacts, and ordinary local restore guards incorrectly required owned
+S3 capture/retention. The scoped repair tracks a portable guarded test entrypoint
+and requires exact owned-campaign opt-in for capture/retention, retaining strict
+proof failures once opted in. Runtime behavior and live S3 gates are unchanged.
+
+A clean public source view passed 59 offline S3 tests; five owned-PG guards and
+Linux isolated bootstrap/spawn checks passed. Failed reproductions and the new
+test's corrected Windows-newline assertion remain retained. Reuse other passes.
+Both diagnostic databases have fresh verified dumps/restores. All twenty catalog
+entries remain retained; only the exact owned PG container stopped, exit zero
+without OOM. Independent final review, repair publication and its exact-SHA CI
+remain pending. No new AWS action, model inference, original-service change or
+Phase 7 work follows.
+
 ## First Phase 6 publication; scoped CI formatting repair (November 6, 2026)
 
 Reviewed Phase 6 was published as `78cbf5a27d08b8a07d7a304bdb6bfd490fa72d39`.

@@ -147,6 +147,7 @@ def pytest_fixture_post_finalizer(fixturedef, request):
     if (
         fixturedef.argname != "storage_engine"
         or request.node.get_closest_marker("s3") is None
+        or os.environ.get("MARKETLAB_PHASE6_OWNED_S3") != "confirmed-disposable-prefix"
         or fixturedef.cached_result is None
         or fixturedef.cached_result[0] is None
     ):
