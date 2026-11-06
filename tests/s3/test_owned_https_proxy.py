@@ -18,8 +18,7 @@ def header(target="/synthetic-bucket/owned/run/object", method="GET", extra=""):
     return (
         f"{method} {target} HTTP/1.1\r\nHost: {HOST}\r\nConnection: close\r\n"
         "Authorization: AWS4-HMAC-SHA256 Credential=synthetic, "
-        "SignedHeaders=host;x-amz-date, Signature=synthetic\r\n"
-        + extra
+        "SignedHeaders=host;x-amz-date, Signature=synthetic\r\n" + extra
     ).encode("ascii")
 
 

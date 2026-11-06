@@ -1,5 +1,13 @@
 # Phased delivery: Binance spot MarketLab
 
+First Phase 6 publication: `78cbf5a27d08b8a07d7a304bdb6bfd490fa72d39`.
+[Exact-SHA run 42277023048](https://github.com/atharva-m/MarketLab/actions/runs/42277023048)
+failed Ubuntu quality formatting; Windows quality was cancelled by fail-fast.
+Locked Ruff reproduced a single test-file formatting issue. Its AST-identical
+repair passes local formatting and focused lint/whitespace checks; independent
+review, repair publication and its exact-SHA CI remain pending. Preserve the
+failed run and reuse qualified behavioral acceptance.
+
 Publication authority (November 6, 2026): the user authorized secret-safe
 commit/push of reviewed Phase 6 and hosted CI verification for the exact published
 SHA, with scoped failures handled through the prescribed coder/reviewer workflow.

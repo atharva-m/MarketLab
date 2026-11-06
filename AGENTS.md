@@ -1,5 +1,18 @@
 # MarketLab contributor instructions
 
+## First Phase 6 publication; scoped CI formatting repair (November 6, 2026)
+
+Reviewed Phase 6 was published as `78cbf5a27d08b8a07d7a304bdb6bfd490fa72d39`.
+[Run 42277023048](https://github.com/atharva-m/MarketLab/actions/runs/42277023048)
+failed Ubuntu quality at the Ruff format check; Windows quality was cancelled
+by fail-fast, not established failed by a test. Preserve this run and published
+source. Locked/installed Ruff 0.17.2 reproduced one formatting issue in
+`tests/s3/test_owned_https_proxy.py`. The one-line formatting repair preserves
+the exact Python AST; repository formatting, focused Ruff and whitespace checks
+passed locally. Independent repair review, publication and its exact-SHA CI
+remain pending. Reuse qualified behavioral passes; no live S3/model replay or
+original-service change follows.
+
 ## Current authority: Phase 6 publication and exact-SHA CI (November 6, 2026)
 
 The user authorized secret-safe publication of reviewed Phase 6, commit/push and
