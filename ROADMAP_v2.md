@@ -1,5 +1,14 @@
 # Phased delivery: Binance spot MarketLab
 
+Phase 6 publication verified: `f3a6dc3eda44ed077c9383b7aa9fdf6cafe5579d`
+passed all five jobs in [run 42285433264](https://github.com/atharva-m/MarketLab/actions/runs/42285433264).
+Reviewed CI repairs changed test support/assertions only. Reuse qualified local
+passes; retain the failed `78cbf5a`, `49244f3` and `b01ddc1` runs and all evidence.
+Original services/endpoints/GIF remain unchanged within point observations;
+preservation retains its two unverified dotenv files and authorized dependency
+differences. The agent made no AWS settings changes. This outcome-only documentation publication
+still needs its own exact-SHA CI check, to be reported separately in the session.
+
 Phase 6 Linux test correction: [run 42281892687](https://github.com/atharva-m/MarketLab/actions/runs/42281892687)
 for `b01ddc1c4d62ceef9e5a3d2f2f715d5406d75037` passed frontend/integration/demo
 but failed Ubuntu offline pytest; Windows was cancelled. A local Linux probe reproduced an incorrect symlink-test

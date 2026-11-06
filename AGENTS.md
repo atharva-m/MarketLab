@@ -1,5 +1,19 @@
 # MarketLab contributor instructions
 
+## Phase 6 publication and hosted CI verified (November 6, 2026)
+
+Reviewed Phase 6 is published as `f3a6dc3eda44ed077c9383b7aa9fdf6cafe5579d`.
+[Exact-SHA run 42285433264](https://github.com/atharva-m/MarketLab/actions/runs/42285433264)
+passed all five jobs: integration, frontend, demo and Ubuntu/Windows quality.
+The failed `78cbf5a`, `49244f3` and `b01ddc1` runs remain retained. CI repairs
+changed test support/assertions only; qualified local passes are reused.
+
+Preservation remains qualified: 283 exact hashes plus two authorized dependency
+differences; both dotenv files remain unverified. Original services/endpoints/GIF
+matched; the agent made no AWS settings changes. No original-service rollout or Phase 7
+authority follows. Check this outcome-only documentation publication's exact-SHA
+CI separately and report its result in the session; it remains pending here.
+
 ## Phase 6 Linux symlink-test oracle correction (November 6, 2026)
 
 Published repair `b01ddc1c4d62ceef9e5a3d2f2f715d5406d75037` passed hosted
