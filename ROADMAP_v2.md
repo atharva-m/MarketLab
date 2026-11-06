@@ -1,5 +1,14 @@
 # Phased delivery: Binance spot MarketLab
 
+Phase 6 Linux test correction: [run 42281892687](https://github.com/atharva-m/MarketLab/actions/runs/42281892687)
+for `b01ddc1c4d62ceef9e5a3d2f2f715d5406d75037` passed frontend/integration/demo
+but failed Ubuntu offline pytest; Windows was cancelled. A local Linux probe reproduced an incorrect symlink-test
+error-message assertion; the shared runtime guard correctly rejected the link.
+The minimal oracle correction preserves real symlink coverage and checks the
+integrity code and unchanged bytes. All seven affected cases passed on Linux,
+including the real symlink. Reuse other qualified passes; final review,
+publication and new exact-SHA CI remain pending. All failures remain retained.
+
 Phase 6 CI continuation: formatting repair `49244f33b1c994e34db046b6206de949a399a5f9`
 passed hosted formatting/typing, but [run 42278134122](https://github.com/atharva-m/MarketLab/actions/runs/42278134122)
 failed integration and Ubuntu pytest; frontend/demo passed and Windows was

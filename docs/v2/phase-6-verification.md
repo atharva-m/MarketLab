@@ -1,5 +1,39 @@
 # Phase 6 implementation and verification
 
+## Linux symlink-test oracle correction (November 6, 2026)
+
+Published repair `b01ddc1c4d62ceef9e5a3d2f2f715d5406d75037` passed hosted
+frontend, integration and demo in [run 42281892687](https://github.com/atharva-m/MarketLab/actions/runs/42281892687).
+The run concluded failed: Ubuntu offline pytest failed and Windows quality was
+cancelled. Hosted annotations remained generic. A separate
+Linux storage probe reproduced a concrete local-test failure: three cases passed,
+then the real symlink case rejected the correct runtime error message.
+
+`LocalBackend._path()` calls the shared `safe_path()` guard first. That guard
+rejects a symlink component with `integrity_failure / Invalid dataset reference`,
+before the backend's later lexical check. The fixture reference is valid; no UUID
+defect or runtime bypass was demonstrated. Only the assertion changed: it checks
+the exact shared error message, error code and unchanged registered target bytes.
+The owned symlink and existing OS-permission skip remain intact. Windows local
+checks passed six cases and skipped that one symlink fixture in 0.55 seconds;
+this skip supplies no symlink acceptance credit. Ruff, formatting and whitespace
+checks passed. Original test bytes and the local result are retained under
+`publication-ci-local-symlink-oracle-001`; receipt SHA-256 is
+`6566b78eac98ee9cf3f44b5022ae0f862a4c49e0d5dad83c3fa6023958c720d7`.
+
+Earlier Linux diagnostic attempts remain failed and retained. The globally
+guarded full run timed out at its 300-second bound without a final failure trace.
+The normal-Python run passed 450 cases before encountering the diagnostic image's
+missing Git executable; that missing CI utility is an environment limitation,
+not an application defect. No speculative runtime correction follows.
+The corrected Linux subset passed all seven cases in 1.74 seconds, including the
+real symlink, with unchanged source, exit zero, no timeout/OOM or forced cleanup.
+Result `publication-ci-linux-storage-green-001/result.json` SHA-256 is
+`0d214fbcb7d2e2fc03baba359d6b19fa70a48c092d996cbb63eb9b4e85ee26db`.
+Other qualified passes and the published hosted integration result are reused;
+this focused check supplies no full-suite hosted pass. Independent final review,
+publication and new exact-SHA hosted CI remain pending.
+
 ## Published pytest failures and scoped local repair (November 6, 2026)
 
 Formatting repair `49244f33b1c994e34db046b6206de949a399a5f9` was published.

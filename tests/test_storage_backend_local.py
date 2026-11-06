@@ -104,5 +104,7 @@ def test_local_symlink_component_fails_closed(tmp_path: Path):
         "application/json",
     )
     (actual / "results.json").write_bytes(data)
-    with pytest.raises(V2Error, match="Unsafe|unsafe"):
+    with pytest.raises(V2Error, match="^Invalid dataset reference$") as failure:
         LocalBackend(tmp_path).stat(ref)
+    assert failure.value.code == "integrity_failure"
+    assert (actual / "results.json").read_bytes() == data

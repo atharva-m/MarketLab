@@ -1,5 +1,19 @@
 # MarketLab contributor instructions
 
+## Phase 6 Linux symlink-test oracle correction (November 6, 2026)
+
+Published repair `b01ddc1c4d62ceef9e5a3d2f2f715d5406d75037` passed hosted
+frontend, integration and demo in [run 42281892687](https://github.com/atharva-m/MarketLab/actions/runs/42281892687).
+Ubuntu offline pytest failed and Windows was cancelled. Local Linux reproduction found a test expecting the
+later backend error text even though the shared path guard correctly rejected
+the symlink first. The test now asserts that exact integrity error, its code and
+unchanged target bytes. Runtime guards and real symlink coverage are unchanged.
+The local Windows subset passed six cases and explicitly skipped symlink creation
+for OS permissions; all seven cases then passed on Linux with the real symlink.
+Reuse other qualified passes and hosted integration. Independent final review,
+publication and new exact-SHA CI remain pending. Preserve prior failures and
+diagnostic evidence; no AWS/model/original-service action follows.
+
 ## Phase 6 CI pytest repair; publication pending (November 6, 2026)
 
 Formatting repair `49244f33b1c994e34db046b6206de949a399a5f9` passed hosted
