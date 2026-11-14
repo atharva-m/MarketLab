@@ -110,6 +110,116 @@ def test_pinned_structured_handoff_equals_manual_and_metadata_is_not_prompt():
     assert model.prepare(snapshot, [value])["input_bytes"] <= 6000
 
 
+CLARIFICATION = "Use all values in the explicit context for the requested profile."
+
+
+def clarification_turns(text=CLARIFICATION):
+    initial = request()
+    initial["text"] = "Market profile for SOLUSDT with 5m bars and the profile metric."
+    complete = initial["context"].copy()
+    del initial["context"]["end"]
+    answer = turn(
+        {
+            "schema": "copilot-answer-v2",
+            "expected_revision": 0,
+            "text": text,
+            "context": complete,
+        },
+        answer=True,
+    )
+    return turn(initial), answer
+
+
+def test_confirmed_descriptive_workflow_asks_only_for_the_missing_field():
+    initial, _ = clarification_turns()
+    model = candidate()
+    model.update(intent=dict.fromkeys(FIELDS), evidence=dict.fromkeys(FIELDS))
+    outcome, _, questions = decide([initial], selection(), model)
+    assert (outcome, questions) == ("needs_clarification", ["end"])
+    initial["context"].pop("workflow")
+    assert decide([initial], selection(), model)[2] == ["workflow"]
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        CLARIFICATION,
+        "Please use the provided context.",
+        "Confirm the supplied context!",
+        "Apply all fields from the structured context.",
+    ],
+)
+def test_context_confirmation_accepts_only_the_original_grounded_handoff(text):
+    initial, answer = clarification_turns(text)
+    snapshot = selection()
+    model = candidate()
+    # This reproduces the successfully checkpointed model result: only the
+    # exclusive end needs the new turn as evidence. All original proofs remain.
+    model["evidence"]["end"] = {"turn": 1, "context": True}
+    mode, intent, questions = decide([initial, answer], snapshot, model)
+    assert mode == "candidate" and questions == []
+    assert assemble(intent, snapshot).body() == ResearchSpec.create(body()).body()
+
+
+@pytest.mark.parametrize(
+    "change,expected",
+    [
+        (lambda initial, answer: answer.update(context={}), "needs_clarification"),
+        (lambda initial, answer: answer["context"].pop("end"), "needs_clarification"),
+        (
+            lambda initial, answer: answer.update(text=CLARIFICATION + " Email results."),
+            "needs_clarification",
+        ),
+        (
+            lambda initial, answer: answer.update(text=CLARIFICATION + " Predict prices."),
+            "unsupported",
+        ),
+        (
+            lambda initial, answer: initial.update(text="Market profile on Kucoin."),
+            "needs_clarification",
+        ),
+        (lambda initial, answer: initial.update(text="Market profile with TPO."), "unsupported"),
+        (
+            lambda initial, answer: answer["context"].update(workflow="cross_asset"),
+            "needs_clarification",
+        ),
+    ],
+)
+def test_context_confirmation_never_erases_unknown_operations_or_conflicts(change, expected):
+    initial, answer = clarification_turns()
+    change(initial, answer)
+    model = candidate()
+    model["evidence"]["end"] = {"turn": 1, "context": True}
+    if "end" not in answer["context"]:
+        model["evidence"]["end"] = model["intent"]["end"] = None
+    assert decide([initial, answer], selection(), model)[0] == expected
+
+
+def test_explicit_market_profile_does_not_resolve_a_conflicting_workflow_mention():
+    value = request()
+    value["text"] = "Market profile and cross_asset."
+    outcome, _, questions = decide([turn(value)], selection(), candidate(value))
+    assert (outcome, questions) == ("needs_clarification", ["workflow"])
+
+
+def test_context_confirmation_cannot_replace_model_proof_or_model_outcome():
+    initial, answer = clarification_turns()
+    model = candidate()
+    with pytest.raises(V2Error, match="Ungrounded context evidence"):
+        decide([initial, answer], selection(), model)
+    model["evidence"]["end"] = {"turn": 1, "context": True}
+    model.update(outcome="needs_clarification", unresolved=["meaning"])
+    assert decide([initial, answer], selection(), model)[0] == "needs_clarification"
+    model.update(
+        outcome="candidate",
+        intent=dict.fromkeys(FIELDS),
+        evidence=dict.fromkeys(FIELDS),
+        unresolved=[],
+    )
+    with pytest.raises(V2Error, match="Incomplete candidate"):
+        decide([initial, answer], selection(), model)
+
+
 @pytest.mark.parametrize(
     "text",
     [

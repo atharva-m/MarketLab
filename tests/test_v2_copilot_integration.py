@@ -222,6 +222,52 @@ async def test_five_answers_sixth_response_replays_and_stale_revision_have_no_ex
         await base.close()
 
 
+async def test_structured_clarification_registers_one_exact_numerical_handoff(
+    model_engine, tmp_path
+):
+    base, numerical, copilot, _, body = await setup(model_engine, tmp_path)
+    try:
+        complete = body["context"].copy()
+        del body["context"]["end"]
+        body["text"] = "Market profile for BTCUSDT with 5m bars and the profile metric."
+        identity, _, _ = await copilot.create(body, "confirmation-fixture")
+        assert await copilot.work(1, identity) == 1
+        initial = copilot.inspect(identity)
+        assert initial["outcome"] == "needs_clarification" and initial["run_id"] is None
+        assert [q["field"] for q in initial["revisions"][0]["questions"]] == ["end"]
+        answer = {
+            "schema": "copilot-answer-v2",
+            "expected_revision": 0,
+            "text": "Use all values in the explicit context for the requested profile.",
+            "context": complete,
+        }
+        assert await copilot.answer(identity, answer, "confirmation-answer") == (identity, 1, False)
+        assert await copilot.work(1, identity) == 1
+        result = copilot.inspect(identity)
+        assert result["outcome"] == "submitted"
+        assert [revision["model_calls"] for revision in result["revisions"]] == [1, 1]
+        expected = ResearchSpec.create(
+            {
+                "schema": "research-spec-v2",
+                **complete,
+                "dataset_versions": body["dataset_versions"],
+                "parameters": {},
+                "predicates": {},
+            }
+        ).body()
+        assert result["revisions"][1]["spec"] == expected
+        queued = numerical.inspect(result["run_id"])
+        assert queued["state"] == "queued" and queued["attempt_count"] == 0
+        assert queued["spec"] == expected
+        assert await copilot.work(1, identity) == 0
+        assert copilot.model.calls == 2
+        with model_engine.connect() as connection:
+            assert execute(connection, "SELECT count(*) FROM v2_research_runs").scalar_one() == 1
+    finally:
+        await numerical.close()
+        await base.close()
+
+
 async def test_spent_reservation_survives_death_and_checkpoint_recovery(model_engine, tmp_path):
     base, numerical, copilot, memo, body = await setup(model_engine, tmp_path)
     try:

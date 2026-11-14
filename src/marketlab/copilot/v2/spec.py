@@ -12,7 +12,7 @@ from marketlab.research.v2.spec import ResearchSpec, utc
 
 FIELDS = ("workflow", "instruments", "start", "end", "history_start", "interval", "metrics")
 GRAMMAR_VERSION = "copilot-evidence-grammar-v1"
-SEMANTIC_VERSION = "copilot-semantic-coverage-v3"
+SEMANTIC_VERSION = "copilot-semantic-coverage-v4"
 QUESTIONS = {
     "workflow": "Choose descriptive market_profile, cross_asset or volatility_cluster.",
     "instruments": "Choose exact selected Binance spot symbols and quote assets.",
@@ -140,7 +140,9 @@ def unsupported(text: str, snapshot: dict[str, Any]) -> bool:
     return False
 
 
-def extract(text: str, snapshot: dict[str, Any]) -> tuple[dict[str, Any], set[str]]:
+def extract(
+    text: str, snapshot: dict[str, Any], *, explicit_workflow: str | None = None
+) -> tuple[dict[str, Any], set[str]]:
     found: dict[str, Any] = {}
     uncertain: set[str] = set()
     workflows = sorted({w for w, _ in workflow_mentions(text)})
@@ -189,11 +191,37 @@ def extract(text: str, snapshot: dict[str, Any]) -> tuple[dict[str, Any], set[st
         uncertain.add("start")
     if re.search(r"\b(?:not|exclude|except|without|versus|usual|high volume)\b", text, re.I):
         uncertain.add("meaning")
-    if re.search(r"market profile", text, re.I) and not re.search(r"descriptive|ohlcv", text, re.I):
+    if (
+        re.search(r"\bmarket profile\b", text, re.I)
+        and not re.search(r"\b(?:descriptive|ohlcv)\b", text, re.I)
+        and not (workflows == ["market_profile"] and explicit_workflow == "market_profile")
+    ):
         uncertain.add("workflow")
     if not semantically_covered(text, snapshot):
         uncertain.add("meaning")
     return found, uncertain
+
+
+CONTEXT_CONFIRMATION = re.compile(
+    r"(?:please\s+)?(?:use|confirm|apply)\s+"
+    r"(?:(?:all\s+)?(?:the\s+)?(?:values|fields)\s+(?:in|from)\s+)?"
+    r"(?:the\s+)?(?:explicit|provided|supplied|structured)\s+context"
+    r"(?P<profile>\s+for\s+the\s+requested\s+profile)?[.!]?",
+    re.IGNORECASE | re.ASCII,
+)
+
+
+def confirms_context(text: str, fields: dict[str, Any]) -> bool:
+    """A whole-turn reference confirms only the structured values in that turn."""
+    match = CONTEXT_CONFIRMATION.fullmatch(text.strip())
+    return bool(
+        fields
+        and match
+        and (
+            match.group("profile") is None
+            or (fields.get("workflow") == "market_profile" and fields.get("metrics") == ["profile"])
+        )
+    )
 
 
 def semantically_covered(text: str, snapshot: dict[str, Any]) -> bool:
@@ -344,8 +372,13 @@ def decide(
     grounded: dict[str, Any] = {}
     pending: set[str] = set()
     for item in turns:
-        literal, unclear = extract(item["text"], snapshot)
         supplied_fields = supplied(item["context"], snapshot)
+        if confirms_context(item["text"], supplied_fields):
+            literal, unclear = {}, set()
+        else:
+            literal, unclear = extract(
+                item["text"], snapshot, explicit_workflow=supplied_fields.get("workflow")
+            )
         explicit = literal.keys() | supplied_fields.keys()
         previous_pending = set(pending)
         pending -= explicit
