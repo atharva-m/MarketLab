@@ -11,6 +11,7 @@ from pathlib import Path
 from prometheus_client import CollectorRegistry
 from sqlalchemy import create_engine
 
+from marketlab import workers
 from marketlab.analytics.bars import BarService
 from marketlab.analytics.v2 import BarsRequest
 from marketlab.config import Settings
@@ -23,6 +24,9 @@ from .spec import ResearchSpec
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
+    result.add_argument(
+        "--worker-root", help="Explicit provisioned root for distributed intake/read"
+    )
     commands = result.add_subparsers(dest="command", required=True)
     submit = commands.add_parser("submit")
     submit.add_argument("--spec", type=Path, required=True)
@@ -31,6 +35,8 @@ def parser() -> argparse.ArgumentParser:
     worker.add_argument("--max-runs", type=int, required=True)
     worker.add_argument("--run")
     worker.add_argument("--wait-seconds", type=int, default=0)
+    worker.add_argument("--compact-fingerprint", help="Opt into compact storage for one pinned run")
+    worker.add_argument("--worker-root", default=argparse.SUPPRESS)
     for name in ("inspect", "results", "summary", "cancel"):
         command = commands.add_parser(name)
         command.add_argument("--run", required=True)
@@ -53,7 +59,14 @@ async def invoke(args: argparse.Namespace) -> object:
         pool_timeout=settings.database_connect_timeout_seconds,
         connect_args=settings.database_connect_args,
     )
+    from marketlab.db_transport import configure
+
+    configure(engine)
     registry = CollectorRegistry()
+    args.worker_root = args.worker_root or (
+        str(settings.worker_root_id) if settings.worker_root_id else None
+    )
+    workers.bind_root(engine, settings.storage_path, args.worker_root)
     base = BarService(
         engine, settings.storage_path, settings.redis_url.get_secret_value(), registry=registry
     )
@@ -73,10 +86,24 @@ async def invoke(args: argparse.Namespace) -> object:
             for number in previous:
                 signal.signal(number, lambda signum, frame: stop.set())
             try:
-                with export_metrics(settings, registry):
+                with (
+                    workers.lifecycle(
+                        engine,
+                        settings.storage_path,
+                        "research",
+                        research.execution["source_sha256"],
+                        args.worker_root,
+                        stop,
+                    ),
+                    export_metrics(settings, registry, durable=True),
+                ):
                     return {
                         "attempted_runs": await research.work(
-                            args.max_runs, args.run, args.wait_seconds, stop
+                            args.max_runs,
+                            args.run,
+                            args.wait_seconds,
+                            stop,
+                            compact_fingerprint=args.compact_fingerprint,
                         )
                     }
             finally:

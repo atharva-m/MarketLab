@@ -1,5 +1,436 @@
 # MarketLab contributor instructions
 
+## Current authority for the Phase 7 local commit (November 14, 2026)
+
+The user authorized a local commit of the reviewed Phase 7 source, tests and
+documentation. The explicit reviewed file list excludes private configuration,
+credentials, data, weights, generated files and retained acceptance evidence.
+Carry forward the existing committed `.env.example` blob without reading or
+staging its working file. This supersedes the earlier Phase 7 no-commit
+instruction for this commit only. Pushing is prohibited.
+
+## Phase 7 distributed acceptance and closeout (November 14, 2026)
+
+All five approved compact workload pairs are qualified on the actual hosts.
+P7-02 reached 39 of 39 cases with 94 reserved starts and zero new model calls.
+Case 11's outer SSH delivery timed out. The original failure remains recorded.
+The retained EC2 trace proved that the worker reached the successful multipart
+callback and that the remote request returned within its deadline. Windows
+committed at token two. Normal owning-root recovery and both exact package
+reads completed under the original invocation deadline without another claim.
+An exact later census found all three captured SSH identities absent without
+signals. Checkpoint `927b607d…` records 132 stopped workers, two ready roots,
+zero active tickets and 23 durable model calls.
+
+The earlier qualified P7-01, P7-03 and P7-04 results were reused. The final
+444,753-byte dump passed an independent restore and preserved all 32 prior
+database names (`22685aaf…`). The exact owned PostgreSQL container stopped
+with zero clients, exit zero and its volume retained (`60e9db11…`). The
+point-in-time preservation comparison remains qualified by three original
+service start timestamps, two authorized dependency differences and two
+unverified dotenv files. Original endpoint observations and the README GIF
+matched. No AWS settings change, original-service rollout, commit, push or
+Phase 8 authority follows. [Verification](docs/v2/phase-7-verification.md)
+
+## Current authority for compact Phase 7 cases (November 14, 2026)
+
+The user approved proposal `397d1742…` for one model-free pair each for cases
+30, 31, 32, 10 and 11 in that order, with exact fresh source-linked jobs and
+the small workload bounds. This supersedes the prior capacity deferral only
+for that plan. Retain all 84 earlier reserved starts and 23 durable model
+calls. The P7-02 campaign cap is 94, with at most two new starts per pair.
+Case 10 may have at most five attempts across its lineage including the three
+retained attempts. Each job remains limited to three. Keep prior queued and
+failed jobs, charges, fixture bytes, object versions and evidence unchanged.
+Check current readiness on both hosts and reconcile each pair before running
+the next. [Verification](docs/v2/phase-7-verification.md)
+
+The compact continuations qualified storage cases 30–32. Both hosts
+verified the committed versioned packages after a real TCP reset and
+opposite-host recovery. The original case 30 failure and the original queued
+jobs for cases 31 and 32 remain retained. Compact case 10 then passed first
+multipart part, opposite-host commit, physical-ticket recovery and both
+immutable reads. The initial EC2 reader path failed before startup and remains
+recorded. An EC2-only read completed under the original deadline with zero
+claims. Checkpoint `ae1ceb63…` records 38 of 39 P7-02 cases, 92 reserved
+starts, 130 stopped workers, zero active tickets and 23 durable model calls.
+
+## Phase 7 native closeout continuation (November 13, 2026)
+
+The owning EC2 read-only check `34435a47…` found all five captured process
+identities absent and the four application ports closed. The previously
+unclassified SSH process exited without a signal. Separately, the new local
+Windows owner passed normal loaded-runner drain (`229443ea…`) with one
+prompt-free load and unload, zero evaluations, zero generation and no worker
+claims. The earlier forced owner and incomplete route receipts are retained.
+P7-03 functional results were reused, with 16 reserved starts and 23 durable
+model calls. [Verification](docs/v2/phase-7-verification.md)
+
+## Phase 7 corrected P7-03 case 3 result (November 13, 2026)
+
+Under the user's approval `02ea2eca…`, a fresh linked case 3 request verified
+EC2 session loss before reservation and ordinary Windows peer completion. The
+pair used two starts, two durable calls and one observed generation request.
+Both hosts read the same immutable 6,200-byte source. The Windows peer
+committed a queued numerical handoff with zero numerical attempts. The two
+prior failed case 3 jobs and calls remain retained. Checkpoint `f3c15d69…`
+records eight of eight P7-03 functional scenarios, 16 reserved starts and 23
+durable calls across the campaign.
+
+The original route stop remained incomplete. The additive EC2 proof found all
+known owned processes gone and all four route ports closed. One unclassified
+SSH identity remained present and was left untouched. The exact Windows model
+owner required forced cleanup after the route stop failed. Its Job had zero
+active processes afterward. Normal owner drain and full native closeout remain
+unqualified. Backup `51364627…` passed independent restore. The exact owned
+PostgreSQL stopped with zero clients and retained its volume (`2df0b55c…`).
+P7-02 remains at 34 of 39, with the locally verified case 10 fix
+awaiting actual-host acceptance and cases 11 and 30–32 capacity-deferred. See
+[verification](docs/v2/phase-7-verification.md).
+
+## Phase 7 case 10 and P7-03 case 3 corrections (November 13, 2026)
+
+The case 10 worker now reports a local cooperative interruption as transient
+ownership loss. The durable cancellation flag, ownership fence and existing
+attempt cap still govern the job transition. Six focused offline checks
+passed. The historical trigger remains unverified, and the affected case
+cannot run on the retained EC2 headroom. Leave cases 10, 11 and 30–32 without
+new dispatch or reservation changes.
+
+The case 3 acceptance guard now checks actual candidate reservation headroom
+on the intended Windows peer before booking starts or calls. The bounded
+proposal `ac11f23c…` keeps the session-loss boundary on EC2 and ordinary
+completion on Windows. The user approved at most two starts, two durable
+calls and one real generation request on a fresh linked job using the
+existing 6,200-byte immutable fixture. The EC2 primary verified the exact
+session loss and one reservation with no generation. The Windows peer spent
+one call before the isolated native monitor failed with
+`STATUS_PROCESS_IS_TERMINATING`. It committed no handoff. The correction
+uses only an authenticated held handle and fresh Job census to distinguish
+a confirmed exiting member. Eleven focused model-free checks passed. The
+forced-close evidence remains failed. Checkpoint `647879cc…` records seven
+of eight P7-03 cases, 14 starts and 21 durable calls. The independent restore
+passed and the exact owned PostgreSQL stopped with all data retained. Any
+further case 3 pair needs a separately approved budget. See
+[verification](docs/v2/phase-7-verification.md).
+
+## Phase 7 case 7 checkpoint recovery (November 13, 2026)
+
+The user approved one additional P7-03 start for case 7 only. The ordinary
+Windows worker published the retained memo at attempt and fencing token three.
+The original post-worker observer failed on its two-attempt row bound. The
+scoped read-only continuation verified the existing commit and identical five
+memo and four numerical source versions on both hosts. The third attempt used
+the saved draft with zero new model calls or requests. Checkpoint `b45b0849…`
+records seven of eight qualified P7-03 cases, 12 starts including the one
+checkpoint-only start, and 19 total durable calls. Case 3 remains failed.
+The database-only route closed with both roots ready, 118 stopped workers
+and zero active tickets. Final backup `b60decbb…` passed an independent
+restore, and the exact owned PostgreSQL container stopped at zero clients
+with its volume retained (`bbd2d8cc…`).
+
+P7-02 remains at 34 of 39 qualified cases and 84 of 92 reserved starts. The
+user conditionally asked to skip the capacity-dependent work. Cases 11 and
+30–32 remain deferred because the existing ordinary worker reservations
+require more free space on the replacement EC2 `/data` filesystem. Case 10
+and the original case 30 remain failed. Preserve the recorded limits,
+historical evidence and all reservations. See
+[verification](docs/v2/phase-7-verification.md).
+
+## Current authority for affected Phase 7 checks (November 13, 2026)
+
+The user authorized investigating and fixing the five failed cases and
+finishing the remaining Phase 7 tests. Reuse all applicable passed evidence.
+The independently reviewed amendment `82cab38e…` preserves the prior cap of
+82 and all 78 spent starts. It allows at most 14 additional P7-02 start
+reservations for cases 9–11, 19 and 30–32, totaling at most 92. Preserve the
+original failed jobs, attempts, charges and files. Cases 31–32 use their
+existing queued jobs. Across an original and its linked successor, the
+logical case can have at most three attempts. Use the prescribed coder and
+independent reviewer before concrete dispatch. The P7-03 model checks need
+their own reviewed limits and owned model binding. The existing production
+limits, original services and publication authorities still apply.
+
+The accepted affected-case 19 and 9 checkpoints bring P7-02 to 34 of 39
+qualified cases and 82 cumulative reserved starts. The case 9 application
+finished within the unchanged request limit, and its outer transport timeout
+and original incomplete native close remain recorded. The exact native and
+version readback continuation made no new claim, preserved all charges and
+file evidence, and closed its owned database-only route. The checkpoint
+recorded 104 stopped workers, zero active tickets and 11 durable model calls.
+See [verification](docs/v2/phase-7-verification.md).
+
+The case 10 successor reached the upload boundary, but its EC2 peer
+failed with a permanent cooperative cancellation diagnostic and committed
+no package. All three logical case attempts are accounted for. The affected
+case 11 successor's zero-start EC2 preflight found insufficient physical
+headroom on the replacement `/data` filesystem. Its job and the original
+cases 31–32 remain queued without claims. Case 30's historical failure is
+retained. Normal owning-root recovery and both route closures are recorded.
+P7-02 remains at 34 of 39 qualified cases, 84 of 92 reserved starts, 106
+stopped workers, zero active tickets and 11 durable model calls at this
+checkpoint. The model-only P7-03 checks may proceed separately through
+ordinary admission with those P7-02 limitations retained.
+
+The reviewed P7-03 checkpoint `aaba13da…` qualifies cases 0, 1, 2 and 4
+and reuses functional cases 5 and 6. Case 3 failed after its second spent
+call, and case 7 observed upstream HTTP completion after disconnect but
+had no committed memo at that checkpoint. Both isolated owners and all
+application and DB-only routes drained. Normal case 7 root recovery retained
+the files and charges. That ledger recorded 117 stopped workers, zero active tickets and
+19 total durable model calls. The proposed one additional ordinary case 7
+start (`e19f9f8b…`) was later approved by the user. See
+[verification](docs/v2/phase-7-verification.md) for the latest outcome and
+the cases deferred for actual EC2 reservation headroom.
+
+The final partial checkpoint backup `b8c7c0d1…` passed a fresh independent
+restore and retained all 28 prior database names. Only the exact owned
+Phase 7 PostgreSQL container stopped, with zero clients, exit code zero and
+no OOM (`99c1af78…`). Its volume and all evidence remain retained. The
+preservation comparison records three original container start-time changes
+after the approved Docker startup and two unverified dotenv paths. Phase 7
+remains incomplete.
+
+## Phase 7 stale-success and cancellation checkpoint (November 13, 2026)
+
+The retained checkpoint `19a4a1cc…` qualifies cases 33–38. The three stale
+primaries failed the publication fence after an opposite-host commit at
+attempt and fencing token two. Normal owning-root recovery preserved files
+and charges. The three cancellation cases verified cancellation first,
+publication first and observed application-level overlap. Both actual hosts
+verified the four committed package version sets. P7-02 has 32 of 39
+qualified cases and 78 of 82 reserved starts. The owned routes closed.
+The database recorded 100 stopped workers, zero active tickets and 11
+durable model calls. A single current campaign dump and independent restore
+passed, and the exact owned PostgreSQL container stopped cleanly with its
+volume retained. Cases 9–11, 19 and 30 remain failed. Cases 31–32 remain
+queued without attempts. See [verification](docs/v2/phase-7-verification.md).
+
+## Phase 7 multipart closeout (November 13, 2026)
+
+Independent review accepted the partial checkpoint `3f61b937…`. The original
+180-second upload-boundary wait also expired for case 11 on EC2. Its first
+attempt and both spent starts remain retained. No multipart case qualified.
+Normal owning-root recovery preserved 40 files totaling 1,185,854,854 bytes,
+released one physical ticket and added no charge. The owned routes closed
+and the database recorded 91 stopped workers and 11 durable model calls.
+P7-02 remains at 26 of 39 qualified cases and 66 of 82 reserved starts.
+Continue the untouched stale-success and cancellation cases 33–38 under
+the prescribed review and existing limits. See
+[verification](docs/v2/phase-7-verification.md).
+
+## Phase 7 Windows multipart checkpoint (November 13, 2026)
+
+Independent review accepted the case 10 partial checkpoint `e557c475…`.
+The original 180-second upload-boundary wait expired before the Windows
+primary reached that boundary. Its attempt and fencing token one, two spent
+starts and logical charges remain retained. The owning worker exited and
+normal root recovery preserved 37 files totaling 434,264,960 bytes, released
+one physical ticket and added no charge. Both owned app routes closed. Case
+11 is queued without an attempt. P7-02 remains at 26 of 39 qualified cases,
+64 of 82 reserved starts and 11 durable model calls. Continue the untouched
+cases with the prescribed reviewer and original limits. See
+[verification](docs/v2/phase-7-verification.md).
+
+## Phase 7 multipart and competing checkpoint (November 13, 2026)
+
+The user approved starting Docker Desktop with possible automatic original
+container restarts. The original API, PostgreSQL and Redis reported fresh
+healthy uptime afterward. Only the exact owned Phase 7 PostgreSQL container
+was started separately. The retained multipart backup passed independent
+review and was reused with current catalog and native readiness.
+
+Multipart case 9 reached attempt one and exhausted its original 180-second
+boundary wait during normalization. No multipart marker, S3 object or peer
+attempt was observed. The exact dead EC2 root recovered normally, preserving
+37 files and 579,538,460 bytes, its logical charge and both spent starts.
+Cases 10–11 remain queued. Competing case 19 reached its Windows after-claim
+marker, then failed before peer dispatch. Normal Windows root recovery preserved
+33 files, the original attempt and its logical charge, and released one
+physical ticket. The precise failed supervisor check remains unverified.
+
+Independent review accepted the untouched case 20 continuation. It verified
+the EC2 winner, a zero-attempt and zero-charge Windows contender while the
+original lease remained live, and both hosts' exact versioned package reads.
+Both routes closed, with 89 stopped workers and 11 retained model calls.
+P7-02 now has 26 of 39 qualified cases and 62 of 82 reserved starts. Preserve
+all failures and earlier evidence. Storage case 30 remains failed and 31–32
+remain queued. Continue only the remaining authorized checks through the
+prescribed coder and independent reviewer. See
+[verification](docs/v2/phase-7-verification.md).
+
+## Phase 7 database and storage partition checkpoint (November 8, 2026)
+
+Independent review qualified database partition cases 27–29 across the
+retained two-host invocations, exact versioned readbacks and normal owning-root
+reconciliation. The original interrupted case 28 reserved two starts and
+remained unclaimed. The user approved two replacement starts only for that
+same job under amendment `7adab830…`, bringing the cumulative cap to 82.
+The replacement committed at attempt and fencing token two after the primary
+expired. The original interruption remains retained.
+
+Storage case 30 recorded an actual private relay cut after 10,840 bytes. The
+primary ended in a permanent `invalid_request`, and the peer made no claim.
+The precise inner exception remains unverified. Preserve its failed job and
+both starts. Cases 31–32 remain queued without attempts. P7-02 has 25 of 39
+qualified cases, 56 cumulative reserved starts and 11 durable model calls.
+The owned routes closed and the database recorded 85 stopped workers. The
+independent multipart checks can proceed from the reviewed partial predecessor.
+Keep the prescribed coder and reviewer, the existing per-case and invocation
+limits, historical evidence and original services. See
+[verification](docs/v2/phase-7-verification.md).
+
+## Phase 7 actual two-host checkpoint (November 8, 2026)
+
+The replacement EC2 and Windows hosts exercised the scoped S3 writer
+bindings and shared owned database. Independent review accepted all six
+P7-04 visibility scenarios across the two exact runner versions. The
+source-qualified model-free subset verified twenty numerical cases, ten
+committed on each host, plus the canonical seed, a separate canonical import
+and a genuine official archive. Both hosts verified the retained results.
+The original 3,600-second invocation remains failed. Separate existing-package
+reads verified the final official projection without another claim. All 25
+spent invocations, prior failures, object versions and root inventory remain
+retained. The functional routes closed and the database recorded 30 stopped
+workers, 23 logical jobs, 20 queued memos and zero model calls.
+
+One P7-02 competing-claim case verified the EC2 winner, Windows attempt zero
+and both hosts' exact versioned readbacks. The original observer failed, and
+the readback continuation made no new claim. The first actual EC2 copilot
+worker checkpointed one spent call and exited before committing a handoff.
+The same job recovered on attempt two with zero additional model calls. Both
+hosts verified its queued handoff and source manifest. The Windows memo then
+committed once and passed exact EC2 readback. Independent review accepted
+P7-01 across the retained source-qualified continuations. The two model calls
+and twenty-eight functional reservations remain accounted for. The memo
+owner's native drain passed. The original copilot owner required forced cleanup
+after a native process query failure, and its failed drain remains retained.
+All three after-claim fault repetitions verified expiry on the primary,
+commit on the peer, both hosts' exact package reads and owning-root recovery.
+The failed group observer remains retained. A read-only continuation verified
+the second commit and the normal physical-ticket release without new claims.
+Both logical charges and the four group reservations remain retained.
+The six model-reservation fault repetitions verified native primary expiry,
+opposite-host recovery and matching semantic readback on both hosts. Twelve
+starts, nine new durable reservations and the two historical calls remain
+accounted for. The isolated model owner's normal drain passed. Upstream HTTP
+request counts and continuation remain unverified for this group.
+The first verified-before-commit publication fault retained four unattached
+versions and its logical charge. The opposite host committed on attempt two,
+and both hosts verified the committed package. The original group timed out
+at the owning-root review after its scratch-only check rejected three retained
+materializations. The exact normal recovery enrolled seven covered files
+without an added charge or another claim. A separate invocation ran the five
+untouched cases. All six publication fault cases now have matching two-host
+package reads and normal owning-root reconciliation. Three post-commit peers
+ran without making a new attempt. The original timeout and its two spent
+starts remain retained. P7-02 has 16 of 39 qualified cases. The next
+worker-death observer failed before its fault boundary, leaving the job
+queued and unclaimed. Its two spent starts bring the cumulative reservation
+count to 34. The 11 durable model calls remain retained.
+The worker-death and lease-expiry continuation then qualified all six cases.
+It reused the six unclaimed jobs and kept the failed first observer and its
+two spent starts. Both hosts verified the retained packages. Normal root
+recovery preserved the existing files and charges. P7-02 now has 22 of 39
+qualified cases and 46 cumulative reserved starts. The reviewed campaign
+bound is 80, including the two failed starts. Per-case, invocation and
+attempt limits remain in force.
+The remaining P7-02 faults, P7-03 contention and final closeout remain
+incomplete. The isolated local admission-loss reproduction qualifies only
+its observed reservation order.
+Use the prescribed coder and independent reviewer for further authorized
+checks. Preserve all evidence and original services. No AWS settings change,
+original-service rollout, commit, push or Phase 8 authority follows. See
+[verification](docs/v2/phase-7-verification.md).
+
+## Current authority: Phase 7 continuation after writer policy attachment (November 7, 2026)
+
+The user attached `MarketLabPhase7Access` to both supplied credential bindings
+and authorized verifying effective operations and continuing Phase 7 checks.
+Use the prescribed coder and independent read-only reviewer. Preserve the
+earlier denied write, retained object versions and both hosts' evidence.
+Keep replacement EC2 files in fresh owned children of `/data/marketlab` and
+apply normal readiness and reservations. Qualify owned service and worker
+bindings before dispatch. No AWS settings changes, original-service rollout,
+commit or push.
+
+## Current authority: Phase 7 replacement EC2 campaign (November 7, 2026)
+
+The user supplied a replacement EC2 host and applied additive policy changes
+to the existing S3 bucket. Continue bounded actual-host checks under the same
+prescribed coder and independent reviewer. Before fresh conditional writes,
+verify versioning, conditional creation and deletion denial for the approved
+Phase 7 prefix. Treat unavailable optional lifecycle readback as unverified
+long-term retention. The original 50 GiB waiver applied only to the previous
+EC2 host. Keep normal readiness and reservation checks on the replacement.
+Keep every remote campaign file under
+`/data/marketlab` in a fresh owned child directory and preserve existing
+contents. Preserve both hosts' retained evidence and original services. No AWS
+settings changes, purchases, original-service rollout, commit or push.
+
+## Prior authority: Phase 7 small-fixture checks on initial EC2 (November 7, 2026)
+
+The user authorized bounded small-fixture distributed checks on the supplied
+EC2 instance and current Windows host using the existing S3 bucket under
+`marketlab-phase7`. Use coder `gpt-6.1-sol/high` and independent read-only
+reviewer `gpt-6-astra/medium`. The 50 GiB readiness check is waived on the
+supplied EC2 host only. Record the exception as waived and keep ordinary job
+reservations, the Windows readiness floor and all other limits. Qualify owned
+bindings before dispatch and preserve all original services and historical and
+new evidence. No AWS settings changes, purchases, original-service rollout,
+commit or push. Report actual scope and blocked gates in
+[verification](docs/v2/phase-7-verification.md).
+
+## Phase 7 implemented; qualified local verification (November 6, 2026)
+
+Implementation under the reviewed worker contract passed the prescribed coder
+and independent read-only reviewer workflow; all identified implementation
+blockers were resolved. Final offline checks passed 1,647 cases. PostgreSQL,
+Windows/Linux lifecycle and transport, frontend/browser, numerical and static
+results retain their exact source qualifications in
+[verification](docs/v2/phase-7-verification.md). Actual P7-01 through P7-04
+distributed acceptance remains incomplete pending EC2 access and reviewed owned
+database, shared-storage and pinned-model bindings. Two local containers are not
+two actual hosts; no Phase 7 completion or Phase 8 authority follows.
+
+Six fresh dumps and independent restores passed review. All twelve databases,
+containers, volumes, copied data, outputs and failures remain retained. Only the
+exact owned Phase 7 PostgreSQL/Redis services were stopped, exit zero/no OOM.
+Original services/endpoints/GIF matched point observations; protected scope is
+283 exact hashes plus two previously authorized dependency differences. Both
+dotenv files remain unverified. Earlier broad test children bypassed the parent
+dotenv guard, so their dotenv access is unverified; known application child
+entrypoints were corrected and checked. Do not claim complete privacy or full
+preservation proof. No commit, push, AWS settings change, original-service
+rollout or actual model inference occurred.
+
+## Current authority: Phase 7 implementation (November 6, 2026)
+
+The user authorized implementation under the reviewed
+[worker contract](docs/v2/phase-7-workers.md), prescribed coder gpt-6.1-sol/high
+and independent read-only reviewer gpt-6-astra/medium, and required checks.
+Resolve blocking findings and record actual outcomes and missing prerequisites in
+docs/v2/phase-7-verification.md. This supersedes the pre-code-only restriction
+within this contract. Preserve original services, protected/private files and all
+historical evidence; use owned isolated resources. No commit, push, purchases,
+AWS settings changes or original-service rollout. Missing real second-host
+infrastructure leaves distributed gates incomplete; never substitute two containers.
+The user directed continued implementation and local checks, with EC2 access to
+be supplied later. Do not block independent local work on that deferred access.
+
+## Current authority: Phase 7 pre-code contract (November 6, 2026)
+
+The user authorized the [distributed-worker contract](docs/v2/phase-7-workers.md),
+these contributor instructions and roadmap updates, and prescribed independent
+read-only review by gpt-6-astra/medium with blocking findings resolved. Scope is
+documentation only. Runtime code, migrations, service operations, commit and push
+require separate authorization. Preserve all historical evidence and original
+services. Independent gpt-6-astra/medium review passed after the cancellation
+revision collision was resolved; exact reviewed contract hash is recorded in the
+contract. Phase 7 implementation and acceptance are not started or authorized.
+The Phase 6 outcome-documentation SHA 57e4f6eae193e78adce3b2e3f0ae814fde6ba7cd
+passed exact-SHA CI in run 42287703042, verified read-only in this session.
+
 ## Phase 6 publication and hosted CI verified (November 6, 2026)
 
 Reviewed Phase 6 is published as `f3a6dc3eda44ed077c9383b7aa9fdf6cafe5579d`.

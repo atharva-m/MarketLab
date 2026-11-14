@@ -127,6 +127,7 @@ class ResearchService:
         rows: list[dict[str, Any]],
         cancelled: threading.Event,
         scratch: Path,
+        compact_scratch: int | None = None,
     ) -> dict[str, list[dict[str, Any]]]:
         inputs: dict[str, list[dict[str, Any]]] = {}
         for identity in spec.instrument_ids:
@@ -154,7 +155,7 @@ class ResearchService:
                     end=before,
                 )
                 body, _ = await self.bars.read_prepared(
-                    request, rows, cancelled, scratch_root=scratch
+                    request, rows, cancelled, scratch_root=scratch, compact_scratch=compact_scratch
                 )
                 inputs[identity].extend(body["bars"])
                 first = before
@@ -166,6 +167,8 @@ class ResearchService:
         cancelled: threading.Event,
         reservation: dict[str, Any],
         pinned: dict[str, Any] | None = None,
+        *,
+        compact_scratch: int | None = None,
     ) -> tuple[list[dict[str, Any]], dict[str, list[dict[str, Any]]]]:
         rows = await self.bars.prepare_selection(
             spec.instrument_ids,
@@ -174,6 +177,7 @@ class ResearchService:
             spec.end,
             cancelled,
             scratch_root=Path(reservation["path"]),
+            compact_scratch=compact_scratch,
         )
         if pinned is not None:
             for row in rows:
@@ -181,7 +185,7 @@ class ResearchService:
                 if old["semantic_sha256"] != row["semantic_sha256"]:
                     raise V2Error("integrity_failure", "Pinned instrument semantics changed")
                 row["metadata"] = old
-        inputs = await self.load(spec, rows, cancelled, reservation["path"])
+        inputs = await self.load(spec, rows, cancelled, reservation["path"], compact_scratch)
         await self.base._thread(
             lambda: calculate(
                 spec, inputs, {r["instrument_id"]: r["metadata"] for r in rows}, cancelled
@@ -221,17 +225,21 @@ class ResearchService:
         result: dict[str, Any],
         summary: dict[str, Any],
         scratch: Path,
+        *,
+        output_limit: int | None = None,
     ) -> Path:
         path = safe_path(scratch, "publication-" + uuid4().hex)
         path.mkdir(exist_ok=False)
         artifacts = {}
+        total = 0
         for name, body, maximum in (
             ("spec.json", spec.body(), 65536),
             ("results.json", result, MAX_RESULT),
             ("summary.json", summary, MAX_RESULT),
         ):
             raw = canonical_json(body)
-            if len(raw) > maximum:
+            total += len(raw)
+            if len(raw) > maximum or (output_limit is not None and total > output_limit):
                 raise V2Error("capacity_exceeded", "Numerical artifact exceeds limit")
             with (path / name).open("xb") as output:
                 output.write(raw)
@@ -246,7 +254,7 @@ class ResearchService:
             "created_at": datetime.now(UTC).isoformat(),
         }
         raw = canonical_json(manifest)
-        if len(raw) > 1024**2:
+        if len(raw) > 1024**2 or (output_limit is not None and total + len(raw) > output_limit):
             raise V2Error("capacity_exceeded", "Numerical manifest exceeds limit")
         with (path / "manifest.json").open("xb") as output:
             output.write(raw)
@@ -354,7 +362,11 @@ class ResearchService:
                     return
                 except TimeoutError:
                     try:
-                        if not await asyncio.to_thread(store.heartbeat, self.engine, current):
+                        from marketlab.workers import stop_requested
+
+                        if stop_requested(self.engine) or not await asyncio.to_thread(
+                            store.heartbeat, self.engine, current
+                        ):
                             current.lost.set()
                             return
                     except Exception:
@@ -365,15 +377,23 @@ class ResearchService:
         reservation: dict[str, Any] | None = None
         try:
             async with asyncio.timeout(self.attempt_timeout):
-                reservation = await asyncio.to_thread(
+                compact = capacity.SMALL_RESEARCH_SPACE if current.compact_fingerprint else None
+                held = await asyncio.to_thread(
                     capacity.reserve,
                     self.engine,
                     self.root,
                     current.run_id,
                     "attempt",
                     current.admission,
+                    **({"space": compact} if compact is not None else {}),
                 )
+                reservation = held
                 info = await asyncio.to_thread(store.inspect, self.engine, current.run_id)
+                if (
+                    compact is not None
+                    and digest(info["fingerprint"]) != current.compact_fingerprint
+                ):
+                    raise V2Error("integrity_failure", "Compact research fingerprint changed")
                 pinned_execution = info["fingerprint"]["execution"]
                 compatibility = (
                     "source_sha256",
@@ -387,7 +407,11 @@ class ResearchService:
                     raise V2Error("incompatible_execution", "Research execution is incompatible")
                 spec = ResearchSpec.create(info["spec"])
                 rows, inputs = await self.prepare(
-                    spec, current.lost, reservation, info["fingerprint"]["instruments"]
+                    spec,
+                    current.lost,
+                    held,
+                    info["fingerprint"]["instruments"],
+                    **({"compact_scratch": compact.scratch} if compact is not None else {}),
                 )
                 if (
                     self.fingerprint(
@@ -404,7 +428,13 @@ class ResearchService:
                 )
                 staging = await self.base._thread(
                     lambda: self.stage(
-                        current, spec, info["fingerprint"], result, summary, reservation["path"]
+                        current,
+                        spec,
+                        info["fingerprint"],
+                        result,
+                        summary,
+                        held["path"],
+                        **({"output_limit": compact.output} if compact is not None else {}),
                     ),
                     current.lost,
                 )
@@ -447,19 +477,32 @@ class ResearchService:
         run_id: str | None = None,
         wait_seconds: int = 0,
         stop_event: threading.Event | None = None,
+        *,
+        compact_fingerprint: str | None = None,
     ) -> int:
         if (
             type(maximum) is not int
             or not 1 <= maximum <= 62
             or type(wait_seconds) is not int
             or not 0 <= wait_seconds <= 3600
+            or (compact_fingerprint is not None and (run_id is None or maximum != 1))
         ):
             raise V2Error("invalid_request", "Invalid bounded research worker invocation")
         async with self.worker_lock:
             stop = stop_event or threading.Event()
             completed, deadline = 0, asyncio.get_running_loop().time() + wait_seconds
             while completed < maximum and not stop.is_set():
-                current = await asyncio.to_thread(store.claim, self.engine, self.execution, run_id)
+                current = await asyncio.to_thread(
+                    store.claim,
+                    self.engine,
+                    self.execution,
+                    run_id,
+                    **(
+                        {"compact_fingerprint": compact_fingerprint}
+                        if compact_fingerprint is not None
+                        else {}
+                    ),
+                )
                 if current is None:
                     if asyncio.get_running_loop().time() >= deadline:
                         break

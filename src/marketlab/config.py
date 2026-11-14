@@ -1,4 +1,5 @@
 from pathlib import Path
+from uuid import UUID
 
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -20,6 +21,7 @@ class Settings(BaseSettings):
         "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90"
     )
     storage_path: Path = Path("./data")
+    worker_root_id: UUID | None = None
     storage_backend: str = "local"
     storage_s3_alias: str = "s3"
     storage_s3_endpoint: str | None = None

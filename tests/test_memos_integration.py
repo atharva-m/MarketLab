@@ -4,7 +4,6 @@ import asyncio
 import json
 import os
 import subprocess
-import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
@@ -12,6 +11,7 @@ from datetime import timedelta
 import httpx
 import pytest
 import sqlalchemy as sa
+from owned_python import command as python_command
 from test_copilot import request
 from test_copilot_integration import FakeModel
 from test_copilot_integration import copilot_engine as copilot_engine
@@ -400,7 +400,7 @@ asyncio.run(service.execute(current))
     )
     process = await asyncio.to_thread(
         subprocess.Popen,
-        [sys.executable, "-c", prefix + "\n" + code],
+        python_command("-c", prefix + "\n" + code),
         env=os.environ.copy(),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

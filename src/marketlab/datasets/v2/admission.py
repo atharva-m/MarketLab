@@ -37,7 +37,7 @@ def binding(connection: Connection, root: Path | None = None) -> dict[str, Any] 
         revision = execute(
             connection, "SELECT version_num FROM alembic_version"
         ).scalar_one_or_none()
-        if revision in {"0011_v2_copilot_memos", "0012_v2_storage"}:
+        if revision in {"0011_v2_copilot_memos", "0012_v2_storage", "0013_v2_workers"}:
             tables: tuple[str, ...] = (
                 "v2_copilot_jobs",
                 "v2_copilot_calls",
@@ -45,7 +45,7 @@ def binding(connection: Connection, root: Path | None = None) -> dict[str, Any] 
                 "v2_memo_calls",
                 "v2_memo_results",
             )
-            if revision == "0012_v2_storage":
+            if revision in {"0012_v2_storage", "0013_v2_workers"}:
                 tables += (
                     "v2_capacity_roots",
                     "v2_capacity_files",
@@ -55,6 +55,15 @@ def binding(connection: Connection, root: Path | None = None) -> dict[str, Any] 
                     "v2_storage_packages",
                     "v2_storage_copies",
                     "v2_storage_objects",
+                )
+            if revision == "0013_v2_workers":
+                tables += (
+                    "v2_worker_mode",
+                    "v2_worker_hosts",
+                    "v2_worker_roots",
+                    "v2_worker_instances",
+                    "v2_worker_capabilities",
+                    "v2_worker_files",
                 )
             for required in tables:
                 if (
@@ -67,12 +76,29 @@ def binding(connection: Connection, root: Path | None = None) -> dict[str, Any] 
             revision = execute(
                 connection, "SELECT version_num FROM alembic_version"
             ).scalar_one_or_none()
-            if revision in {"0010_v2_browser_imports", "0011_v2_copilot_memos", "0012_v2_storage"}:
+            if revision in {
+                "0010_v2_browser_imports",
+                "0011_v2_copilot_memos",
+                "0012_v2_storage",
+                "0013_v2_workers",
+            }:
                 raise V2Error("integrity_failure", "Required capacity ledger is missing")
         return None
     row = one(connection, "SELECT * FROM v2_capacity_roots WHERE singleton")
-    if row is not None and root is not None and row["root_path"] != str(capacity_root(root)):
-        raise V2Error("unavailable", "Storage root binding mismatch")
+    if row is not None and root is not None:
+        from marketlab.workers import local_root, mode
+
+        current = mode(connection)
+        if current is not None and current["mode"] == "distributed":
+            physical = local_root(connection)
+            if (
+                physical is None
+                or physical["local_path"] != str(capacity_root(root))
+                or not physical["ready"]
+            ):
+                raise V2Error("unavailable", "Worker physical root binding mismatch")
+        elif row["root_path"] != str(capacity_root(root)):
+            raise V2Error("unavailable", "Storage root binding mismatch")
     return row
 
 
@@ -501,12 +527,23 @@ def audit(engine: Engine, root: Path) -> None:
     # Exact inventories, active-owner projection and expected_count all use one
     # repeatable-read snapshot. A legitimate inventory commit cannot change the
     # denominator halfway through this filesystem walk.
+    from marketlab.workers import mode
+
+    with engine.connect() as connection:
+        current = mode(connection)
     reconcile_dead(engine, safe_root(root))
     for _ in range(3):
         try:
-            with engine.connect().execution_options(isolation_level="REPEATABLE READ") as snapshot:
-                with snapshot.begin():
-                    _audit(engine, root, snapshot)
+            if current is not None and current["mode"] == "distributed":
+                from marketlab.workers import audit_root
+
+                audit_root(engine, safe_root(root))
+            else:
+                with engine.connect().execution_options(
+                    isolation_level="REPEATABLE READ"
+                ) as snapshot:
+                    with snapshot.begin():
+                        _audit(engine, root, snapshot)
             return
         except V2Error as error:
             if error.code != "audit_changed":
@@ -567,12 +604,22 @@ def reconcile_dead(engine: Engine, root: Path) -> None:
         bound = binding(connection, root)
         if bound is None:
             return
+        from marketlab.workers import local_root, mode
+
+        current = mode(connection)
+        physical = local_root(connection)
+        predicate = ""
+        if current is not None and current["mode"] == "distributed":
+            if physical is None:
+                raise V2Error("unavailable", "Owning worker root required for recovery")
+            predicate = "AND worker_root_id=:worker_root "
         candidates = (
             execute(
                 connection,
                 "SELECT * FROM v2_admission_tickets WHERE root_id=:id "
-                "AND state<>'released' ORDER BY created_at LIMIT 12",
+                "AND state<>'released' " + predicate + "ORDER BY created_at LIMIT 12",
                 id=bound["root_id"],
+                worker_root=physical["root_id"] if physical else None,
             )
             .mappings()
             .all()
@@ -859,6 +906,16 @@ def acquire(
             .all()
         )
         for old in active:
+            from marketlab.workers import local_root, mode
+
+            current = mode(connection)
+            physical = local_root(connection)
+            if (
+                current is not None
+                and current["mode"] == "distributed"
+                and (physical is None or old["worker_root_id"] != physical["root_id"])
+            ):
+                continue
             if native_children.dead(json.loads(old["native_identity"])):
                 execute(
                     connection,
@@ -945,6 +1002,14 @@ def root_for(engine: Engine, *, historical: bool = False) -> Path | None:
             ):
                 raise V2Error("unavailable", "Storage admission initialization required")
             return None
+        from marketlab.workers import local_root, mode
+
+        current = mode(connection)
+        if current is not None and current["mode"] == "distributed":
+            physical = local_root(connection)
+            if physical is None or not physical["ready"]:
+                raise V2Error("unavailable", "Worker physical root required")
+            return Path(physical["local_path"])
         return Path(row["root_path"])
 
 
@@ -974,6 +1039,13 @@ def inventory_owned(engine: Engine, ticket: dict[str, Any] | None, relative: str
     """Record exact immutable/drained file identities before an active path is retired."""
     if ticket is None:
         return 0
+    from marketlab.workers import inventory_owned as worker_inventory
+    from marketlab.workers import mode
+
+    with engine.connect() as connection:
+        current = mode(connection)
+    if current is not None and current["mode"] == "distributed":
+        return worker_inventory(engine, ticket, relative)
     root = Path(ticket["root"])
     target = safe_path(root, relative)
     if not target.exists():

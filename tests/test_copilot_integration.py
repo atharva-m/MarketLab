@@ -5,13 +5,14 @@ import copy
 import json
 import os
 import subprocess
-import sys
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
 
 import httpx
 import pytest
 import sqlalchemy as sa
+from owned_python import command as python_command
+from owned_python import script_command
 from test_copilot import INTENT, candidate, request
 from test_research_integration import published
 from test_research_integration import research_engine as research_engine
@@ -29,6 +30,10 @@ pytestmark = pytest.mark.integration
 
 @pytest.fixture
 def copilot_engine(research_engine):
+    from marketlab.db_transport import configure
+
+    # Match worker startup before tests deliberately borrow a competing session.
+    configure(research_engine)
     schema = research_engine.get_execution_options()["schema_translate_map"][None]
     with research_engine.begin() as connection:
         for name in ("copilot_requests", "copilot_revisions", "copilot_jobs", "copilot_attempts"):
@@ -309,7 +314,7 @@ async def test_http_and_cli_creation_inspection(copilot_engine, tmp_path):
     env = {**os.environ, "PGOPTIONS": "-c search_path=" + schema + ",public"}
     result = await asyncio.to_thread(
         subprocess.run,
-        [sys.executable, "-m", "marketlab.copilot_cli", "inspect", "--request", identity],
+        python_command("-m", "marketlab.copilot_cli", "inspect", "--request", identity),
         env=env,
         capture_output=True,
         text=True,
@@ -371,7 +376,7 @@ time.sleep(60)
     )
     process = await asyncio.to_thread(
         subprocess.Popen,
-        [sys.executable, str(script), str(payload), str(marker), phase, schema],
+        script_command(script, str(payload), str(marker), phase, schema),
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
     )
@@ -410,7 +415,7 @@ def test_actual_fresh_populated_migration_and_constraints(copilot_engine):
     try:
         for target in ("0005_research", "head"):
             outcome = subprocess.run(
-                [sys.executable, "-m", "alembic", "upgrade", target],
+                python_command("-m", "alembic", "upgrade", target),
                 env=env,
                 capture_output=True,
                 text=True,
@@ -428,7 +433,7 @@ def test_actual_fresh_populated_migration_and_constraints(copilot_engine):
             assert connection.scalar(sa.text(f'SELECT count(*) FROM "{schema}".trades')) == 1
             assert (
                 connection.scalar(sa.text(f'SELECT version_num FROM "{schema}".alembic_version'))
-                == "0012_v2_storage"
+                == "0013_v2_workers"
             )
             count = connection.scalar(
                 sa.text("""SELECT count(*) FROM pg_constraint c
@@ -463,22 +468,22 @@ async def test_cancel_during_session_lock_acquisition_releases_physical_lock(
 ):
     import threading
 
-    from sqlalchemy.engine import Connection
+    from marketlab import inference
 
     service, _, body = ready(copilot_engine, tmp_path)
     identity, _, _ = await service.create(body, "cancel-lock")
     current = store.claim(copilot_engine, identity)
-    original = Connection.scalar
+    original = inference._bounded_query
     entered, release = threading.Event(), threading.Event()
 
-    def delayed(connection, statement, *args, **kwargs):
-        result = original(connection, statement, *args, **kwargs)
-        if "pg_try_advisory_lock" in str(statement):
+    def delayed(connection, statement):
+        result = original(connection, statement)
+        if b"pg_try_advisory_lock" in statement:
             entered.set()
             release.wait(5)
         return result
 
-    monkeypatch.setattr(Connection, "scalar", delayed)
+    monkeypatch.setattr(inference, "_bounded_query", delayed)
     task = asyncio.create_task(service.infer(current, [body], None))
     for _ in range(100):
         if entered.is_set():
@@ -489,7 +494,7 @@ async def test_cancel_during_session_lock_acquisition_releases_physical_lock(
     release.set()
     with pytest.raises(asyncio.CancelledError):
         await task
-    monkeypatch.setattr(Connection, "scalar", original)
+    monkeypatch.setattr(inference, "_bounded_query", original)
     from sqlalchemy import create_engine
     from sqlalchemy.pool import NullPool
 

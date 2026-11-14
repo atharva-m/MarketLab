@@ -22,7 +22,7 @@ from marketlab.datasets.publication import _safe_path
 from marketlab.datasets.source import file_hash
 from marketlab.datasets.v2 import admission as storage_admission
 from marketlab.datasets.v2.common import V2Error
-from marketlab.inference import admission, release_current
+from marketlab.inference import admission, guarded_call, release_current, validate_current
 from marketlab.research import store as research_store
 from marketlab.research.service import ResearchService, transient_failure
 from marketlab.research.spec import ResearchError
@@ -417,10 +417,13 @@ class MemoService:
                         ),
                         current,
                     )
+                    await validate_current(self.engine)
                     await drained(lambda: store.reserve_call(self.engine, current), current)
                     try:
                         with self.latency.time():
-                            value, provenance = await self.model.generate(source, installed)
+                            value, provenance = await guarded_call(
+                                self.engine, self.model.generate(source, installed), current.lost
+                            )
                         render(value, source)
                     except ModelFailure as error:
                         if error.provenance is not None:

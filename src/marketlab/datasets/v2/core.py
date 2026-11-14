@@ -70,10 +70,28 @@ def transaction(engine: Engine) -> Iterator[Connection]:
         connection.execute(sa.text("SET LOCAL lock_timeout = '10s'"))
         connection.execute(sa.text("SET LOCAL statement_timeout = '15s'"))
         connection.execute(sa.text("SET LOCAL idle_in_transaction_session_timeout = '15s'"))
+        for name in ("worker_root_id", "worker_instance_id"):
+            value = connection.get_execution_options().get(name)
+            if value is not None:
+                connection.execute(
+                    sa.text("SELECT set_config(:name,:value,true)"),
+                    {"name": "marketlab." + name, "value": str(value)},
+                )
         yield connection
 
 
 def lock(connection: Connection, namespace: str) -> None:
+    if namespace.startswith("v2-space:"):
+        from marketlab.workers import local_root, mode
+
+        current = mode(connection)
+        if current is not None and current["mode"] == "distributed":
+            root = local_root(connection)
+            if root is None:
+                raise V2Error("unavailable", "Worker physical root is required")
+            lock(connection, "v2-shared-space:" + str(current["shared_root_id"]))
+            lock(connection, "v2-worker-space:" + str(root["root_id"]))
+            return
     key = int.from_bytes(hashlib.sha256(namespace.encode()).digest()[:8], "big", signed=True)
     connection.execute(sa.text("SELECT pg_advisory_xact_lock(:key)"), {"key": key})
 
@@ -248,6 +266,8 @@ def execution_identity() -> dict[str, str]:
     paths += sorted((project / "src/marketlab/storage").rglob("*.py"))
     paths += [project / "src/marketlab/config.py"]
     paths += [project / "src/marketlab/dataset_cli.py", project / "uv.lock"]
+    paths += [project / "src/marketlab/workers.py"]
+    paths += [project / "src/marketlab/db_transport.py"]
     inventory = {p.relative_to(project).as_posix(): sha256_file(p) for p in paths}
     return {"execution_sha256": digest(inventory), "lock_sha256": inventory["uv.lock"]}
 

@@ -27,6 +27,7 @@ secrets/
 /.ssh/
 /.netrc
 /_netrc
+marketlab.pem
 
 # R7 local browser workspace outputs
 frontend/node_modules/

@@ -34,6 +34,7 @@ from marketlab.research.service import ResearchService
 from marketlab.research.v2.routes import router as v2_research_router
 from marketlab.research.v2.service import ResearchService as V2ResearchService
 from marketlab.trades.routes import router as trade_router
+from marketlab.workers import bind_root
 from marketlab.workspace import WorkspaceService
 from marketlab.workspace import router as workspace_router
 
@@ -58,6 +59,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             pool_pre_ping=True,
             pool_timeout=settings.database_connect_timeout_seconds,
             connect_args=settings.database_connect_args,
+        )
+        await run_in_threadpool(
+            bind_root,
+            trade_engine,
+            settings.storage_path,
+            str(settings.worker_root_id) if settings.worker_root_id else None,
         )
         app.state.trade_engine = trade_engine
         app.state.bar_service = BarService(

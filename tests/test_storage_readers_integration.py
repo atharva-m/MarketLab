@@ -3,13 +3,13 @@
 import hashlib
 import shutil
 import subprocess
-import sys
 from concurrent.futures import ThreadPoolExecutor
 from threading import Barrier
 from types import SimpleNamespace
 from uuid import UUID
 
 import pytest
+from owned_python import command as python_command
 from test_memos_integration import ready as ready_legacy_memo
 from test_storage_store_integration import storage_engine as storage_engine  # noqa: F401
 from test_v2_browser_imports_integration import browser_engine as browser_engine  # noqa: F401
@@ -111,8 +111,7 @@ def test_explicit_recovery_proves_native_drain_before_releasing(storage_engine, 
     with storage_engine.connect() as connection:
         schema = execute(connection, "SELECT current_schema()").scalar_one()
     child = subprocess.run(
-        [
-            sys.executable,
+        python_command(
             "-c",
             """
 import sys
@@ -133,7 +132,7 @@ engine.dispose()
 """,
             schema,
             str(root),
-        ],
+        ),
         check=False,
         capture_output=True,
         text=True,

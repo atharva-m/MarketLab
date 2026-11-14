@@ -10,7 +10,7 @@ from prometheus_client import CollectorRegistry, Counter, Histogram
 
 from marketlab.datasets.publication import dataset_versions
 from marketlab.inference import INFERENCE_LOCK as INFERENCE_LOCK
-from marketlab.inference import admission, release_current
+from marketlab.inference import admission, guarded_call, release_current, validate_current
 from marketlab.research.service import ResearchService, transient_failure
 from marketlab.research.spec import ResearchError
 
@@ -105,10 +105,13 @@ class CopilotService:
                     None,
                     {"model_digest": installed, "execution": self.research.execution},
                 )
+                await validate_current(self.engine)
                 await asyncio.to_thread(store.reserve_call, self.engine, current)
                 with self.latency.time():
                     try:
-                        return await self.model.infer(turns, installed)
+                        return await guarded_call(
+                            self.engine, self.model.infer(turns, installed), current.lost
+                        )
                     except ModelFailure as error:
                         if error.provenance is not None:
                             error.provenance["execution"] = self.research.execution

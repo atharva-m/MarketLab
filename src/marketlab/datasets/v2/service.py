@@ -8,7 +8,7 @@ import time
 from contextlib import ExitStack
 from datetime import timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, TypedDict
 from uuid import uuid4
 
 from sqlalchemy.engine import Connection, Engine
@@ -41,6 +41,7 @@ from .core import (
     uid,
     wire,
 )
+from .ingestion_budget import DEFAULT_OUTPUT_BYTES, OfficialBudget
 
 
 def _reserve(
@@ -464,22 +465,30 @@ def _import_file(
 
 
 def _job_reservations(engine: Engine, root: Path, current: dict[str, Any], relative: str) -> None:
+    from .admission import mark_auxiliary_path
+
+    budget: OfficialBudget | None = current.get("_official_budget")
     with transaction(engine) as connection:
         _reserve(
             connection,
             root,
             relative + "/output",
-            4 * 1024**3 + 128 * 1024,
+            budget.output_bytes if budget else DEFAULT_OUTPUT_BYTES,
             "output",
             job=current,
             admission_ticket=current.get("_admission"),
         )
-        _reserve(connection, root, relative + "/scratch", 20 * 1024**3, "scratch", job=current)
+        _reserve(
+            connection,
+            root,
+            relative + "/scratch",
+            budget.scratch_bytes if budget else DEFAULT_LIMITS.scratch_bytes,
+            "scratch",
+            job=current,
+        )
     with transaction(engine) as connection:
         jobs.fence(connection, current)
     if current.get("_admission") is not None:
-        from .admission import mark_auxiliary_path
-
         mark_auxiliary_path(engine, current["_admission"], relative)
 
 
@@ -505,11 +514,31 @@ def _reconcile(
     )
 
 
+class _IngestionInterrupted(V2Error):
+    transient = True
+
+    def __init__(self) -> None:
+        super().__init__("ownership_lost", "Ingestion ownership lost")
+
+
+class _NormalizationOptions(TypedDict, total=False):
+    limits: Limits
+
+
+class _OfficialDownloadOptions(_NormalizationOptions, total=False):
+    expected_sha256: str
+
+
 def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, Any]:
+    from marketlab.storage import store as storage
+
     from .artifacts import verify_dataset
     from .normalize import normalize_source
     from .source import download_official
 
+    budget: OfficialBudget | None = current.get("_official_budget")
+    limits = budget.limits if budget else DEFAULT_LIMITS
+    limit_arguments: _NormalizationOptions = {"limits": limits} if budget else {}
     root = root.resolve()
     root.mkdir(parents=True, exist_ok=True)
     relative = f"attempts-v2/{current['job_id']}/{current['fencing_token']}/{uuid4()}"
@@ -520,7 +549,9 @@ def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, 
     def renew() -> None:
         while not done.wait(10):
             try:
-                if not jobs.heartbeat(engine, current):
+                from marketlab.workers import stop_requested
+
+                if stop_requested(engine) or not jobs.heartbeat(engine, current):
                     lost.set()
                     return
             except Exception:
@@ -531,13 +562,31 @@ def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, 
     renewer.start()
     source_pins = ExitStack()
     try:
+        if budget is not None and (
+            str(current["submission_id"]) != budget.submission_id
+            or current["source_mode"] != "official"
+            or current["import_id"] is not None
+            or current.get("_admission") is None
+        ):
+            raise V2Error("invalid_request", "Compact ingestion source or reservation changed")
         _job_reservations(engine, root, current, relative)
         attempt.mkdir(parents=True, exist_ok=False)
         snapshot = current["instrument_snapshot"]
         if current["source_mode"] == "official":
-            source = download_official(
-                attempt / "source", snapshot, current["trade_date"], cancelled=lost.is_set
+            source_arguments: _OfficialDownloadOptions = (
+                {"limits": limits, "expected_sha256": budget.source_sha256} if budget else {}
             )
+            source = download_official(
+                attempt / "source",
+                snapshot,
+                current["trade_date"],
+                cancelled=lost.is_set,
+                **source_arguments,
+            )
+            if budget is not None and source["source_sha256"] != budget.source_sha256:
+                raise V2Error(
+                    "integrity_failure", "Compact official archive differs from its pinned hash"
+                )
         else:
             with engine.connect() as connection:
                 imported = one(
@@ -588,6 +637,7 @@ def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, 
             metadata=source["metadata"],
             instrument=snapshot,
             cancelled=lost.is_set,
+            **limit_arguments,
         )
         identity = {
             "source_sha256": source["source_sha256"],
@@ -616,17 +666,18 @@ def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, 
         }
         for filename, value in (("quality.json", quality), ("manifest.json", manifest)):
             content = canonical_json(value)
-            if len(content) > 64 * 1024:
+            if len(content) > limits.metadata_bytes:
                 raise V2Error("integrity_failure", "Dataset metadata exceeds limit")
             with (output / filename).open("xb") as stream:
                 stream.write(content)
                 stream.flush()
                 os.fsync(stream.fileno())
-        verify_dataset(output, cancelled=lost.is_set)
+        verify_dataset(output, cancelled=lost.is_set, **limit_arguments)
         final_relative = f"datasets-v2/{version}"
-        from marketlab.storage import store as storage
-
-        if storage.current(engine):
+        shared_storage = storage.current(engine)
+        if budget is not None and not shared_storage:
+            raise V2Error("unavailable", "Compact ingestion requires managed object storage")
+        if shared_storage:
             return _publish_storage_dataset(
                 engine, root, current, output, attempt, lost, version, identity, quality, manifest
             )
@@ -721,6 +772,15 @@ def run_claim(engine: Engine, root: Path, current: dict[str, Any]) -> dict[str, 
                 break
         raise V2Error("integrity_failure", "Concurrent publication did not settle")
     except Exception as error:
+        if (
+            lost.is_set()
+            and isinstance(error, V2Error)
+            and error.code in {"cancelled", "ownership_lost"}
+        ):
+            # The locked job row in fail() distinguishes durable cancellation from local loss.
+            interruption = _IngestionInterrupted()
+            jobs.fail(engine, current, interruption)
+            raise interruption from error
         jobs.fail(engine, current, error)
         raise
     finally:
@@ -796,6 +856,13 @@ def _publish_storage_dataset(
                 manifest_sha256=digest(manifest),
             )
         scratch = sum(p.stat().st_size for p in attempt.rglob("*") if p.is_file())
+        # The registered object owns the logical output charge. Keep an exact
+        # footprint for the compact attempt's local output mirror.
+        local_output = (
+            sum(file.stat().st_size for file in output.iterdir() if file.is_file())
+            if current.get("_official_budget") is not None
+            else 0
+        )
         with transaction(engine) as connection:
             job = jobs.fence(connection, current)
             lock(connection, "v2-version:" + version)
@@ -835,9 +902,8 @@ def _publish_storage_dataset(
                 )
                 storage.register(connection, group, "v2_dataset", version)
             jobs.finish(connection, job, "succeeded", "succeeded", version=version)
-            # The verified storage object charge owns output bytes now.
-            _reconcile(connection, current, "output", 0)
-            _reconcile(connection, current, "scratch", scratch)
+            _reconcile(connection, current, "output", local_output)
+            _reconcile(connection, current, "scratch", scratch - local_output)
         return found if found is not None else manifest
     raise V2Error("integrity_failure", "Concurrent dataset publication did not settle")
 
@@ -850,6 +916,7 @@ def work(
     submission_id: str | None = None,
     wait_seconds: int = 0,
     stop_event: threading.Event | None = None,
+    budget: OfficialBudget | None = None,
 ) -> dict[str, int]:
     if (
         type(max_jobs) is not int
@@ -858,12 +925,18 @@ def work(
         or not 0 <= wait_seconds <= 3600
     ):
         raise V2Error("invalid_request", "Invalid worker bounds")
+    if budget is not None and (max_jobs != 1 or submission_id != budget.submission_id):
+        raise V2Error("invalid_request", "Compact ingestion requires exactly one selected job")
     end = time.monotonic() + wait_seconds
     attempted = succeeded = failed = 0
     stop = stop_event or threading.Event()
     expire_staging(engine, root)
     while attempted < max_jobs and not stop.is_set():
-        current = jobs.claim(engine, submission_id)
+        current = (
+            jobs.claim(engine, submission_id, budget=budget)
+            if budget is not None
+            else jobs.claim(engine, submission_id)
+        )
         if current is None:
             if time.monotonic() >= end:
                 break

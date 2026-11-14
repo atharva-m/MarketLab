@@ -7,12 +7,13 @@ from datetime import timedelta
 from typing import Any
 
 import httpx
+from sqlalchemy.exc import DBAPIError
 
 from marketlab.analytics.bars import BarError
 from marketlab.copilot.model import ModelFailure
 from marketlab.datasets.v2 import capacity, catalog
 from marketlab.datasets.v2.common import V2Error, canonical_json, digest
-from marketlab.inference import admission, release_current
+from marketlab.inference import admission, guarded_call, release_current, validate_current
 from marketlab.research.v2.service import ResearchService
 
 from . import durable, store
@@ -40,7 +41,11 @@ async def keep(engine: Any, current: durable.Claim, done: asyncio.Event) -> None
             return
         except TimeoutError:
             try:
-                if not await asyncio.to_thread(durable.heartbeat, engine, current):
+                from marketlab.workers import stop_requested
+
+                if stop_requested(engine) or not await asyncio.to_thread(
+                    durable.heartbeat, engine, current
+                ):
                     current.lost.set()
                     return
             except Exception:
@@ -178,13 +183,19 @@ class CopilotService:
                 async with asyncio.timeout(self.model.timeout):
                     identities = self.model.prepare(info["snapshot"], turns)
                     installed = await self.model.identify()
+                    await validate_current(self.engine)
                     number = await drained(
                         lambda: durable.reserve(self.engine, current, identities, installed),
                         current,
                     )
                     try:
-                        interpretation, provenance = await self.model.interpret(
-                            info["snapshot"], turns, installed, expected=identities
+                        interpretation, provenance = await guarded_call(
+                            self.engine,
+                            self.model.interpret(
+                                info["snapshot"], turns, installed, expected=identities
+                            ),
+                            current.lost,
+                            lambda: durable.validate_claim(self.engine, current),
                         )
                     except ModelFailure as error:
                         failed_provenance = error.provenance
@@ -271,7 +282,12 @@ class CopilotService:
             current.lost.set()
             raise
         except Exception as error:
-            transient = isinstance(error, (httpx.TransportError, TimeoutError))
+            transient = (
+                isinstance(error, (httpx.TransportError, TimeoutError))
+                or bool(getattr(error, "transient", False))
+                or (isinstance(error, DBAPIError) and error.connection_invalidated)
+            )
+            error_code = getattr(error, "code", None)
             if not current.lost.is_set():
                 try:
                     await drained(
@@ -279,6 +295,7 @@ class CopilotService:
                             self.engine,
                             current,
                             transient,
+                            error_code,
                         ),
                         current,
                     )

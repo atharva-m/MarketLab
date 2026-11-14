@@ -359,9 +359,16 @@ async def test_actual_venv_launcher_worker_marker_and_failure_cleanup(
             environment = os.environ.copy()
             # Bind only this fixture child to the existing locked packages; no
             # install or parent/global environment mutation is involved.
-            environment["PYTHONPATH"] = os.pathsep.join(
-                [str(project / "src"), sysconfig.get_path("purelib")]
+            # Python 3.13 -S can leave sys.prefix at the base interpreter.
+            # Resolve the existing venv's packages from the executable layout,
+            # matching the guarded bootstrap instead of importing base packages.
+            prefix = Path(sys.executable).absolute().parent
+            if prefix.name.casefold() in {"scripts", "bin"}:
+                prefix = prefix.parent
+            packages = sysconfig.get_path(
+                "purelib", vars={"base": str(prefix), "platbase": str(prefix)}
             )
+            environment["PYTHONPATH"] = os.pathsep.join([str(project / "src"), packages])
             return native_popen([base, *arguments[1:]], env=environment, **kwargs)
 
         monkeypatch.setattr(control.subprocess, "Popen", base_popen)

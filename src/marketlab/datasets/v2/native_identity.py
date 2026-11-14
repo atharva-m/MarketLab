@@ -160,6 +160,17 @@ def current() -> dict[str, Any]:
         raise V2Error("unavailable", "Native admission identity unavailable") from error
 
 
+def machine_identity() -> str:
+    """Stable OS installation proof, separate from operator-assigned host identity."""
+    if sys.platform == "win32":
+        value = _host_boot()[0]
+    else:
+        value = _linux_text("/etc/machine-id")
+        if re.fullmatch(r"[0-9a-fA-F]{32}", value) is None:
+            raise V2Error("unavailable", "Stable native machine proof unavailable")
+    return hashlib.sha256(canonical_json([platform.system(), value.lower()])).hexdigest()
+
+
 def child(pid: int) -> dict[str, Any]:
     """Independently birth-check one public pool PID and its direct parent."""
     if type(pid) is not int or not 0 < pid <= 2**32 - 1:

@@ -11,6 +11,7 @@ from uuid import uuid4
 
 import pytest
 import sqlalchemy as sa
+from owned_python import command as python_command
 from sqlalchemy.engine import Engine
 
 from marketlab.config import Settings
@@ -562,7 +563,6 @@ def test_publication_wins_concurrent_cancellation(
 def test_non_utc_registry_job_import_coverage_and_cli(v2_engine: Engine, tmp_path: Path) -> None:
     import json
     import subprocess
-    import sys
 
     from marketlab.datasets.v2 import catalog
 
@@ -583,7 +583,7 @@ def test_non_utc_registry_job_import_coverage_and_cli(v2_engine: Engine, tmp_pat
 
     def cli(arguments: list[str]) -> dict[str, Any]:
         completed = subprocess.run(
-            [sys.executable, "-m", "marketlab.dataset_cli", "v2", *arguments],
+            python_command("-m", "marketlab.dataset_cli", "v2", *arguments),
             env=env,
             capture_output=True,
             text=True,

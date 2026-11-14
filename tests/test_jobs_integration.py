@@ -4,7 +4,6 @@ import hashlib
 import importlib.util
 import json
 import subprocess
-import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import date, timedelta
@@ -17,6 +16,7 @@ import pytest
 import sqlalchemy as sa
 from alembic.migration import MigrationContext
 from alembic.operations import Operations
+from owned_python import command as python_command
 from sqlalchemy.engine import Engine
 from test_datasets import ROW, archive_files
 
@@ -468,7 +468,7 @@ def test_killed_process_recovers_without_incomplete_visibility(
     configuration = tmp_path / "process.json"
     configuration.write_text(json.dumps(config))
     process = subprocess.Popen(
-        [sys.executable, "-c", PROCESS, str(configuration)],
+        python_command("-c", PROCESS, str(configuration)),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )

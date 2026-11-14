@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
+from sqlalchemy.exc import DBAPIError
 
 from marketlab.copilot.model import ModelFailure
 from marketlab.copilot.v2 import durable
@@ -16,7 +17,7 @@ from marketlab.datasets.v2 import admission
 from marketlab.datasets.v2.common import V2Error, canonical_json, digest, safe_path, sha256_file
 from marketlab.datasets.v2.core import execute, lock, one, transaction
 from marketlab.inference import admission as inference_admission
-from marketlab.inference import release_current
+from marketlab.inference import guarded_call, release_current, validate_current
 from marketlab.research.v2.service import ResearchService
 from marketlab.storage.materialize import materialize_package, registered_members
 
@@ -336,12 +337,18 @@ class MemoService:
             if info["draft"] is None:
                 async with asyncio.timeout(self.model.timeout):
                     installed = await self.model.identify()
+                    await validate_current(self.engine)
                     number = await drained(
                         lambda: durable.reserve(self.engine, current, identities, installed),
                         current,
                     )
                     try:
-                        value, provenance = await self.model.generate(source, installed)
+                        value, provenance = await guarded_call(
+                            self.engine,
+                            self.model.generate(source, installed),
+                            current.lost,
+                            lambda: durable.validate_claim(self.engine, current),
+                        )
                         render(value, source)
                     except ModelFailure as error:
                         failed_provenance = error.provenance
@@ -374,12 +381,18 @@ class MemoService:
             current.lost.set()
             raise
         except Exception as error:
-            transient = isinstance(error, (httpx.TransportError, TimeoutError)) or bool(
-                getattr(error, "transient", False)
+            transient = (
+                isinstance(error, (httpx.TransportError, TimeoutError))
+                or bool(getattr(error, "transient", False))
+                or (isinstance(error, DBAPIError) and error.connection_invalidated)
             )
+            error_code = getattr(error, "code", None)
             if not current.lost.is_set():
                 try:
-                    await drained(lambda: durable.fail(self.engine, current, transient), current)
+                    await drained(
+                        lambda: durable.fail(self.engine, current, transient, error_code),
+                        current,
+                    )
                 except Exception:
                     current.lost.set()
         finally:

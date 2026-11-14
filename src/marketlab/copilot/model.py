@@ -109,6 +109,10 @@ class Ollama:
     async def bounded(
         self, client: httpx.AsyncClient, method: str, path: str, **kwargs: Any
     ) -> Any:
+        if method == "POST" and path == "/api/chat":
+            from marketlab.inference import before_dispatch
+
+            await before_dispatch()
         async with client.stream(method, path, **kwargs) as response:
             if response.status_code != 200:
                 raise ModelFailure(

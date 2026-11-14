@@ -3,7 +3,6 @@
 import asyncio
 import hashlib
 import subprocess
-import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import timedelta
@@ -12,6 +11,7 @@ from pathlib import Path
 import httpx
 import pytest
 import sqlalchemy as sa
+from owned_python import command as python_command
 from test_bars import FakeRedis
 from test_datasets import START as MICROS
 from test_datasets import archive_files
@@ -322,8 +322,7 @@ async def test_real_process_crash_recovery(research_engine, tmp_path, phase):
     marker = tmp_path / "phase.txt"
     process = await asyncio.to_thread(
         subprocess.Popen,
-        [
-            sys.executable,
+        python_command(
             "-c",
             "import sys;sys.path.insert(0,'tests');"
             "from test_research_integration import crash_child;crash_child(*sys.argv[1:])",
@@ -332,7 +331,7 @@ async def test_real_process_crash_recovery(research_engine, tmp_path, phase):
             run,
             phase,
             str(marker),
-        ],
+        ),
         stdout=subprocess.DEVNULL,
         stderr=subprocess.PIPE,
     )

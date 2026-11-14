@@ -89,6 +89,8 @@ class Scratch:
 
     used: int = 0
     directory: Path | None = None
+    limit: int | None = None
+    private: bool = False
 
 
 @dataclass
@@ -185,6 +187,13 @@ class FileCache:
                 raise VerificationCancelled("Artifact materialization stopped")
 
         check()
+        if scratch.private:
+            if scratch.directory is None:
+                raise V2Error("integrity_failure", "Private materialization must be owned")
+            with self._temporary_member(engine, root, ref, scratch, stopped, backend) as path:
+                check()
+                yield path
+            return
         key = (ref.sha256, ref.length)
         with self._lock:
             entry = None if _OPERATOR_VERIFY.get() else self._entries.get(key)
@@ -262,7 +271,7 @@ class FileCache:
         cancelled: Callable[[], bool],
         backend: Backend,
     ) -> Iterator[Path]:
-        if scratch.used + ref.length > SCRATCH:
+        if scratch.used + ref.length > (SCRATCH if scratch.limit is None else scratch.limit):
             raise V2Error("capacity_exceeded", "Artifact materialization exceeds scratch limit")
         scratch.used += ref.length
         try:
@@ -286,7 +295,7 @@ class FileCache:
         scratch: Scratch,
         cancelled: Callable[[], bool] | None,
     ) -> Iterator[None]:
-        if scratch.used + ref.length > SCRATCH:
+        if scratch.used + ref.length > (SCRATCH if scratch.limit is None else scratch.limit):
             raise V2Error("capacity_exceeded", "Artifact package view exceeds scratch limit")
         scratch.used += ref.length
         try:

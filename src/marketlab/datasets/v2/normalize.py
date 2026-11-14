@@ -19,6 +19,7 @@ import pyarrow as pa  # type: ignore[import-untyped]
 import pyarrow.parquet as pq  # type: ignore[import-untyped]
 
 from .common import DEFAULT_LIMITS, Limits, V2Error, date_value, utc_text
+from .ingestion_budget import COMPACT_LIMITS
 from .source import check_cancelled, checked_hash
 
 COLUMNS = [
@@ -414,12 +415,32 @@ def normalize_source(
     high: int | None = None
     bounds = day_bounds(day)
     cursor: sqlite3.Cursor | None = None
+    compact = limits is COMPACT_LIMITS
+    ordered_rows = "SELECT * FROM records ORDER BY id"
     try:
-        database.execute("PRAGMA journal_mode=OFF")
+        journal_mode = database.execute("PRAGMA journal_mode=OFF").fetchone()[0]
         database.execute("PRAGMA synchronous=OFF")
-        database.execute("PRAGMA temp_store=FILE")
+        if compact:
+            # Compact official ingest uses one rowid table. A PK-order scan
+            # needs no disk sort. Reject an unexpected planner or temp mode.
+            if journal_mode != "off":
+                raise V2Error("unavailable", "Compact normalization requires no SQLite journal")
+            database.execute("PRAGMA temp_store=MEMORY")
+            if database.execute("PRAGMA temp_store").fetchone()[0] != 2:
+                raise V2Error(
+                    "unavailable", "Compact normalization requires memory-only SQLite temp storage"
+                )
+            page_size = int(database.execute("PRAGMA page_size").fetchone()[0])
+            pages = limits.scratch_bytes // page_size
+            if (
+                not pages
+                or database.execute(f"PRAGMA max_page_count={pages}").fetchone()[0] != pages
+            ):
+                raise V2Error("capacity_exceeded", "Compact normalization page limit unavailable")
+        else:
+            database.execute("PRAGMA temp_store=FILE")
+            database.execute(f"PRAGMA max_page_count={max(1, limits.scratch_bytes // 4096)}")
         database.execute("PRAGMA cache_size=-8192")
-        database.execute(f"PRAGMA max_page_count={max(1, limits.scratch_bytes // 4096)}")
         database.execute(
             "CREATE TABLE records (id INTEGER PRIMARY KEY,ts INTEGER,p TEXT,q TEXT,v TEXT,"
             "maker INTEGER,best INTEGER)"
@@ -469,7 +490,12 @@ def normalize_source(
         database.commit()
         logical = hashlib.sha256()
         accepted = 0
-        cursor = database.execute("SELECT * FROM records ORDER BY id")
+        if compact and any(
+            "TEMP" in str(step[3]).upper()
+            for step in database.execute("EXPLAIN QUERY PLAN " + ordered_rows)
+        ):
+            raise V2Error("unavailable", "Compact normalization would require a temporary sort")
+        cursor = database.execute(ordered_rows)
         with parquet_path.open("xb") as raw_output:
             sink = _CappedFile(raw_output, limits.parquet_bytes)
             with pq.ParquetWriter(sink, SCHEMA, compression="zstd") as writer:
@@ -515,8 +541,13 @@ def normalize_source(
             validation="passed",
             coverage_note="Observed bounds do not establish gap-free exchange coverage.",
         )
+    except sqlite3.Error as error:
+        if compact and getattr(error, "sqlite_errorcode", None) == sqlite3.SQLITE_FULL:
+            raise V2Error(
+                "capacity_exceeded", "Compact normalization SQLite capacity exhausted"
+            ) from error
+        raise V2Error("invalid_request", "Invalid source or normalization artifact") from error
     except (
-        sqlite3.Error,
         pa.ArrowException,
         zipfile.BadZipFile,
         RuntimeError,

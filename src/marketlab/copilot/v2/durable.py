@@ -67,6 +67,9 @@ def claim(
     if target is not None:
         uid(target)
     with transaction(engine) as connection:
+        from marketlab.workers import guard
+
+        guard(connection, kind, digest(execution))
         join = "JOIN v2_copilot_requests r USING(request_id)" if kind == "copilot" else ""
         compatibility = "r.execution_sha256" if kind == "copilot" else "j.execution_sha256"
         selector = "j.request_id" if kind == "copilot" else "j.run_id"
@@ -109,6 +112,12 @@ def claim(
             )
             if row is None:
                 return None
+            if row.get("cancel_requested"):
+                _cancelled(connection, kind, row)
+                continue
+            from marketlab.workers import require_inputs
+
+            require_inputs(connection, kind, row)
             if row["state"] == "running":
                 execute(
                     connection,
@@ -178,7 +187,7 @@ def claim(
     return None
 
 
-def fence(connection: Connection, current: Claim) -> dict[str, Any]:
+def fence(connection: Connection, current: Claim, *, allow_cancel: bool = False) -> dict[str, Any]:
     prefix, ident = table(current.kind)
     if current.lost.is_set():
         raise V2Error("revision_conflict", "Inference ownership lost")
@@ -210,6 +219,8 @@ def fence(connection: Connection, current: Claim) -> dict[str, Any]:
     )
     if row is None:
         raise V2Error("revision_conflict", "Inference ownership lost")
+    if row.get("cancel_requested") and not allow_cancel:
+        raise V2Error("cancelled", "Inference cancellation requested")
     return row
 
 
@@ -218,13 +229,17 @@ def heartbeat(engine: Engine, current: Claim) -> bool:
     if current.lost.is_set():
         return False
     with transaction(engine) as connection:
+        from marketlab.workers import enabled
+
+        cancellation = "AND NOT cancel_requested " if enabled(connection) else ""
         return (
             execute(
                 connection,
                 f"UPDATE {prefix}_jobs SET lease_until=clock_timestamp()+interval '60 "
                 f"seconds',updated_at=clock_timestamp() WHERE {ident}=:id AND state='running' "
                 f"AND owner=:owner AND fencing_token=:token AND lease_until>clock_timestamp() "
-                f"RETURNING {ident}",
+                + cancellation
+                + f"RETURNING {ident}",
                 id=current.identity,
                 owner=current.owner,
                 token=current.token,
@@ -262,6 +277,11 @@ def reserve(engine: Engine, current: Claim, identities: dict[str, Any], model_di
             prompt=identities["prompt_sha256"],
         )
         return int(number)
+
+
+def validate_claim(engine: Engine, current: Claim) -> None:
+    with transaction(engine) as connection:
+        fence(connection, current)
 
 
 def checkpoint(
@@ -346,7 +366,7 @@ def complete(
     connection: Connection, current: Claim, state: str = "succeeded", error: str | None = None
 ) -> None:
     prefix, ident = table(current.kind)
-    fence(connection, current)
+    fence(connection, current, allow_cancel=state == "cancelled")
     execute(
         connection,
         f"UPDATE {prefix}_attempts SET "
@@ -368,25 +388,33 @@ def complete(
         delay=10 if current.attempt == 1 else 30,
         id=current.identity,
     )
-    if current.kind == "copilot" and state == "failed":
+    if current.kind == "copilot" and state in {"failed", "cancelled"}:
         execute(
             connection,
-            "UPDATE v2_copilot_revisions SET outcome='failed' WHERE request_id=:id AND "
+            "UPDATE v2_copilot_revisions SET outcome=:state WHERE request_id=:id AND "
             "revision=:revision",
             id=current.request_id,
             revision=current.revision,
+            state=state,
         )
 
 
-def fail(engine: Engine, current: Claim, transient: bool = False) -> None:
+def fail(
+    engine: Engine, current: Claim, transient: bool = False, error_code: str | None = None
+) -> None:
     with transaction(engine) as connection:
-        row = fence(connection, current)
+        row = fence(connection, current, allow_cancel=True)
+        if row.get("cancel_requested"):
+            complete(connection, current, "cancelled", "cancelled")
+            return
         retry = transient and current.attempt < 3 and row["model_calls"] < 2
         complete(
             connection,
             current,
             "retry_wait" if retry else "failed",
-            "unavailable" if transient else "execution_failed",
+            "upstream_continuation_unknown"
+            if error_code == "upstream_continuation_unknown"
+            else ("unavailable" if transient else "execution_failed"),
         )
 
 
@@ -396,3 +424,120 @@ def decoded(row: dict[str, Any], names: tuple[str, ...]) -> dict[str, Any]:
         raw = result.pop(name + "_json")
         result[name] = json.loads(raw) if raw is not None else None
     return result
+
+
+def _cancelled(connection: Connection, kind: str, row: dict[str, Any]) -> None:
+    prefix, ident = table(kind)
+    execute(
+        connection,
+        f"UPDATE {prefix}_attempts SET outcome='cancelled',"
+        f"ended_at=clock_timestamp(),error_code='cancelled' WHERE {ident}=:id "
+        "AND outcome='running'",
+        id=row[ident],
+    )
+    execute(
+        connection,
+        f"UPDATE {prefix}_jobs SET state='cancelled',cancel_requested=true,"
+        f"owner=NULL,lease_until=NULL,error_code='cancelled',updated_at=clock_timestamp() "
+        f"WHERE {ident}=:id",
+        id=row[ident],
+    )
+    if kind == "copilot":
+        execute(
+            connection,
+            "UPDATE v2_copilot_revisions SET outcome='cancelled' "
+            "WHERE request_id=:id AND revision=:revision",
+            id=row["request_id"],
+            revision=row["revision"],
+        )
+
+
+def cancel(
+    engine: Engine, kind: str, identity: str, expected_state_revision: int, key: str
+) -> dict[str, Any]:
+    """Receipt lock precedes request/run then job; replay precedes revision checks."""
+    from marketlab.datasets.v2.common import KEY
+    from marketlab.datasets.v2.core import lock, wire
+
+    prefix, ident = table(kind)
+    uid(identity)
+    if (
+        type(expected_state_revision) is not int
+        or expected_state_revision < 0
+        or not isinstance(key, str)
+        or not KEY.fullmatch(key)
+    ):
+        raise V2Error("invalid_request", "Invalid cancellation request")
+    request = {"kind": kind, "target": identity, "expected_state_revision": expected_state_revision}
+    operation, protocol = kind + "_cancel", "worker-cancellation-v1"
+    with transaction(engine) as connection:
+        lock(connection, f"v2-operation:{operation}:{protocol}:{key}")
+        old = one(
+            connection,
+            "SELECT * FROM v2_operations WHERE operation=:operation "
+            "AND protocol=:protocol AND idempotency_key=:key",
+            operation=operation,
+            protocol=protocol,
+            key=key,
+        )
+        if old is not None:
+            if old["request_sha256"] != digest(request):
+                raise V2Error("idempotency_conflict", "Cancellation key conflicts")
+            return dict(old["response_json"], replayed=True)
+        row = one(connection, f"SELECT * FROM {prefix}_jobs WHERE {ident}=:id", id=identity)
+        if row is None:
+            raise V2Error("not_found", "Inference job not found")
+        if kind == "copilot":
+            one(
+                connection,
+                "SELECT request_id FROM v2_copilot_requests WHERE request_id=:id FOR UPDATE",
+                id=row["request_id"],
+            )
+        else:
+            one(
+                connection,
+                "SELECT run_id FROM v2_research_runs WHERE run_id=:id FOR UPDATE",
+                id=identity,
+            )
+        row = one(
+            connection, f"SELECT * FROM {prefix}_jobs WHERE {ident}=:id FOR UPDATE", id=identity
+        )
+        assert row is not None
+        if row["state_revision"] != expected_state_revision:
+            raise V2Error("revision_conflict", "Job state revision is stale")
+        if row["state"] in {"succeeded", "failed", "cancelled"} or row["cancel_requested"]:
+            raise V2Error(
+                "revision_conflict", "Inference is terminal or cancellation is already requested"
+            )
+        if row["state"] == "running":
+            execute(
+                connection,
+                f"UPDATE {prefix}_jobs SET cancel_requested=true,updated_at=clock_timestamp() "
+                f"WHERE {ident}=:id",
+                id=identity,
+            )
+        elif row["state"] != "cancelled":
+            _cancelled(connection, kind, row)
+        result = one(
+            connection,
+            f"SELECT {ident},state,state_revision,cancel_requested FROM {prefix}_jobs "
+            f"WHERE {ident}=:id",
+            id=identity,
+        )
+        assert result is not None
+        result = wire(result)
+        encoded = canonical_json(result)
+        if len(encoded) > 65536:
+            raise V2Error("integrity_failure", "Cancellation receipt exceeds bound")
+        execute(
+            connection,
+            "INSERT INTO v2_operations VALUES(:operation,:protocol,:key,:sha,:id,"
+            "CAST(:response AS jsonb),clock_timestamp())",
+            operation=operation,
+            protocol=protocol,
+            key=key,
+            sha=digest(request),
+            id=identity,
+            response=encoded.decode(),
+        )
+        return dict(result, replayed=False)

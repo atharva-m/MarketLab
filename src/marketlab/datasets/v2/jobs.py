@@ -5,6 +5,7 @@ from typing import Any, cast
 from uuid import uuid4
 
 from sqlalchemy.engine import Connection, Engine
+from sqlalchemy.exc import DBAPIError
 
 from .common import V2Error, canonical_json, digest
 from .core import (
@@ -21,6 +22,7 @@ from .core import (
     uid,
     wire,
 )
+from .ingestion_budget import CHECKSUM_BYTES, OfficialBudget
 
 
 def create_submission(
@@ -174,10 +176,44 @@ def finish(
     project(connection, job, state, error)
 
 
-def claim(engine: Engine, submission_id: str | None = None) -> dict[str, Any] | None:
+def _check_compact_job(job: dict[str, Any], budget: OfficialBudget) -> None:
+    if (
+        str(job["submission_id"]) != budget.submission_id
+        or job["source_mode"] != "official"
+        or job["import_id"] is not None
+        or job["child_count"] != 1
+        or job["actual_count"] != 1
+    ):
+        raise V2Error("invalid_request", "Compact ingestion requires one exact official job")
+
+
+def claim(
+    engine: Engine, submission_id: str | None = None, *, budget: OfficialBudget | None = None
+) -> dict[str, Any] | None:
     from . import admission
 
     root = admission.root_for(engine)
+    if budget is not None:
+        if root is None or submission_id != budget.submission_id:
+            raise V2Error("invalid_request", "Compact ingestion requires the selected bound root")
+        from marketlab.config import Settings
+        from marketlab.storage import store as storage
+
+        if Settings().storage_backend != "s3" or not storage.current(engine):
+            raise V2Error("unavailable", "Compact ingestion requires managed object storage")
+        with engine.connect() as connection:
+            job = one(
+                connection,
+                "SELECT j.submission_id,j.source_mode,j.import_id,s.child_count,"
+                "(SELECT count(*) FROM v2_ingestion_jobs WHERE submission_id=s.submission_id) "
+                "AS actual_count "
+                "FROM v2_ingestion_jobs j JOIN v2_ingestion_submissions s USING(submission_id) "
+                "WHERE j.submission_id=:id ORDER BY j.job_id LIMIT 1",
+                id=uid(budget.submission_id),
+            )
+        if job is None:
+            raise V2Error("not_found", "Compact official ingestion job is missing")
+        _check_compact_job(job, budget)
     ticket = None
     if root is not None:
         try:
@@ -185,15 +221,23 @@ def claim(engine: Engine, submission_id: str | None = None) -> dict[str, Any] | 
                 engine,
                 root,
                 "ingestion",
-                admission.OUTPUT_LIMIT + 512 * 1024**2 + 4096,
-                physical_bytes=admission.OUTPUT_LIMIT + 20 * 1024**3,
+                budget.logical_bytes
+                if budget
+                else admission.OUTPUT_LIMIT + 512 * 1024**2 + CHECKSUM_BYTES,
+                physical_bytes=budget.physical_bytes
+                if budget
+                else admission.OUTPUT_LIMIT + 20 * 1024**3,
             )
         except V2Error as error:
             if error.code == "capacity_exceeded":
                 return None
             raise
     try:
-        result = _claim(engine, submission_id, ticket)
+        result = (
+            _claim(engine, submission_id, ticket, budget=budget)
+            if budget is not None
+            else _claim(engine, submission_id, ticket)
+        )
     except BaseException:
         admission.finish(engine, ticket, 0)
         raise
@@ -201,14 +245,23 @@ def claim(engine: Engine, submission_id: str | None = None) -> dict[str, Any] | 
         admission.finish(engine, ticket, 0)
     else:
         result["_admission"] = ticket
+        if budget is not None:
+            result["_official_budget"] = budget
     return result
 
 
 def _claim(
-    engine: Engine, submission_id: str | None, ticket: dict[str, Any] | None
+    engine: Engine,
+    submission_id: str | None,
+    ticket: dict[str, Any] | None,
+    *,
+    budget: OfficialBudget | None = None,
 ) -> dict[str, Any] | None:
     fingerprint = execution_identity()["execution_sha256"]
     with transaction(engine) as connection:
+        from marketlab.workers import guard
+
+        guard(connection, "ingestion", fingerprint)
         values: dict[str, Any] = {"execution": fingerprint, "submission": None}
         extra = ""
         if submission_id is not None:
@@ -224,16 +277,20 @@ def _claim(
             "AND s.contract='daily-ingestion-v2'" + extra
         )
         # Lock a canonical import before its job; official jobs have no import.
-        candidate = one(
-            connection,
-            "SELECT i.import_id "
-            "FROM v2_canonical_imports i JOIN v2_ingestion_jobs j USING(import_id) "
-            "JOIN v2_ingestion_submissions s ON s.submission_id=j.submission_id WHERE "
-            + eligible
-            + " AND s.execution_sha256=:execution"
-            + extra
-            + " ORDER BY j.created_at,j.job_id LIMIT 1 FOR UPDATE OF i SKIP LOCKED",
-            **values,
+        candidate = (
+            None
+            if budget is not None
+            else one(
+                connection,
+                "SELECT i.import_id "
+                "FROM v2_canonical_imports i JOIN v2_ingestion_jobs j USING(import_id) "
+                "JOIN v2_ingestion_submissions s ON s.submission_id=j.submission_id WHERE "
+                + eligible
+                + " AND s.execution_sha256=:execution"
+                + extra
+                + " ORDER BY j.created_at,j.job_id LIMIT 1 FOR UPDATE OF i SKIP LOCKED",
+                **values,
+            )
         )
         if candidate is not None:
             job = one(
@@ -250,6 +307,22 @@ def _claim(
             )
         if job is None:
             return None
+        if budget is not None:
+            # The exact normal work-row lock still governs target eligibility.
+            if ticket is None or submission_id != budget.submission_id:
+                raise V2Error("invalid_request", "Compact ingestion requires its admission ticket")
+            sizes = (
+                execute(
+                    connection,
+                    "SELECT s.child_count, (SELECT count(*) FROM v2_ingestion_jobs "
+                    "WHERE submission_id=s.submission_id) AS actual_count "
+                    "FROM v2_ingestion_submissions s WHERE s.submission_id=:id",
+                    id=job["submission_id"],
+                )
+                .mappings()
+                .one()
+            )
+            _check_compact_job({**job, **sizes}, budget)
         # Import lock acquisition does not prevent an independent heartbeat.
         # Recheck eligibility after the job row is locked, using current DB time.
         eligible_now = execute(
@@ -269,6 +342,9 @@ def _claim(
         if job["cancel_requested"]:
             finish(connection, job, "cancelled", "cancelled")
             return None
+        from marketlab.workers import require_inputs
+
+        require_inputs(connection, "ingestion", job)
         if job["state"] == "running":
             execute(
                 connection,
@@ -360,7 +436,9 @@ def fail(engine: Engine, current: dict[str, Any], error: Exception) -> None:
         if job["cancel_requested"]:
             finish(connection, job, "cancelled", "cancelled")
             return
-        transient = bool(getattr(error, "transient", False))
+        transient = bool(getattr(error, "transient", False)) or (
+            isinstance(error, DBAPIError) and error.connection_invalidated
+        )
         retry = transient and job["attempt_count"] < 3
         delay = max(
             10 if job["attempt_count"] == 1 else 30,

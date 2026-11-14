@@ -496,6 +496,11 @@ registered instruments and dates.
 
 ## Phase 6 — Shared artifact storage
 
+Current status: acceptance and publication passed with the qualifications at the
+top of this roadmap. The deferred-S3 paragraph below is a historical checkpoint.
+Outcome-documentation SHA `57e4f6eae193e78adce3b2e3f0ae814fde6ba7cd` also passed
+[exact-SHA CI](https://github.com/atharva-m/MarketLab/actions/runs/42287703042).
+
 Independent pre-code review passed. The [contract](docs/v2/phase-6-storage.md)
 binds this phase to the Phase 1 storage protocol and the four mandatory Phase 6
 gates. Implementation and local acceptance checks have passed independent review,
@@ -522,6 +527,89 @@ interrupted-upload recovery, duplicate publication handling, storage-outage
 behavior, and retained-artifact migration rehearsal.
 
 ## Phase 7 — Distributed worker execution
+
+**Current status (November 14, 2026).** Independent review accepted the
+qualified two-host results and final owned-resource closeout. P7-02 reached
+39 of 39 cases with 94 reserved worker starts. The five compact workload
+pairs used the original fixtures and made zero additional model calls.
+The earlier qualified P7-01 and all six P7-04 results were reused, along with
+all eight P7-03 functional scenarios. The campaign retains 23 durable model
+calls. The separately verified normal model-owner drain and the exact SSH
+process absence checks close the native lifecycle scope. Original failures,
+including case 11's outer SSH timeout, remain recorded.
+
+The final backup passed independent restore and preserved all 32 prior
+databases. The exact owned PostgreSQL container stopped cleanly with zero
+clients and its volume retained. Original endpoints and the README GIF
+matched. The preservation comparison remains qualified by three earlier
+service start-time changes, two approved dependency differences and two
+unverified dotenv files. Phase 8, commit and push require separate authority.
+See [verification](docs/v2/phase-7-verification.md).
+
+**Historical implementation and campaign checkpoints**
+
+Implementation authorized November 6, 2026 under the reviewed contract through
+the prescribed coder/reviewer workflow. Required checks and honest prerequisite
+reporting are authorized; commit/push and original-service rollout remain excluded.
+Implementation and qualified local verification are complete through independent
+review; exact outcomes, retained failures and source qualifications are recorded in
+[verification](docs/v2/phase-7-verification.md). The initial EC2 campaign
+verified two-way SSH transfer under a host-specific disk-floor waiver. The
+replacement passed the ordinary disk floor and S3 policy readback. After the
+user attached scoped writer access to both identities, a fresh S3 transfer
+passed exact version and byte readback in both directions. The owned database,
+private reverse route and both application workers then qualified. All six
+visibility scenarios have actual two-host observations across reviewed runner
+versions and passed independent P7-04 review. The qualified model-free
+subset verified twenty numerical cases, ten on each host, a canonical seed,
+a separate canonical import and a genuine official archive. The original
+timed-out invocation and all twenty-five reservations remain retained.
+Separate reads verified the existing official projection without a new
+claim. One competing-claim case verified a single EC2 winner, a Windows
+attempt-zero observation and matching versioned readbacks. The original
+observer failure remains retained. The first actual copilot worker spent and
+checkpointed one pinned-model call, then failed before publishing a handoff.
+The same job recovered on attempt two with no additional call. Both hosts
+verified its single queued handoff. The Windows memo committed with one call
+and passed exact EC2 readback. Independent review accepted source-qualified
+P7-01. The memo owner's native drain passed. The earlier copilot owner's forced
+cleanup and failed drain remain retained. All three after-claim fault
+repetitions verified primary expiry, peer commit and both hosts' package
+readback. A read-only continuation resolved the group observer's failed ticket
+assertion. Normal owning-root recovery preserved bytes and logical charges.
+The six model-reservation fault repetitions verified primary expiry and
+opposite-host commits with matching semantic readback. Nine new durable
+reservations and two historical calls remain accounted for. The isolated
+model owner drained normally. Upstream HTTP counts and continuation remain
+unverified for this group.
+The first verified-before-commit fault verified an opposite-host commit on
+attempt two, four retained unattached versions and matching package reads.
+The original group timed out at its root review. An additive normal recovery
+enrolled seven covered files and preserved the logical charge without another
+claim. The continuation ran the five untouched cases. The six qualified
+publication faults include three opposite-host commits after a verified-output
+loss and three post-commit peers that made zero new attempts. Both hosts
+verified the packages. P7-02 has 16 of 39 qualified cases. The next
+worker-death observer failed before its fault boundary. Its job remains
+queued and unclaimed. Both spent starts remain retained, bringing the
+cumulative reservation count to 34. The 11 durable model calls remain retained.
+The bounded worker-death and lease-expiry continuation qualified all six
+cases and preserved the original failed invocation. Both hosts verified the
+packages and normal owning-root recovery preserved files and charges.
+P7-02 now has 22 of 39 qualified cases and 46 cumulative reserved starts.
+The reviewed campaign bound of 80 includes the two earlier failed starts.
+Remaining P7-02 faults, P7-03 model contention and final closeout remain
+incomplete.
+No commit or push occurred. The pre-code checkpoint below remains historical.
+
+Historical pre-code checkpoint (November 6, 2026): design independently reviewed and passed;
+blocking findings resolved. Exact reviewed hash and outcome are in the contract.
+The [minimal worker contract](docs/v2/phase-7-workers.md) defines shared versus
+host-local capacity, worker compatibility/lifecycle, cancellation and recovery,
+inference admission, bounded monitoring and P7-01 through P7-04 acceptance.
+Reuse existing queues, services, storage and CLIs. That checkpoint authorized
+documentation only; subsequent Phase 7 implementation authority superseded its
+runtime restriction. Commit and push remain excluded.
 
 Execute independent jobs across multiple hosts.
 

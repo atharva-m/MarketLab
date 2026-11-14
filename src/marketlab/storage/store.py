@@ -29,7 +29,7 @@ from .backend import (
     new_prefix,
 )
 
-HEAD = "0012_v2_storage"
+HEAD = "0013_v2_workers"
 TABLES = ("v2_storage_packages", "v2_storage_copies", "v2_storage_objects")
 OWNERS = {
     "legacy_dataset": "legacy_dataset_id",
@@ -92,7 +92,7 @@ def enabled(connection: Connection) -> bool:
         revision = execute(
             connection, "SELECT version_num FROM alembic_version"
         ).scalar_one_or_none()
-        if revision == HEAD:
+        if revision in {"0012_v2_storage", HEAD}:
             raise V2Error("integrity_failure", "Storage ledger is missing")
     return False
 
@@ -156,6 +156,15 @@ def snapshot(connection: Connection, owner: str, owner_id: str) -> Snapshot:
     if not rows:
         raise V2Error("integrity_failure", "Artifact package registration missing")
     first = rows[0]
+    from marketlab.workers import mode
+
+    worker_mode = mode(connection)
+    if (
+        worker_mode is not None
+        and worker_mode["mode"] == "distributed"
+        and (first["legacy_local"] or first["copy_alias"] == "local" or first["copy_id"] is None)
+    ):
+        raise V2Error("unavailable", "Local artifact requires explicit verified object copy")
     if first["copy_id"] is None:
         if first["legacy_local"] and len(rows) == 1:
             return Snapshot(first["package_id"], None, None)

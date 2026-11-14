@@ -157,9 +157,14 @@ def inspect(engine: Engine, request_id: str) -> dict[str, Any]:
         ):
             raise V2Error("integrity_failure", "Copilot stored identity mismatch")
         history = []
+        from marketlab.workers import enabled
+
+        extra = ",j.state_revision,j.cancel_requested" if enabled(connection) else ""
         for revision in execute(
             connection,
-            "SELECT r.*,j.job_id,j.state,j.attempt_count,j.model_calls,j.error_code FROM "
+            "SELECT r.*,j.job_id,j.state,j.attempt_count,j.model_calls,j.error_code"
+            + extra
+            + " FROM "
             "v2_copilot_revisions r JOIN v2_copilot_jobs j USING(request_id,revision) WHERE "
             "request_id=:id ORDER BY revision",
             id=request_id,

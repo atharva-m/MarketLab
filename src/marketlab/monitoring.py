@@ -23,11 +23,59 @@ from sqlalchemy.engine import Engine
 
 from marketlab.config import Settings
 
-STATES = {
+STATES: dict[str, tuple[str, ...]] = {
     "ingestion": ("queued", "running", "retry_wait", "succeeded", "failed"),
     "research": ("queued", "running", "retry_wait", "succeeded", "failed"),
     "copilot": ("queued", "running", "retry_wait", "completed", "failed"),
     "memo": ("queued", "running", "retry_wait", "ready", "failed"),
+}
+V2_TABLES = {
+    "v2_ingestion": "v2_ingestion_jobs",
+    "v2_research": "v2_research_runs",
+    "v2_copilot": "v2_copilot_jobs",
+    "v2_memo": "v2_memo_jobs",
+}
+STATES.update(
+    {
+        kind: ("queued", "running", "retry_wait", "succeeded", "failed", "cancelled")
+        for kind in V2_TABLES
+    }
+)
+_KINDS = {"ingestion", "research", "copilot", "memo"}
+DETAIL_LABELS = {
+    "workers": ({"all"}, {"starting", "ready", "draining", "stopped", "stale"}),
+    "reserved_bytes": (
+        {"upload", "ingestion", "research", "legacy", "memo", "scratch", "cache"},
+        {"pending", "active", "draining", "reserved", "retained", "released"},
+    ),
+    "lease_losses": (_KINDS, {"expired"}),
+    "failures": (
+        _KINDS,
+        {
+            "storage_denied",
+            "storage_unavailable",
+            "integrity_failure",
+            "capacity_exceeded",
+            "upstream_continuation_unknown",
+            "other",
+        },
+    ),
+    "compute_seconds": (
+        _KINDS,
+        {
+            "running",
+            "succeeded",
+            "retry_wait",
+            "expired",
+            "failed",
+            "cancelled",
+            "transient",
+            "permanent",
+        },
+    ),
+    "model_admission": ({"inference"}, {"held"}),
+    "dependency_age": ({"model", "storage"}, {"verified"}),
+    "dependency_available": ({"model", "storage"}, {"recent_success", "unknown"}),
 }
 TABLES = {
     "ingestion": "ingestion_jobs",
@@ -53,6 +101,7 @@ QUERY = sa.text(
 class JobSnapshot:
     observed: float
     values: tuple[tuple[str, str, int, int, int, float], ...]
+    details: tuple[tuple[str, str, str, float], ...] | None = None
 
 
 class DurableCollector:
@@ -64,7 +113,11 @@ class DurableCollector:
         self.snapshot: JobSnapshot | None = None
         self.available = False
 
-    def update(self, values: tuple[tuple[str, str, int, int, int, float], ...]) -> None:
+    def update(
+        self,
+        values: tuple[tuple[str, str, int, int, int, float], ...],
+        details: tuple[tuple[str, str, str, float], ...] | None = None,
+    ) -> None:
         if any(kind not in STATES or state not in STATES[kind] for kind, state, *_ in values):
             raise ValueError("unknown durable metric label")
         if any(
@@ -72,8 +125,17 @@ class DurableCollector:
             for _, _, count, attempts, retried, oldest in values
         ):
             raise ValueError("invalid durable metric value")
+        if details is not None and any(
+            name not in DETAIL_LABELS
+            or kind not in DETAIL_LABELS[name][0]
+            or state not in DETAIL_LABELS[name][1]
+            or value < 0
+            or not math.isfinite(value)
+            for name, kind, state, value in details
+        ):
+            raise ValueError("invalid worker metric value or label")
         with self.lock:
-            self.snapshot = JobSnapshot(self.clock(), values)
+            self.snapshot = JobSnapshot(self.clock(), values, details)
             self.available = True
 
     def fail(self) -> None:
@@ -88,6 +150,13 @@ class DurableCollector:
         status = GaugeMetricFamily("marketlab_durable_available", "Fresh durable job snapshot")
         status.add_metric([], int(fresh))
         yield status
+        workers_available = GaugeMetricFamily(
+            "marketlab_v2_workers_available", "Fresh worker ledger snapshot"
+        )
+        workers_available.add_metric(
+            [], int(fresh and snapshot is not None and snapshot.details is not None)
+        )
+        yield workers_available
         if age is not None:
             observed = GaugeMetricFamily(
                 "marketlab_durable_snapshot_age_seconds", "Age of last successful job snapshot"
@@ -110,6 +179,8 @@ class DurableCollector:
         )
         counts = {(kind, state): count for kind, state, count, *_ in snapshot.values}
         for kind, states in STATES.items():
+            if kind in V2_TABLES and not any(row[0] == kind for row in snapshot.values):
+                continue
             for state in states:
                 jobs.add_metric([kind, state], counts.get((kind, state), 0))
             rows = [row for row in snapshot.values if row[0] == kind]
@@ -120,6 +191,50 @@ class DurableCollector:
         yield attempts
         yield retried
         yield oldest
+        if snapshot.details is not None:
+            families = {
+                "workers": GaugeMetricFamily(
+                    "marketlab_v2_workers", "Registered worker freshness", labels=["kind", "state"]
+                ),
+                "reserved_bytes": GaugeMetricFamily(
+                    "marketlab_v2_reserved_bytes",
+                    "Conservative physical/data reservations",
+                    labels=["kind", "state"],
+                ),
+                "lease_losses": GaugeMetricFamily(
+                    "marketlab_v2_lease_losses",
+                    "Retained expired attempts",
+                    labels=["kind", "reason"],
+                ),
+                "failures": GaugeMetricFamily(
+                    "marketlab_v2_failures",
+                    "Retained bounded failure reasons",
+                    labels=["kind", "reason"],
+                ),
+                "compute_seconds": GaugeMetricFamily(
+                    "marketlab_v2_compute_seconds",
+                    "Observed durable attempt durations",
+                    labels=["kind", "state"],
+                ),
+                "model_admission": GaugeMetricFamily(
+                    "marketlab_v2_model_admission",
+                    "Database inference admission lock",
+                    labels=["kind", "state"],
+                ),
+                "dependency_age": GaugeMetricFamily(
+                    "marketlab_v2_dependency_observation_age_seconds",
+                    "Age of last verified storage copy or pinned model call reservation",
+                    labels=["kind", "state"],
+                ),
+                "dependency_available": GaugeMetricFamily(
+                    "marketlab_v2_dependency_observation",
+                    "Recent successful observation or explicitly unknown availability",
+                    labels=["kind", "state"],
+                ),
+            }
+            for name, kind, state, value in snapshot.details:
+                families[name].add_metric([kind, state], value)
+            yield from families.values()
 
 
 def collect_jobs(engine: Engine) -> tuple[tuple[str, str, int, int, int, float], ...]:
@@ -128,7 +243,7 @@ def collect_jobs(engine: Engine) -> tuple[tuple[str, str, int, int, int, float],
         connection.exec_driver_sql("SET TRANSACTION READ ONLY")
         connection.exec_driver_sql("SET LOCAL statement_timeout = '1000ms'")
         connection.exec_driver_sql("SET LOCAL lock_timeout = '250ms'")
-        return tuple(
+        values = tuple(
             (
                 str(row.kind),
                 str(row.state),
@@ -139,6 +254,129 @@ def collect_jobs(engine: Engine) -> tuple[tuple[str, str, int, int, int, float],
             )
             for row in connection.execute(QUERY)
         )
+        for kind, table in V2_TABLES.items():
+            if connection.scalar(sa.text("SELECT to_regclass(:name)"), {"name": table}) is None:
+                continue
+            rows = tuple(
+                (
+                    kind,
+                    str(row.state),
+                    int(row.jobs),
+                    int(row.attempts),
+                    int(row.retried),
+                    float(row.oldest),
+                )
+                for row in connection.execute(
+                    sa.text(
+                        "SELECT state,count(*) jobs,coalesce(sum(attempt_count),0) attempts,"
+                        "count(*) FILTER(WHERE attempt_count>1) retried,coalesce(max(CASE WHEN "
+                        "state IN ('queued','retry_wait') THEN greatest(0,extract(epoch FROM "
+                        f"clock_timestamp()-created_at)) END),0) oldest FROM {table} GROUP BY state"
+                    )
+                )
+            )
+            values += rows or ((kind, "queued", 0, 0, 0, 0.0),)
+        return values
+
+
+def collect_worker_details(engine: Engine) -> tuple[tuple[str, str, str, float], ...] | None:
+    from marketlab.inference import INFERENCE_LOCK
+
+    with engine.begin() as connection:
+        connection.exec_driver_sql("SET TRANSACTION READ ONLY")
+        connection.exec_driver_sql("SET LOCAL statement_timeout='1000ms'")
+        connection.exec_driver_sql("SET LOCAL lock_timeout='250ms'")
+        if connection.scalar(sa.text("SELECT to_regclass('v2_worker_mode')")) is None:
+            return None
+        rows: list[tuple[str, str, str, float]] = []
+        for row in connection.execute(
+            sa.text(
+                "SELECT CASE WHEN state IN ('starting','ready','draining') "
+                "AND heartbeat_at<=clock_timestamp()-interval '30 seconds' "
+                "THEN 'stale' ELSE state END state,"
+                "count(*) value FROM v2_worker_instances GROUP BY 1"
+            )
+        ):
+            rows.append(("workers", "all", str(row.state), float(row.value)))
+        for row in connection.execute(
+            sa.text(
+                "SELECT role,state,sum(physical_bytes) value "
+                "FROM v2_admission_tickets WHERE state<>'released' GROUP BY role,state"
+            )
+        ):
+            rows.append(("reserved_bytes", str(row.role), str(row.state), float(row.value)))
+        for row in connection.execute(
+            sa.text(
+                "SELECT CASE WHEN materialization_native_identity IS NULL "
+                "THEN 'scratch' ELSE 'cache' END kind,state,"
+                "sum(scratch_bytes+spill_bytes+output_bytes) value "
+                "FROM v2_research_reservations WHERE state<>'released' GROUP BY 1,state"
+            )
+        ):
+            rows.append(("reserved_bytes", str(row.kind), str(row.state), float(row.value)))
+        for kind in ("ingestion", "research", "copilot", "memo"):
+            for row in connection.execute(
+                sa.text(
+                    f"SELECT outcome,count(*) count,coalesce(sum(greatest(0,"
+                    "extract(epoch FROM ended_at-started_at))),0) seconds "
+                    f"FROM v2_{kind}_attempts GROUP BY outcome"
+                )
+            ):
+                rows.append(("compute_seconds", kind, str(row.outcome), float(row.seconds)))
+                if row.outcome == "expired":
+                    rows.append(("lease_losses", kind, "expired", float(row._mapping["count"])))
+            table = "v2_research_runs" if kind == "research" else f"v2_{kind}_jobs"
+            for row in connection.execute(
+                sa.text(
+                    "SELECT CASE WHEN error_code IN "
+                    "('storage_denied','storage_unavailable','integrity_failure','capacity_exceeded',"
+                    "'upstream_continuation_unknown') THEN error_code ELSE 'other' END reason,"
+                    "count(*) value "
+                    f"FROM {table} WHERE error_code IS NOT NULL GROUP BY 1"
+                )
+            ):
+                rows.append(("failures", kind, str(row.reason), float(row.value)))
+        key = INFERENCE_LOCK & ((1 << 64) - 1)
+        locked = connection.scalar(
+            sa.text(
+                "SELECT count(*) FROM pg_locks WHERE locktype='advisory' "
+                "AND granted AND classid::bigint=:high AND objid::bigint=:low AND objsubid=1"
+            ),
+            {"high": key >> 32, "low": key & ((1 << 32) - 1)},
+        )
+        rows.append(("model_admission", "inference", "held", float(locked)))
+        for kind, query in (
+            (
+                "model",
+                "SELECT max(reserved_at) FROM (SELECT reserved_at FROM v2_copilot_calls "
+                "UNION ALL SELECT reserved_at FROM v2_memo_calls) c",
+            ),
+            (
+                "storage",
+                "SELECT max(verified_at) FROM v2_storage_copies WHERE backend_alias<>'local'",
+            ),
+        ):
+            observed = connection.scalar(
+                sa.text(
+                    "SELECT CASE WHEN observed IS NULL THEN NULL ELSE "
+                    "greatest(0,extract(epoch FROM clock_timestamp()-observed)) END FROM ("
+                    + query
+                    + ") q(observed)"
+                )
+            )
+            if observed is not None:
+                rows.append(("dependency_age", kind, "verified", float(observed)))
+            rows.append(
+                (
+                    "dependency_available",
+                    kind,
+                    "recent_success"
+                    if observed is not None and float(observed) <= 30
+                    else "unknown",
+                    1.0,
+                )
+            )
+        return tuple(rows)
 
 
 def collector_engine(settings: Settings) -> Engine:
@@ -170,7 +408,9 @@ class DurablePoller:
         try:
             while not self.stop.is_set():
                 try:
-                    self.collector.update(collect_jobs(self.engine))
+                    self.collector.update(
+                        collect_jobs(self.engine), collect_worker_details(self.engine)
+                    )
                 except Exception:
                     self.collector.fail()
                 self.stop.wait(5.0)

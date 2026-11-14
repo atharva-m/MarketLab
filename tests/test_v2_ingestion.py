@@ -1,11 +1,99 @@
 """V2 control validation is independent of legacy allowlists."""
 
+import threading
+from contextlib import nullcontext
 from datetime import date
+from types import SimpleNamespace
 
 import pytest
 
+from marketlab.datasets.v2 import jobs, service, source
 from marketlab.datasets.v2.common import V2Error, canonical_json, date_value, parse_json
 from marketlab.datasets.v2.core import canonical_metadata, official_request, registry_request
+
+
+@pytest.mark.parametrize(
+    "active,requested,attempt,error_code,lost,diagnostic,transition",
+    [
+        (
+            True,
+            False,
+            2,
+            "cancelled",
+            True,
+            "ownership_lost",
+            ("retry_wait", "transient", "ownership_lost", 30),
+        ),
+        (True, True, 2, "cancelled", True, "ownership_lost", ("cancelled", "cancelled", None, 0)),
+        (False, False, 2, "cancelled", True, "ownership_lost", None),
+        (
+            True,
+            False,
+            3,
+            "ownership_lost",
+            True,
+            "ownership_lost",
+            ("failed", "permanent", "ownership_lost", 0),
+        ),
+        (
+            True,
+            False,
+            2,
+            "integrity_failure",
+            True,
+            "integrity_failure",
+            ("failed", "permanent", "integrity_failure", 0),
+        ),
+        (True, False, 2, "cancelled", False, "cancelled", ("failed", "permanent", "cancelled", 0)),
+    ],
+)
+def test_run_claim_distinguishes_worker_loss_from_cancellation(
+    tmp_path, monkeypatch, active, requested, attempt, error_code, lost, diagnostic, transition
+):
+    class ImmediateHeartbeat(threading.Event):
+        def wait(self, timeout=None):
+            return not lost or self.is_set()
+
+    events = iter((ImmediateHeartbeat(), threading.Event()))
+    monkeypatch.setattr(
+        service, "threading", SimpleNamespace(Event=lambda: next(events), Thread=threading.Thread)
+    )
+    monkeypatch.setattr(jobs, "heartbeat", lambda *_: False)
+    monkeypatch.setattr(service, "_job_reservations", lambda *_: None)
+
+    def download(*args, cancelled):
+        if lost:
+            # Observe the actual signal sent by run_claim's renewal thread.
+            assert cancelled.__self__.wait(1)
+        if error_code == "cancelled" and lost:
+            source.check_cancelled(cancelled)
+        raise V2Error(error_code)
+
+    monkeypatch.setattr(source, "download_official", download)
+    monkeypatch.setattr(jobs, "transaction", lambda _: nullcontext(object()))
+    job = {"cancel_requested": requested, "attempt_count": attempt}
+    monkeypatch.setattr(jobs, "lock_job", lambda *_: job)
+    monkeypatch.setattr(
+        jobs, "execute", lambda *_, **__: SimpleNamespace(scalar_one=lambda: active)
+    )
+    writes = []
+
+    def finish(connection, current, state, outcome, code=None, *, delay=0):
+        assert current is job
+        writes.append((state, outcome, code, delay))
+
+    monkeypatch.setattr(jobs, "finish", finish)
+    current = {
+        "job_id": "owned-job",
+        "fencing_token": attempt,
+        "owner": "owned-worker",
+        "source_mode": "official",
+        "instrument_snapshot": {},
+        "trade_date": date(2025, 2, 1),
+    }
+    with pytest.raises(V2Error) as raised:
+        service.run_claim(object(), tmp_path, current)
+    assert (raised.value.code, writes) == (diagnostic, [] if transition is None else [transition])
 
 
 def registry(symbol: str = "SOLUSDT", base: str = "SOL") -> dict[str, object]:

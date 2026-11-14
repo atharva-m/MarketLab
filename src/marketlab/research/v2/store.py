@@ -3,14 +3,16 @@
 import json
 import threading
 from dataclasses import dataclass, field, replace
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
 from sqlalchemy.engine import Connection, Engine
 
-from marketlab.datasets.v2.common import KEY, V2Error, canonical_json, digest
+from marketlab.datasets.v2.common import HASH, KEY, V2Error, canonical_json, digest
 from marketlab.datasets.v2.core import execute, lock, one, transaction, uid, wire
 
+from .capacity import DEFAULT_RESEARCH_SPACE, SMALL_RESEARCH_SPACE
 from .spec import SCHEMA, ResearchSpec
 
 
@@ -22,6 +24,7 @@ class Claim:
     attempt: int
     lost: threading.Event = field(default_factory=threading.Event, compare=False)
     admission: dict[str, Any] | None = field(default=None, compare=False)
+    compact_fingerprint: str | None = None
 
 
 def key_value(key: str) -> None:
@@ -164,22 +167,85 @@ def inspect(engine: Engine, run_id: str) -> dict[str, Any]:
     return wire(row)  # type: ignore[no-any-return]
 
 
-def claim(engine: Engine, execution: dict[str, Any], run_id: str | None = None) -> Claim | None:
+def _compact_input(connection: Connection, run_id: str, fingerprint_sha256: str) -> dict[str, Any]:
+    row = one(
+        connection,
+        "SELECT s.fingerprint_json,s.fingerprint_sha256,s.spec_json,s.request_sha256 "
+        "FROM v2_research_runs r JOIN v2_research_submissions s USING(submission_id) "
+        "WHERE r.run_id=:id",
+        id=uid(run_id),
+    )
+    if row is None or row["fingerprint_sha256"] != fingerprint_sha256:
+        raise V2Error("invalid_request", "Compact research requires the pinned run fingerprint")
+    fingerprint = json.loads(row["fingerprint_json"])
+    spec = ResearchSpec.create(json.loads(row["spec_json"]))
+    datasets = fingerprint["datasets"]
+    if (
+        digest(fingerprint) != fingerprint_sha256
+        or fingerprint["request_sha256"] != row["request_sha256"]
+        or spec.digest != row["request_sha256"]
+        or len(datasets) != 1
+        or datasets[0]["contract"] != "dataset-manifest-v2"
+        or tuple(spec.dataset_versions) != (datasets[0]["dataset_version_id"],)
+        or tuple(spec.instrument_ids) != (datasets[0]["instrument_id"],)
+    ):
+        raise V2Error("invalid_request", "Compact research requires one pinned v2 dataset")
+    return dict(datasets[0])
+
+
+def _check_compact_storage(engine: Engine, root: Path, dataset: dict[str, Any]) -> None:
+    from marketlab.storage.materialize import V2_DATASET_MEMBERS, registered_members
+
+    refs = registered_members(
+        engine,
+        root,
+        "v2_dataset",
+        dataset["dataset_version_id"],
+        V2_DATASET_MEMBERS,
+        dataset["manifest_sha256"],
+    )
+    if (
+        refs is None
+        or any(ref.alias == "local" or ref.version is None for ref in refs)
+        or 2 * sum(ref.length for ref in refs) > SMALL_RESEARCH_SPACE.scratch
+    ):
+        raise V2Error(
+            "capacity_exceeded", "Compact research input exceeds its private scratch limit"
+        )
+
+
+def claim(
+    engine: Engine,
+    execution: dict[str, Any],
+    run_id: str | None = None,
+    *,
+    compact_fingerprint: str | None = None,
+) -> Claim | None:
     from marketlab.datasets.v2 import admission
 
     root = admission.root_for(engine)
     ticket = None
+    if compact_fingerprint is not None:
+        if root is None or run_id is None or not HASH.fullmatch(compact_fingerprint):
+            raise V2Error("invalid_request", "Compact research requires one exact owned run")
+        with engine.connect() as connection:
+            dataset = _compact_input(connection, run_id, compact_fingerprint)
+        _check_compact_storage(engine, root, dataset)
     if root is not None:
         try:
+            space = DEFAULT_RESEARCH_SPACE if compact_fingerprint is None else SMALL_RESEARCH_SPACE
             ticket = admission.acquire(
-                engine, root, "research", 34 * 1024**2, physical_bytes=22 * 1024**3 + 34 * 1024**2
+                engine, root, "research", space.output, physical_bytes=space.physical
             )
         except V2Error as error:
             if error.code == "capacity_exceeded":
                 return None
             raise
     try:
-        result = _claim(engine, execution, run_id, ticket)
+        if compact_fingerprint is None:
+            result = _claim(engine, execution, run_id, ticket)
+        else:
+            result = _claim(engine, execution, run_id, ticket, compact_fingerprint)
     except BaseException:
         admission.finish(engine, ticket, 0)
         raise
@@ -190,10 +256,17 @@ def claim(engine: Engine, execution: dict[str, Any], run_id: str | None = None) 
 
 
 def _claim(
-    engine: Engine, execution: dict[str, Any], run_id: str | None, ticket: dict[str, Any] | None
+    engine: Engine,
+    execution: dict[str, Any],
+    run_id: str | None,
+    ticket: dict[str, Any] | None,
+    compact_fingerprint: str | None = None,
 ) -> Claim | None:
     identity = None if run_id is None else uid(run_id)
     with transaction(engine) as connection:
+        from marketlab.workers import guard
+
+        guard(connection, "research", execution["source_sha256"])
         while True:
             row = one(
                 connection,
@@ -218,6 +291,8 @@ def _claim(
             )
             if row is None:
                 return None
+            if compact_fingerprint is not None:
+                _compact_input(connection, str(row["run_id"]), compact_fingerprint)
             if row["state"] == "running":
                 execute(
                     connection,
@@ -239,8 +314,15 @@ def _claim(
                     id=row["run_id"],
                 )
                 continue
+            from marketlab.workers import require_inputs
+
+            require_inputs(connection, "research", row)
             current = Claim(
-                str(row["run_id"]), str(uuid4()), row["fencing_token"] + 1, row["attempt_count"] + 1
+                str(row["run_id"]),
+                str(uuid4()),
+                row["fencing_token"] + 1,
+                row["attempt_count"] + 1,
+                compact_fingerprint=compact_fingerprint,
             )
             from marketlab.datasets.v2.admission import activate
 

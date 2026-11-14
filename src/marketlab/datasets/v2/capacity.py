@@ -2,6 +2,7 @@
 
 import os
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -16,6 +17,29 @@ SPILL = 2 * 1024**3
 OUTPUT = 34 * 1024**2
 
 
+@dataclass(frozen=True)
+class ResearchSpace:
+    scratch: int = SCRATCH
+    spill: int = SPILL
+    output: int = OUTPUT
+
+    def __post_init__(self) -> None:
+        if any(
+            type(value) is not int or not 0 < value <= maximum
+            for value, maximum in zip(
+                (self.scratch, self.spill, self.output), (SCRATCH, SPILL, OUTPUT), strict=True
+            )
+        ):
+            raise V2Error("invalid_request", "Invalid numerical space limits")
+
+    @property
+    def physical(self) -> int:
+        return self.scratch + self.spill + self.output
+
+
+DEFAULT_RESEARCH_SPACE = ResearchSpace()
+
+
 def capacity_root(root: Path) -> Path:
     """Unify legacy Windows extended paths with the configured Phase 2 root."""
     text = str(root.resolve())
@@ -27,9 +51,18 @@ def capacity_root(root: Path) -> Path:
 
 
 def outstanding(connection: Connection) -> int:
+    from marketlab.workers import local_root, mode
+
+    current = mode(connection)
+    physical = local_root(connection)
+    predicate = ""
+    if current is not None and current["mode"] == "distributed":
+        if physical is None:
+            raise V2Error("unavailable", "Worker physical root required")
+        predicate = " AND worker_root_id=:worker_root"
     terms = [
         "(SELECT coalesce(sum(reserved_bytes),0) FROM "
-        "v2_storage_reservations WHERE state<>'released')"
+        "v2_storage_reservations WHERE state<>'released'" + predicate + ")"
     ]
     present = execute(connection, "SELECT to_regclass('v2_research_reservations')").scalar_one()
     if present is None:
@@ -49,21 +82,28 @@ def outstanding(connection: Connection) -> int:
             "0010_v2_browser_imports",
             "0011_v2_copilot_memos",
             "0012_v2_storage",
+            "0013_v2_workers",
         }:
             raise V2Error("integrity_failure", "Research capacity ledger is missing")
     else:
         terms.append(
             "(SELECT coalesce(sum(scratch_bytes+spill_bytes+output_bytes),0) "
-            "FROM v2_research_reservations WHERE state<>'released')"
+            "FROM v2_research_reservations WHERE state<>'released'" + predicate + ")"
         )
     if execute(connection, "SELECT to_regclass('v2_admission_tickets')").scalar_one() is not None:
         terms.append(
             "(SELECT coalesce(sum(physical_bytes),0) FROM "
-            "v2_admission_tickets WHERE state<>'released')"
+            "v2_admission_tickets WHERE state<>'released'" + predicate + ")"
         )
     # Every ledger sum shares one PostgreSQL statement snapshot. A browser
     # handoff can commit concurrently without exposing neither or both budgets.
-    return int(execute(connection, "SELECT " + "+".join(terms)).scalar_one())
+    return int(
+        execute(
+            connection,
+            "SELECT " + "+".join(terms),
+            worker_root=physical["root_id"] if physical else None,
+        ).scalar_one()
+    )
 
 
 def reserve(
@@ -72,6 +112,8 @@ def reserve(
     run_id: str | None = None,
     purpose: str = "preparation",
     admission_ticket: dict[str, Any] | None = None,
+    *,
+    space: ResearchSpace = DEFAULT_RESEARCH_SPACE,
 ) -> dict[str, Any]:
     from . import admission
 
@@ -80,11 +122,11 @@ def reserve(
         bound = admission.root_for(engine)
         if bound is not None:
             own_ticket = admission.acquire(
-                engine, root, "research", 0, physical_bytes=SCRATCH + SPILL + OUTPUT
+                engine, root, "research", 0, physical_bytes=space.physical
             )
             admission_ticket = own_ticket
     try:
-        result = _reserve(engine, root, run_id, purpose, admission_ticket)
+        result = _reserve(engine, root, run_id, purpose, admission_ticket, space)
         if own_ticket is not None:
             admission.mark_path(engine, own_ticket, result["relative_path"])
             with transaction(engine) as connection:
@@ -103,6 +145,7 @@ def _reserve(
     run_id: str | None,
     purpose: str,
     admission_ticket: dict[str, Any] | None,
+    space: ResearchSpace,
 ) -> dict[str, Any]:
     root = capacity_root(root)
     from . import admission
@@ -125,7 +168,7 @@ def _reserve(
             from .admission import transfer
 
             transfer(connection, admission_ticket)
-        if shutil.disk_usage(root).free < outstanding(connection) + SCRATCH + SPILL + OUTPUT:
+        if shutil.disk_usage(root).free < outstanding(connection) + space.physical:
             raise V2Error("capacity_exceeded", "Insufficient reserved numerical capacity")
         execute(
             connection,
@@ -136,9 +179,9 @@ def _reserve(
             run=run_id,
             owner=owner,
             purpose=purpose,
-            scratch=SCRATCH,
-            spill=SPILL,
-            output=OUTPUT,
+            scratch=space.scratch,
+            spill=space.spill,
+            output=space.output,
             path=relative,
         )
         if admission_ticket is not None:

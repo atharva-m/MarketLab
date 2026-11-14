@@ -11,7 +11,8 @@ import httpx
 
 from marketlab.datasets.source import retry_after_seconds
 
-from .common import DEFAULT_LIMITS, MAX_DATE, MIN_DATE, SYMBOL, Limits, V2Error
+from .common import DEFAULT_LIMITS, HASH, MAX_DATE, MIN_DATE, SYMBOL, Limits, V2Error
+from .ingestion_budget import CHECKSUM_BYTES
 
 
 class TransientSourceError(V2Error):
@@ -60,6 +61,7 @@ def download_official(
     *,
     cancelled: Callable[[], bool] | None = None,
     limits: Limits = DEFAULT_LIMITS,
+    expected_sha256: str | None = None,
 ) -> dict[str, Any]:
     symbol = instrument.get("source_symbol")
     if (
@@ -71,6 +73,10 @@ def download_official(
         or type(trade_date) is not date
         or not MIN_DATE <= trade_date <= MAX_DATE
         or trade_date >= datetime.now(UTC).date()
+        or (
+            expected_sha256 is not None
+            and (not isinstance(expected_sha256, str) or not HASH.fullmatch(expected_sha256))
+        )
     ):
         raise V2Error("invalid_request", "Unsupported official source selection")
     check_cancelled(cancelled)
@@ -81,13 +87,22 @@ def download_official(
     url = f"https://data.binance.vision/data/spot/daily/trades/{symbol}/{name}"
     archive = directory / name
     checksum = directory / (name + ".CHECKSUM")
+    checksum_pattern = r"([0-9a-fA-F]{64})[ \t]+\*?([^\s]+)"
     try:
         with httpx.Client(trust_env=False, follow_redirects=False, timeout=30.0) as client:
             for remote, destination, ceiling in [
-                (url + ".CHECKSUM", checksum, 4096),
+                (url + ".CHECKSUM", checksum, CHECKSUM_BYTES),
                 (url, archive, limits.compressed_bytes),
             ]:
                 check_cancelled(cancelled)
+                if destination == archive and expected_sha256 is not None:
+                    match = re.fullmatch(
+                        checksum_pattern, checksum.read_text(encoding="ascii").strip()
+                    )
+                    if match is None or match[2] != name or match[1].lower() != expected_sha256:
+                        raise V2Error(
+                            "integrity_failure", "Official checksum differs from the pinned archive"
+                        )
                 with client.stream("GET", remote) as response:
                     if response.status_code in {408, 429} or response.status_code >= 500:
                         raise TransientSourceError(
@@ -114,11 +129,15 @@ def download_official(
                             output.write(chunk)
                     if declared is not None and total != int(declared):
                         raise V2Error("integrity_failure", "Incomplete official source")
-        match = re.fullmatch(
-            r"([0-9a-fA-F]{64})[ \t]+\*?([^\s]+)", checksum.read_text(encoding="ascii").strip()
-        )
+        match = re.fullmatch(checksum_pattern, checksum.read_text(encoding="ascii").strip())
         actual = checked_hash(archive, cancelled)
-        if match is None or match[2] != name or match[1].lower() != actual:
+        if (
+            match is None
+            or match[2] != name
+            or match[1].lower() != actual
+            or expected_sha256 is not None
+            and actual != expected_sha256
+        ):
             raise V2Error("integrity_failure", "Official checksum mismatch")
     except httpx.HTTPError as error:
         raise TransientSourceError() from error

@@ -462,6 +462,7 @@ class BarService:
         end: datetime,
         cancelled: threading.Event,
         scratch_root: Path | None = None,
+        compact_scratch: int | None = None,
     ) -> list[dict[str, Any]]:
         try:
             if (
@@ -488,6 +489,19 @@ class BarService:
                 for n in range(day_count)
             }
             rows = self._catalog(tuple(versions))
+            if compact_scratch is not None:
+                if (
+                    scratch_root is None
+                    or len(rows) != 1
+                    or rows[0]["contract"] != "dataset-manifest-v2"
+                    or rows[0].get("refs") is None
+                    or any(ref.alias == "local" or ref.version is None for ref in rows[0]["refs"])
+                    or 2 * sum(ref.length for ref in rows[0]["refs"]) > compact_scratch
+                ):
+                    raise V2Error(
+                        "capacity_exceeded",
+                        "Compact research requires one bounded immutable dataset",
+                    )
             actual = [(r["instrument_id"], r["trade_date"]) for r in rows]
             if len(set(actual)) != len(actual) or set(actual) != expected:
                 raise BarError("Registered coverage is incomplete or ambiguous", 409)
@@ -499,9 +513,14 @@ class BarService:
                 refs = row.get("refs")
                 with self.lock:
                     cached = self.verified.get(row["dataset_version_id"])
-                if cached and (cached["catalog_identity"], cached["signature"]) == (
-                    row["catalog_identity"],
-                    row["signature"],
+                if (
+                    compact_scratch is None
+                    and cached
+                    and (cached["catalog_identity"], cached["signature"])
+                    == (
+                        row["catalog_identity"],
+                        row["signature"],
+                    )
                 ):
                     if refs is not None:
                         check_registered(self.root, refs, cancelled.is_set)
@@ -527,7 +546,11 @@ class BarService:
                         missing_legacy[offset : offset + 5], cancelled
                     )
                 )
-            scratch = Scratch(directory=scratch_root)
+            scratch = (
+                Scratch(directory=scratch_root)
+                if compact_scratch is None
+                else Scratch(directory=scratch_root, limit=compact_scratch, private=True)
+            )
             for row in rows:
                 _check(cancelled)
                 if "manifest" in row:
@@ -634,12 +657,13 @@ class BarService:
         cancelled: threading.Event,
         *,
         scratch_root: Path | None = None,
+        compact_scratch: int | None = None,
     ) -> list[dict[str, Any]]:
         return cast(
             list[dict[str, Any]],
             await self.base._thread(
                 lambda: self.resolve_selection(
-                    instrument_ids, versions, start, end, cancelled, scratch_root
+                    instrument_ids, versions, start, end, cancelled, scratch_root, compact_scratch
                 ),
                 cancelled,
             ),
@@ -651,9 +675,10 @@ class BarService:
         rows: list[dict[str, Any]],
         cancelled: threading.Event,
         scratch_root: Path | None = None,
+        compact_scratch: int | None = None,
     ) -> dict[str, Any]:
         try:
-            return self._bounded_query(request, rows, cancelled, scratch_root)
+            return self._bounded_query(request, rows, cancelled, scratch_root, compact_scratch)
         except (VerificationCancelled, VerificationUnavailable) as error:
             self.base.metrics.overload.inc()
             raise BarError("Bar query capacity unavailable", 503) from error
@@ -668,9 +693,14 @@ class BarService:
         rows: list[dict[str, Any]],
         cancelled: threading.Event,
         scratch_root: Path | None = None,
+        compact_scratch: int | None = None,
     ) -> dict[str, Any]:
         with ExitStack() as pins:
-            scratch = Scratch(directory=scratch_root)
+            scratch = (
+                Scratch(directory=scratch_root)
+                if compact_scratch is None
+                else Scratch(directory=scratch_root, limit=compact_scratch, private=True)
+            )
             paths = [pins.enter_context(self._trade_path(row, scratch, cancelled)) for row in rows]
             pins.enter_context(
                 self.base.reader.compute.query(cancelled, self.base.admission_timeout)
@@ -769,6 +799,7 @@ class BarService:
         cancelled: threading.Event | None = None,
         *,
         scratch_root: Path | None = None,
+        compact_scratch: int | None = None,
     ) -> tuple[dict[str, Any], CacheStatus]:
         request = BarsRequest.create(
             versions=request.versions,
@@ -830,11 +861,13 @@ class BarService:
         def validator(value: Any) -> bool:
             return valid_body(value, request, versions, metadata)
 
-        body, available = await self.base.cache.get(key, validator)
+        body, available = (
+            await self.base.cache.get(key, validator) if compact_scratch is None else (None, False)
+        )
         if body is not None:
             return body, "HIT"
         body = await self.base._thread(
-            lambda: self._query(request, selected, stop, scratch_root), stop
+            lambda: self._query(request, selected, stop, scratch_root, compact_scratch), stop
         )
         stored = available and await self.base.cache.put(key, body, "bars", validator=validator)
         return body, "MISS" if stored else "BYPASS"

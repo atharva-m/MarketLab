@@ -16,6 +16,17 @@ from marketlab.datasets.v2.core import execute, lock, one, transaction
 
 def _changed(connection: Connection, root: Path) -> None:
     if execute(connection, "SELECT to_regclass('v2_capacity_roots')").scalar_one() is not None:
+        from marketlab.workers import mode
+
+        current = mode(connection)
+        if current is not None and current["mode"] == "distributed":
+            execute(
+                connection,
+                "UPDATE v2_capacity_roots SET epoch=epoch+1,updated_at=clock_timestamp() "
+                "WHERE root_id=:id",
+                id=current["shared_root_id"],
+            )
+            return
         execute(
             connection,
             "UPDATE v2_capacity_roots SET epoch=epoch+1,updated_at=clock_timestamp() "
