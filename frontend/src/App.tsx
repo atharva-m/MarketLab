@@ -18,7 +18,7 @@ const WORDMARK = [
   "█ ▀ █ █▀█ █▀▄ █ █ ██▄  █  █▄▄ █▀█ █▄█",
 ].join("\n");
 const NAV: [string, IconName, string][] = [
-  ["/v2/catalog", "datasets", "Binance workspace"],
+  ["/v2/catalog", "datasets", "Workspace"],
   ["/catalog", "datasets", "Datasets"],
   ["/ingestion/new", "ingestion", "Ingestion"],
   ["/jobs", "jobs", "Jobs"],

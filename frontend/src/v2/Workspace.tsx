@@ -41,19 +41,19 @@ const links = [
   ["/v2/catalog", "Catalog"],
   ["/v2/research/new", "Research"],
   ["/v2/copilot/new", "Copilot"],
-  ["/v2/ingestion/new", "Official ingestion"],
-  ["/v2/imports/new", "File import"],
+  ["/v2/ingestion/new", "Ingestion"],
+  ["/v2/imports/new", "Import"],
   ["/v2/instruments", "Instruments"],
 ];
 function Header({ route }: { route: string }) {
   return (
     <>
-      <PageTitle title="Binance spot workspace" />
+      <PageTitle title="Workspace" />
       <p className="intro">
         Registered instruments and dates · exact pinned datasets · local
         operator access
       </p>
-      <nav className="v2-tabs" aria-label="Binance workspace navigation">
+      <nav className="v2-tabs" aria-label="Workspace navigation">
         {links.map(([href, label]) => (
           <a
             key={href}

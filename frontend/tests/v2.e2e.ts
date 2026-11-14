@@ -291,7 +291,7 @@ test("real browser worker hashes a File and upload status avoids persistent capa
   );
   expect(storage).not.toContain("private-one-use-token");
   await page.getByRole("link", { name: "Catalog", exact: true }).click();
-  await page.getByRole("link", { name: "File import", exact: true }).click();
+  await page.getByRole("link", { name: "Import", exact: true }).click();
   await expect(page.getByLabel("Instrument", { exact: true })).toHaveValue(
     instrument.instrument_id,
   );
@@ -354,7 +354,8 @@ test("a sole last-page instrument never becomes a unique-catalog default", async
   ).toBeVisible();
   await expect(page.getByLabel("Instrument", { exact: true })).toHaveValue("");
   await page
-    .getByRole("link", { name: "Official ingestion", exact: true })
+    .getByRole("navigation", { name: "Workspace navigation" })
+    .getByRole("link", { name: "Ingestion", exact: true })
     .click();
   await page.getByRole("button", { name: "Next instrument page" }).click();
   await expect(
