@@ -35,6 +35,18 @@ def object_key(key: str) -> str:
     return key
 
 
+def _aws_s3_endpoint(region: str) -> str:
+    from botocore.loaders import Loader  # type: ignore[import-untyped]
+
+    metadata = Loader(
+        extra_search_paths=[Loader.BUILTIN_DATA_PATH], include_default_search_paths=False
+    ).load_data("endpoints")
+    for partition in metadata["partitions"]:
+        if region in partition["regions"]:
+            return f"https://s3.{region}.{partition['dnsSuffix']}"
+    raise V2Error("storage_denied", "Specify an object storage endpoint for this region")
+
+
 @dataclass(frozen=True)
 class ObjectRef:
     alias: str
@@ -277,9 +289,17 @@ class ObjectConfig:
         alias = settings.storage_s3_alias
         if settings.storage_s3_endpoint is None and settings.storage_backend == "local":
             return None
-        endpoint = settings.storage_s3_endpoint or ""
         bucket = settings.storage_s3_bucket or ""
         region = settings.storage_s3_region
+        if (
+            not _ALIAS.fullmatch(alias)
+            or alias == "local"
+            or settings.storage_backend not in {"local", alias}
+            or not re.fullmatch(r"[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]", bucket)
+            or not re.fullmatch(r"[A-Za-z0-9-]{1,64}", region)
+        ):
+            raise V2Error("storage_denied", "Invalid object storage configuration")
+        endpoint = settings.storage_s3_endpoint or _aws_s3_endpoint(region)
         try:
             parsed = urlsplit(endpoint)
             hostname = parsed.hostname
@@ -287,10 +307,7 @@ class ObjectConfig:
         except ValueError:
             raise V2Error("storage_denied", "Invalid object storage configuration") from None
         if (
-            not _ALIAS.fullmatch(alias)
-            or alias == "local"
-            or settings.storage_backend not in {"local", alias}
-            or parsed.scheme not in {"https", "http"}
+            parsed.scheme not in {"https", "http"}
             or not hostname
             or parsed.username is not None
             or parsed.password is not None
@@ -298,8 +315,6 @@ class ObjectConfig:
             or parsed.query
             or parsed.fragment
             or (parsed.scheme == "http" and hostname not in {"localhost", "127.0.0.1", "::1"})
-            or not re.fullmatch(r"[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]", bucket)
-            or not re.fullmatch(r"[A-Za-z0-9-]{1,64}", region)
         ):
             raise V2Error("storage_denied", "Invalid object storage configuration")
         prefix = object_key(settings.storage_s3_prefix)

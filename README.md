@@ -212,13 +212,16 @@ cancel accepted durable work. See the [operating guide](docs/r9-operations.md).
 ## Configuration
 
 Settings are read from `.env` in the repository root and from process environment
-variables. Keep local configuration, data, and model weights out of Git.
+variables. Process environment variables take precedence. Keep local
+configuration, credentials, data, and model weights out of Git.
 
 | Setting | Purpose |
 | --- | --- |
 | `MARKETLAB_DATABASE_URL` | Host PostgreSQL URL, using `postgresql+psycopg://` |
 | `MARKETLAB_DATABASE_PASSWORD` | Optional literal password override, avoiding URL escaping |
 | `MARKETLAB_STORAGE_PATH` | Shared dataset/research artifact root |
+| `MARKETLAB_STORAGE_BACKEND` | Artifact write backend. Defaults to `local`. |
+| `MARKETLAB_WORKER_ROOT_ID` | Provisioned root UUID for the current distributed host |
 | `MARKETLAB_REDIS_URL` | Optional Redis cache endpoint |
 | `MARKETLAB_OLLAMA_URL` | Host Ollama endpoint, normally `http://127.0.0.1:11434` |
 | `MARKETLAB_COPILOT_MODEL` | Shared copilot/memo model, default `qwen3.5:9b-q4_K_M` |
@@ -230,6 +233,66 @@ variables. Keep local configuration, data, and model weights out of Git.
 See [.env.example](.env.example) and the
 [configuration reference](docs/user-reference.md#configuration-details) for passwords,
 container URLs, and alternate ports.
+
+### Use your own AWS bucket
+
+The default quickstart uses local storage and needs no AWS credentials. For
+managed v2 artifact storage on S3, edit the same `.env` before initializing
+storage. Fill in the bucket name, region and credentials from your own AWS
+account. Each worker still uses local scratch and cache space.
+
+```dotenv
+MARKETLAB_STORAGE_BACKEND=s3
+S3_BUCKET_NAME=
+AWS_REGION=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+# AWS_SESSION_TOKEN=
+# MARKETLAB_STORAGE_S3_PREFIX=marketlab
+```
+
+Use an existing private bucket with versioning enabled and a dedicated prefix.
+The supplied credentials need versioning inspection, exact-version reads and
+scoped writes including conditional creation and multipart operations. Set
+`AWS_SESSION_TOKEN` for temporary credentials. The application uses the AWS
+regional HTTPS endpoint by default. Set `MARKETLAB_STORAGE_S3_ENDPOINT` for
+an S3-compatible service or an explicit AWS endpoint. Existing installations
+should keep their registered endpoint, bucket, region and prefix.
+
+The application reads those credentials directly. Buckets, IAM permissions,
+EC2 instances and private connections are provisioned separately. For the
+host quickstart, run this after `alembic upgrade head` and before starting
+the API or workers on the fresh root:
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli v2 capacity-initialize
+```
+
+Use the same storage settings for initialization, API and workers. Review the
+binding steps before changing a stack that already has data.
+[Storage setup and permissions](docs/v2/phase-6-operations.md)
+
+Use the v2 commands with managed storage. After submitting a v2 ingestion
+request or research run, start the corresponding bounded worker. Replace the
+placeholder with the ID returned by your submission.
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli v2 worker --max-jobs 1 --submission SUBMISSION_UUID
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.research_cli v2 worker --max-runs 1 --run RUN_UUID
+```
+
+Host commands read the repository `.env`. For the Docker API, Compose forwards
+the listed storage, worker and model settings from the same file or process
+environment. Use the same variable name in both places when overriding a
+Compose setting. Keep the API and local-mode workers on the same runtime and
+storage root. Compose's named data volume differs from the host's `./data`.
+
+For a second host such as EC2, install the same locked checkout there and create
+its own protected `.env`. Point both hosts at the shared private PostgreSQL
+database and same versioned S3 namespace. Provision a separate filesystem root
+and root UUID on each host before enabling distributed mode. Manage any SSH
+connection separately from application configuration.
+[Distributed worker setup](docs/v2/phase-7-operations.md#explicit-configuration-and-identities)
 
 ## Health and troubleshooting
 

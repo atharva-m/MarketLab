@@ -1,13 +1,15 @@
 from pathlib import Path
 from uuid import UUID
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy.engine import URL, make_url
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_prefix="MARKETLAB_", env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_prefix="MARKETLAB_", env_file=".env", extra="ignore", populate_by_name=True
+    )
 
     environment: str = "local"
     database_url: SecretStr = SecretStr(
@@ -25,16 +27,46 @@ class Settings(BaseSettings):
     storage_backend: str = "local"
     storage_s3_alias: str = "s3"
     storage_s3_endpoint: str | None = None
-    storage_s3_region: str = "us-east-1"
-    storage_s3_bucket: str | None = None
+    storage_s3_region: str = Field(
+        default="us-east-1",
+        validation_alias=AliasChoices(
+            "MARKETLAB_STORAGE_S3_REGION", "AWS_REGION", "AWS_DEFAULT_REGION"
+        ),
+    )
+    storage_s3_bucket: str | None = Field(
+        default=None, validation_alias=AliasChoices("MARKETLAB_STORAGE_S3_BUCKET", "S3_BUCKET_NAME")
+    )
     storage_s3_prefix: str = "marketlab"
-    storage_s3_access_key: SecretStr | None = None
-    storage_s3_secret_key: SecretStr | None = None
-    storage_s3_session_token: SecretStr | None = None
+    storage_s3_access_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("MARKETLAB_STORAGE_S3_ACCESS_KEY", "AWS_ACCESS_KEY_ID"),
+    )
+    storage_s3_secret_key: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("MARKETLAB_STORAGE_S3_SECRET_KEY", "AWS_SECRET_ACCESS_KEY"),
+    )
+    storage_s3_session_token: SecretStr | None = Field(
+        default=None,
+        validation_alias=AliasChoices("MARKETLAB_STORAGE_S3_SESSION_TOKEN", "AWS_SESSION_TOKEN"),
+    )
     dependency_timeout_seconds: float = Field(default=3.0, gt=0, le=30)
     database_connect_timeout_seconds: int = Field(default=5, ge=2, le=30)
     metrics_port: int = Field(default=0, ge=0, le=65535)
     metrics_bind: str = "127.0.0.1"
+
+    @field_validator(
+        "database_password",
+        "worker_root_id",
+        "storage_s3_endpoint",
+        "storage_s3_bucket",
+        "storage_s3_access_key",
+        "storage_s3_secret_key",
+        "storage_s3_session_token",
+        mode="before",
+    )
+    @classmethod
+    def empty_optional_setting(cls, value: object) -> object:
+        return None if isinstance(value, str) and not value.strip() else value
 
     @field_validator("metrics_bind")
     @classmethod
