@@ -371,6 +371,8 @@ def decide(
         return "unsupported", {}, []
     grounded: dict[str, Any] = {}
     pending: set[str] = set()
+    literal: dict[str, Any]
+    unclear: set[str]
     for item in turns:
         supplied_fields = supplied(item["context"], snapshot)
         if confirms_context(item["text"], supplied_fields):
