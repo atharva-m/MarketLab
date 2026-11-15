@@ -156,7 +156,7 @@ class CopilotService:
         return await asyncio.to_thread(store.answer, self.engine, request_id, body, key)
 
     def inspect(self, request_id: str) -> dict[str, Any]:
-        info = store.inspect(self.engine, request_id)
+        info = store.inspect(self.engine, request_id, include_execution_status=True)
         if info["state"] not in {"succeeded", "failed"} and info["execution"] != self.execution:
             info["error_code"] = "incompatible_execution"
         for revision in info["revisions"]:

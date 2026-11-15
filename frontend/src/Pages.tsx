@@ -18,7 +18,7 @@ import {
   useMutation,
   VersionInput,
 } from "./components";
-import { ShortId, WorkerHint } from "./ui";
+import { Pair, ShortId, WorkerHint } from "./ui";
 export function ResearchForm() {
   const [versions, setVersions] = useState(() =>
     selectedVersions()
@@ -57,10 +57,6 @@ export function ResearchForm() {
   return (
     <>
       <PageTitle title="New research run" />
-      <p className="intro">
-        Pin exact versions and an evaluation window. The server checks coverage
-        and warm-up before it accepts the run.
-      </p>
       <form className="panel form-grid" onSubmit={submit}>
         <label>
           Workflow
@@ -98,34 +94,35 @@ export function ResearchForm() {
           </select>
         </label>
         <label>
-          Evaluation start (UTC, inclusive)
+          Evaluation start
           <input
             data-testid="evaluation-start"
             required
+            placeholder="2025-01-01T01:00:00Z"
             value={form.start}
             onChange={(e) => field("start", e.target.value)}
           />
         </label>
         <label>
-          Evaluation end (UTC, exclusive)
+          Evaluation end
           <input
             data-testid="evaluation-end"
             required
+            placeholder="2025-02-01T00:00:00Z"
             value={form.end}
             onChange={(e) => field("end", e.target.value)}
           />
         </label>
         <label>
-          History start (UTC)
+          History start
           <input
             data-testid="history-start"
             required
+            placeholder="2025-01-01T00:00:00Z"
             value={form.history_start}
             onChange={(e) => field("history_start", e.target.value)}
           />
-          <small>
-            Profiles and cross-asset runs need 12 prior bars; clusters need 300.
-          </small>
+          <small>12 prior bars, 300 for clusters</small>
         </label>
         <fieldset>
           <legend>Summary metrics</legend>
@@ -148,10 +145,6 @@ export function ResearchForm() {
           ))}
         </fieldset>
         <VersionInput value={versions} onChange={setVersions} />
-        <p className="notice wide">
-          Five-minute bars. Clusters use volatility quantile 0.9, volume
-          multiple 2 and at least 2 bars. Missing bars are never filled.
-        </p>
         <div className="wide">
           <ErrorBox>{validation}</ErrorBox>
           {mutation.panel}
@@ -166,8 +159,7 @@ export function ResearchForm() {
           </button>
           {mutation.busy && (
             <p role="status" className="muted">
-              Validation can take several minutes. Keep this page open; the run
-              is queued once it is accepted.
+              This can take a few minutes.
             </p>
           )}
         </div>
@@ -185,10 +177,6 @@ export function Ingestion() {
   return (
     <>
       <PageTitle title="New ingestion" />
-      <p className="intro">
-        Request official daily trade archives. A worker downloads, verifies and
-        publishes each day as an immutable version.
-      </p>
       <form
         className="panel form-grid"
         onSubmit={(e) => {
@@ -218,16 +206,13 @@ export function Ingestion() {
                   )
                 }
               />
-              {s}
+              <Pair symbol={s} small />
             </label>
           ))}
         </fieldset>
-        <p className="muted">
-          Up to 62 daily jobs per submission. Each day succeeds or fails on its
-          own.
-        </p>
+        <small>Up to 62 daily jobs</small>
         <label>
-          First UTC date (inclusive)
+          From
           <input
             type="date"
             min="2025-01-01"
@@ -238,7 +223,7 @@ export function Ingestion() {
           />
         </label>
         <label>
-          Before UTC date (exclusive)
+          Before
           <input
             type="date"
             min="2025-01-02"
@@ -277,7 +262,7 @@ export function IngestionDetail({ id }: { id: string }) {
         <>
           <section className="stat-grid">
             <div>
-              <span>Total daily jobs</span>
+              <span>Jobs</span>
               <strong>{r.data.total}</strong>
             </div>
             <div>
@@ -289,10 +274,8 @@ export function IngestionDetail({ id }: { id: string }) {
               <strong>{r.data.failed}</strong>
             </div>
             <div>
-              <span>Completion</span>
-              <strong>
-                {r.data.complete ? "Complete" : "Partial / pending"}
-              </strong>
+              <span>Status</span>
+              <strong>{r.data.complete ? "Complete" : "In progress"}</strong>
             </div>
           </section>
           {!r.data.complete && r.data.jobs?.some((j: Data) => active(j)) && (
@@ -307,7 +290,8 @@ export function IngestionDetail({ id }: { id: string }) {
             {r.data.jobs.map((job: Data) => (
               <details key={job.job_id}>
                 <summary>
-                  {job.symbol} · {job.trade_date} <Tag value={job.state} />{" "}
+                  <Pair symbol={job.symbol} small /> {job.trade_date}{" "}
+                  <Tag value={job.state} />{" "}
                   <span className="muted">
                     attempt {job.attempt_count} of 3
                   </span>
@@ -337,11 +321,6 @@ export function CopilotForm() {
   return (
     <>
       <PageTitle title="Ask the copilot" />
-      <p className="intro">
-        Describe one research run in plain words: assets, UTC evaluation window,
-        warm-up history and metrics. The copilot asks when something is unclear
-        and submits the run once it validates.
-      </p>
       <form
         className="panel form-grid"
         onSubmit={(e) => {
@@ -370,9 +349,9 @@ export function CopilotForm() {
             onChange={(e) => setText(e.target.value)}
             placeholder="Describe your research question…"
           />
-          <small>
-            Up to 8,192 bytes. Forecasts and trading advice are out of scope.
-          </small>
+          <span className="counter">
+            {new TextEncoder().encode(text).length} of 8,192 bytes
+          </span>
         </label>
         <VersionInput value={versions} onChange={setVersions} />
         <div className="wide">
@@ -418,7 +397,7 @@ export function CopilotDetail({ id }: { id: string }) {
         <>
           <section className="panel">
             <p>{r.data.body?.text}</p>
-            <p>Revision {revision} of at most 5 clarification rounds</p>
+            <p>Revision {revision} of 5</p>
             {active(r.data) && (
               <WorkerHint
                 kind="copilot"
@@ -428,7 +407,7 @@ export function CopilotDetail({ id }: { id: string }) {
             )}
             {r.data.outcome === "submitted" && (
               <p className="notice">
-                The request validated and queued a research run.{" "}
+                Run queued.{" "}
                 <a href={`#/runs/${r.data.run_id}`}>Open research run</a>
               </p>
             )}
@@ -439,9 +418,9 @@ export function CopilotDetail({ id }: { id: string }) {
                   <Tag value={item.outcome ?? item.state} />
                 </h2>
                 {item.questions && <DataView data={item.questions} />}
-                <p className="muted">
-                  Attempt {item.attempt_count} of 3, model calls{" "}
-                  {item.model_calls} of 2
+                <p className="muted revision-meta">
+                  <span>Attempt {item.attempt_count} of 3</span>
+                  <span>Model calls {item.model_calls} of 2</span>
                 </p>
                 {item.error && <ErrorBox>{item.error}</ErrorBox>}
               </article>
@@ -478,10 +457,6 @@ export function CopilotDetail({ id }: { id: string }) {
               <button type="button" className="secondary" onClick={r.refresh}>
                 Refresh current revision
               </button>
-              <p className="muted">
-                Answers apply to the current revision only. If the request
-                changed, refresh before answering.
-              </p>
             </form>
           )}
           <Provenance data={r.data} />

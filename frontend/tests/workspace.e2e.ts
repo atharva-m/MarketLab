@@ -147,7 +147,7 @@ test("research submits pinned spec once and retains responsive validation state"
     .selectOption("cross_asset");
   await page.getByTestId("submit-research").dblclick();
   await expect(
-    page.getByText("Validation can take several minutes", { exact: false }),
+    page.getByText("This can take a few minutes", { exact: false }),
   ).toBeVisible();
   await expect(page.getByTestId("submit-research")).toBeDisabled();
   await expect(
@@ -756,9 +756,7 @@ test("copilot stale answer refreshes revision and preserves safe state", async (
   await page.goto(`/#/copilot/${requestID}`);
   await page.getByLabel("Clarification answer").fill("Use VWAP.");
   await page.getByRole("button", { name: "Submit clarification" }).click();
-  await expect(
-    page.getByText("Revision 2 of at most 5 clarification rounds"),
-  ).toBeVisible();
+  await expect(page.getByText("Revision 2 of 5")).toBeVisible();
   await expect(page.getByText("Copilot revision conflict")).toHaveCount(0);
 });
 test("keyboard skip preserves route and responsive navigation stays usable", async ({
@@ -856,19 +854,17 @@ test("ingestion submission and job discovery show partial daily outcomes", async
     }),
   );
   await page.goto("/#/ingestion/new");
-  await page.getByLabel("ETHUSDT", { exact: true }).check();
-  await page.getByLabel("First UTC date (inclusive)").fill("2025-01-31");
-  await page.getByLabel("Before UTC date (exclusive)").fill("2025-02-01");
+  await page.getByLabel("ETH/USDT", { exact: true }).check();
+  await page.getByLabel("From", { exact: true }).fill("2025-01-31");
+  await page.getByLabel("Before", { exact: true }).fill("2025-02-01");
   await page
     .getByRole("button", { name: "Submit ingestion", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Ingestion submission" }),
   ).toBeVisible();
-  await expect(
-    page.getByText("Partial / pending", { exact: true }),
-  ).toBeVisible();
-  await page.getByText("ETHUSDT · 2025-01-31", { exact: false }).click();
+  await expect(page.getByText("In progress", { exact: true })).toBeVisible();
+  await page.locator("summary", { hasText: "ETH/USDT 2025-01-31" }).click();
   await expect(
     page.getByText("Source integrity failure", { exact: true }),
   ).toBeVisible();

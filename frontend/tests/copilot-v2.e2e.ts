@@ -141,12 +141,8 @@ test("selected copilot creates exact context, recovers questions and submits a f
   await page
     .getByLabel("Research request", { exact: true })
     .fill("Profile SOLUSDT; ask me for the missing UTC fields.");
-  await page
-    .getByRole("checkbox", { name: /I confirm these exact selected/ })
-    .check();
-  await page
-    .getByRole("button", { name: "Submit selected-context request" })
-    .click();
+  await page.getByRole("checkbox", { name: /Confirm these versions/ }).check();
+  await page.getByRole("button", { name: "Ask copilot", exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/v2/copilot/${id}`));
   expect(create).toEqual({
     schema: "copilot-request-v2",
@@ -159,29 +155,24 @@ test("selected copilot creates exact context, recovers questions and submits a f
   await expect(page.getByText(/Which UTC start/)).toBeVisible();
   expect(await page.locator("img").count()).toBe(0);
   await page.reload();
-  await expect(
-    page.getByRole("heading", { name: "Answer clarification · 1/5" }),
-  ).toBeVisible();
+  await expect(page.getByTestId("answer-round")).toHaveText("1 of 5");
   await page
     .getByLabel("Clarification answer")
     .fill("Start 2025-03-01T01:00:00Z");
-  await page
-    .getByRole("button", { name: "Submit clarification answer" })
-    .click();
-  await expect(
-    page.getByRole("link", { name: "Open linked numerical result" }),
-  ).toHaveAttribute("href", `#/v2/runs/${run}`);
+  await page.getByRole("button", { name: "Send answer" }).click();
+  await expect(page.getByRole("link", { name: "Open run" })).toHaveAttribute(
+    "href",
+    `#/v2/runs/${run}`,
+  );
   expect(answer).toEqual({
     schema: "copilot-answer-v2",
     expected_revision: 0,
     text: "Start 2025-03-01T01:00:00Z",
     context: {},
   });
-  expect(
-    await page
-      .getByRole("button", { name: "Submit clarification answer" })
-      .count(),
-  ).toBe(0);
+  expect(await page.getByRole("button", { name: "Send answer" }).count()).toBe(
+    0,
+  );
   const stored = await page.evaluate(() => JSON.stringify(localStorage));
   expect(stored).not.toContain("Profile SOLUSDT");
   expect(stored).not.toContain("Which UTC start");
@@ -193,7 +184,7 @@ test("empty selection stays explicit, and revision five is readable without anot
   await base(page);
   await page.goto("/#/v2/copilot/new");
   await expect(
-    page.getByRole("button", { name: "Submit selected-context request" }),
+    page.getByRole("button", { name: "Ask copilot", exact: true }),
   ).toBeDisabled();
   await page.route(`**/v2/copilot/requests/${id}`, (route) =>
     json(route, {
@@ -215,11 +206,12 @@ test("empty selection stays explicit, and revision five is readable without anot
     }),
   );
   await page.getByLabel("Copilot request ID", { exact: true }).fill(id);
-  await page.getByRole("button", { name: "Open copilot request" }).click();
-  await expect(page.getByText(/Five answers have been accepted/)).toBeVisible();
+  await page.getByRole("button", { name: "Open", exact: true }).click();
+  await expect(page.getByText(/Clarification limit reached/)).toBeVisible();
   await expect(page.getByLabel("Clarification answer")).toHaveCount(0);
+  await expect(page.getByText("Meaning", { exact: true })).toBeVisible();
   await expect(
-    page.getByText("meaning: Please clarify.", { exact: true }),
+    page.getByText("Please clarify.", { exact: true }),
   ).toBeVisible();
 });
 
@@ -253,23 +245,17 @@ test("an uncertain create retries the same operation and surfaces safe errors", 
   await page
     .getByLabel("Research request", { exact: true })
     .fill("Profile this selection");
-  await page
-    .getByRole("checkbox", { name: /I confirm these exact selected/ })
-    .check();
-  await page
-    .getByRole("button", { name: "Submit selected-context request" })
-    .click();
+  await page.getByRole("checkbox", { name: /Confirm these versions/ }).check();
+  await page.getByRole("button", { name: "Ask copilot", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText(
     "Catalog temporarily unavailable",
   );
-  await page
-    .getByRole("button", { name: "Submit selected-context request" })
-    .click();
+  await page.getByRole("button", { name: "Ask copilot", exact: true }).click();
   await expect.poll(() => keys.length).toBe(2);
   expect(keys[0]).toBe(keys[1]);
   expect(bodies[0]).toEqual(bodies[1]);
   await expect(
-    page.getByRole("link", { name: "Open manual numerical research" }),
+    page.getByRole("link", { name: "Manual research" }),
   ).toBeVisible();
 });
 
@@ -298,19 +284,13 @@ test("a lost accepted-answer response retries the identical operation without an
   await page
     .getByLabel("Clarification answer")
     .fill("Use the selected SOLUSDT profile");
-  await page
-    .getByRole("button", { name: "Submit clarification answer" })
-    .click();
+  await page.getByRole("button", { name: "Send answer" }).click();
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(page.getByLabel("Clarification answer")).toHaveValue(
     "Use the selected SOLUSDT profile",
   );
-  await page
-    .getByRole("button", { name: "Submit clarification answer" })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Answer clarification · 2/5" }),
-  ).toBeVisible();
+  await page.getByRole("button", { name: "Send answer" }).click();
+  await expect(page.getByTestId("answer-round")).toHaveText("2 of 5");
   expect(keys).toHaveLength(2);
   expect(keys[0]).toBe(keys[1]);
   expect(bodies[0]).toEqual(bodies[1]);
@@ -357,33 +337,23 @@ test("stale-answer conflict recovers the current revision before a new answer", 
   });
   await page.goto(`/#/v2/copilot/${id}`);
   await page.getByLabel("Clarification answer").fill("Stale answer");
-  await page
-    .getByRole("button", { name: "Submit clarification answer" })
-    .click();
+  await page.getByRole("button", { name: "Send answer" }).click();
   await expect(page.getByRole("alert")).toContainText(
     "Clarification revision is stale",
   );
   expect(accepted).toBe(0);
-  await page.getByRole("button", { name: "Refresh copilot status" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Answer clarification · 2/5" }),
-  ).toBeVisible();
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await expect(page.getByTestId("answer-round")).toHaveText("2 of 5");
   await expect(page.getByLabel("Clarification answer")).toHaveValue("");
   await page
     .getByLabel("Clarification answer")
     .fill("Answer the current question");
-  await page
-    .getByRole("button", { name: "Submit clarification answer" })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Answer clarification · 3/5" }),
-  ).toBeVisible();
+  await page.getByRole("button", { name: "Send answer" }).click();
+  await expect(page.getByTestId("answer-round")).toHaveText("3 of 5");
   expect(bodies.map((body) => body.expected_revision)).toEqual([0, 1]);
   expect(keys[0]).not.toBe(keys[1]);
   expect(accepted).toBe(1);
-  await expect(
-    page.getByRole("link", { name: "Open linked numerical result" }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Open run" })).toHaveCount(0);
 });
 
 test("memo enqueue and plain-text reading remain supplemental to exact numerical results", async ({
@@ -450,7 +420,7 @@ test("memo enqueue and plain-text reading remain supplemental to exact numerical
   await expect(
     page.getByText("1.123456789012345678", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Queue supplemental memo" }).click();
+  await page.getByRole("button", { name: "Queue memo" }).click();
   expect(body).toEqual({ schema: "memo-request-v2" });
   await expect(page.locator(".v2-memo-text > p")).toHaveCount(3);
   await expect(page.locator(".v2-memo-text script")).toHaveCount(0);
@@ -461,6 +431,6 @@ test("memo enqueue and plain-text reading remain supplemental to exact numerical
     page.getByText("1.123456789012345678", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Pinned dataset charts" }),
+    page.getByRole("heading", { name: "Chart", exact: true }),
   ).toBeVisible();
 });

@@ -11,6 +11,7 @@ from sqlalchemy.engine import Connection, Engine
 
 from marketlab.datasets.v2.common import HASH, KEY, V2Error, canonical_json, digest
 from marketlab.datasets.v2.core import execute, lock, one, transaction, uid, wire
+from marketlab.execution_status import attach_execution_status
 
 from .capacity import DEFAULT_RESEARCH_SPACE, SMALL_RESEARCH_SPACE
 from .spec import SCHEMA, ResearchSpec
@@ -128,6 +129,7 @@ def register(
 def inspect(engine: Engine, run_id: str) -> dict[str, Any]:
     identity = uid(run_id)
     with engine.connect() as connection:
+        connection.execution_options(isolation_level="REPEATABLE READ")
         row = one(
             connection,
             "SELECT r.*,s.spec_json,s.fingerprint_json,s.fingerprint_sha256,"
@@ -137,14 +139,7 @@ def inspect(engine: Engine, run_id: str) -> dict[str, Any]:
         )
         if row is None:
             raise V2Error("not_found", "Research run not found")
-        attempts = [
-            dict(v)
-            for v in execute(
-                connection,
-                "SELECT * FROM v2_research_attempts WHERE run_id=:id ORDER BY attempt_number",
-                id=identity,
-            ).mappings()
-        ]
+        attach_execution_status(connection, "research", [row], include_raw_attempts=True)
         memo_supported = (
             execute(connection, "SELECT to_regclass('v2_memo_jobs')").scalar_one() is not None
         )
@@ -158,7 +153,6 @@ def inspect(engine: Engine, run_id: str) -> dict[str, Any]:
     if digest(row["fingerprint"]) != row.pop("fingerprint_sha256"):
         raise V2Error("integrity_failure", "Research provenance integrity failure")
     row.update(
-        attempts=attempts,
         numerical_available=row["state"] == "succeeded",
         memo_available=memo is not None and memo["state"] == "succeeded",
         memo_contract="memo-facts-v2" if memo_supported else "unsupported",

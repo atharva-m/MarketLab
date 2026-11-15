@@ -60,6 +60,13 @@ const ICONS = {
   left: <path d="m14.5 6-6 6 6 6" />,
   right: <path d="m9.5 6 6 6-6 6" />,
   close: <path d="M17.5 6.5l-11 11M6.5 6.5l11 11" />,
+  workspace: (
+    <>
+      <path d="m12 3.5 8.5 4.5-8.5 4.5L3.5 8z" />
+      <path d="m3.5 12 8.5 4.5 8.5-4.5" />
+      <path d="m3.5 16 8.5 4.5 8.5-4.5" />
+    </>
+  ),
 };
 export type IconName = keyof typeof ICONS;
 export function Icon({ name, size = 16 }: { name: IconName; size?: number }) {
@@ -296,7 +303,7 @@ const WORKERS: Record<
   {
     waiting: string;
     running: string;
-    command: (id: string, jobs: number) => string;
+    command?: (id: string, jobs: number) => string;
   }
 > = {
   research: {
@@ -322,6 +329,22 @@ const WORKERS: Record<
     command: (id, jobs) =>
       `python -m marketlab.dataset_cli worker --max-jobs ${jobs} --submission ${id}`,
   },
+  research_v2: {
+    waiting: "Waiting for a research worker",
+    running: "Running on a research worker",
+    command: (id) =>
+      `python -m marketlab.research_cli v2 worker --max-runs 1 --run ${id}`,
+  },
+  ingestion_v2: {
+    waiting: "Waiting for an ingestion worker",
+    running: "Ingesting daily archives",
+    command: (id, jobs) =>
+      `python -m marketlab.dataset_cli v2 worker --max-jobs ${jobs} --submission ${id}`,
+  },
+  inference: {
+    waiting: "Waiting for an inference worker",
+    running: "Working",
+  },
 };
 /** Queued work is only described: the workspace never starts a worker itself. */
 export function WorkerHint({
@@ -338,7 +361,7 @@ export function WorkerHint({
   running?: boolean;
 }) {
   const worker = WORKERS[kind];
-  const command = worker.command(id, jobs);
+  const command = worker.command?.(id, jobs);
   return (
     <section className="worker">
       <div>
@@ -349,7 +372,7 @@ export function WorkerHint({
             <span className="muted">queued {minuteLabel(since)} UTC</span>
           )}
         </h2>
-        {!running && (
+        {!running && command && (
           <>
             <code>
               <span className="prompt" aria-hidden="true">
@@ -363,7 +386,7 @@ export function WorkerHint({
           </>
         )}
       </div>
-      {!running && (
+      {!running && command && (
         <CopyButton
           value={command}
           label="worker command"

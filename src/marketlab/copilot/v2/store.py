@@ -7,6 +7,7 @@ from sqlalchemy.engine import Engine
 
 from marketlab.datasets.v2.common import V2Error, canonical_json, digest
 from marketlab.datasets.v2.core import execute, lock, one, transaction, uid, wire
+from marketlab.execution_status import attach_execution_status
 from marketlab.research.v2 import store as research
 from marketlab.research.v2.spec import ResearchSpec
 
@@ -136,7 +137,9 @@ def answer(
         return request_id, number, False
 
 
-def inspect(engine: Engine, request_id: str) -> dict[str, Any]:
+def inspect(
+    engine: Engine, request_id: str, *, include_execution_status: bool = False
+) -> dict[str, Any]:
     uid(request_id)
     with engine.connect() as connection:
         # Read the request, revisions and calls from the same committed snapshot.
@@ -159,7 +162,8 @@ def inspect(engine: Engine, request_id: str) -> dict[str, Any]:
         history = []
         from marketlab.workers import enabled
 
-        extra = ",j.state_revision,j.cancel_requested" if enabled(connection) else ""
+        registry_available = enabled(connection)
+        extra = ",j.state_revision,j.cancel_requested" if registry_available else ""
         for revision in execute(
             connection,
             "SELECT r.*,j.job_id,j.state,j.attempt_count,j.model_calls,j.error_code"
@@ -188,6 +192,10 @@ def inspect(engine: Engine, request_id: str) -> dict[str, Any]:
                 ).mappings()
             ]
             history.append(item)
+        if include_execution_status:
+            attach_execution_status(
+                connection, "copilot", history, registry_available=registry_available
+            )
     if len(history) != result["current_revision"] + 1:
         raise V2Error("integrity_failure", "Copilot revision history incomplete")
     result = wire(

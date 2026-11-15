@@ -13,6 +13,23 @@ import { Exact, ShortId } from "./ui";
 export const active = (d: Data) =>
   ["queued", "running", "retry_wait", "pending"].includes(d.state ?? d.status);
 export const label = (s: string) => s.replaceAll("_", " ");
+/**
+ * Label for a machine key. Plain snake_case keys become "First open"; anything
+ * else (instrument ids, hashes, dates) is data and is returned unchanged.
+ */
+const ACRONYMS: Record<string, string> = {
+  id: "ID",
+  utc: "UTC",
+  vwap: "VWAP",
+  sha256: "SHA-256",
+};
+export const keyLabel = (key: string) => {
+  if (!/^[a-z][a-z0-9_]*$/.test(key)) return key;
+  const words = key.split("_").map((word) => ACRONYMS[word] ?? word);
+  return (words[0].charAt(0).toUpperCase() + words[0].slice(1))
+    .concat(" ", words.slice(1).join(" "))
+    .trim();
+};
 export function ErrorBox({ children }: { children: ReactNode }) {
   return children ? (
     <div className="error" role="alert">
@@ -58,7 +75,7 @@ export function DataView({
     <dl className="kv">
       {Object.entries(data).map(([k, v]) => (
         <div key={k}>
-          <dt>{label(k)}</dt>
+          <dt>{keyLabel(k)}</dt>
           <dd>
             <DataView data={v} name={k} />
           </dd>
@@ -149,10 +166,7 @@ export function useMutation(
       {saved?.state === "uncertain" && saved.id !== first && (
         <section className="notice">
           <strong>The last request has no confirmed outcome</strong>
-          <p>
-            The server may already have accepted it. Retrying sends the same key
-            and body, so it cannot be applied twice. Reloading never resends it.
-          </p>
+          <p>Retrying is safe: it resends the same request.</p>
           <Provenance
             data={saved.body ? JSON.parse(saved.body) : {}}
             title="Review saved request"
@@ -206,12 +220,8 @@ export function VersionInput({
         required
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Paste full version IDs, or select days in Datasets."
+        placeholder="One version ID per line"
       />
-      <small>
-        One ID per line. Include warm-up and evaluation days; nothing is
-        selected automatically.
-      </small>
     </label>
   );
 }

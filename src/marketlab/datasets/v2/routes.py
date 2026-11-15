@@ -7,6 +7,7 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 
+from marketlab.execution_status import worker_inventory
 from marketlab.workspace import local_mutation
 
 from . import catalog, core, jobs
@@ -107,6 +108,22 @@ async def capabilities(request: Request) -> JSONResponse:
 
         return JSONResponse(value())
     except (V2Error, ValueError) as error:
+        return failure(request, error)
+
+
+@router.get("/workers")
+async def workers(request: Request) -> JSONResponse:
+    try:
+        values = query(request, {"limit", "cursor", "instance_id"})
+        return JSONResponse(
+            await asyncio.to_thread(
+                worker_inventory,
+                service(request).engine,
+                **page(values),
+                instance_id=values.get("instance_id"),
+            )
+        )
+    except (V2Error, SQLAlchemyError, ValueError) as error:
         return failure(request, error)
 
 

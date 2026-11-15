@@ -8,7 +8,7 @@ export const active = (data: Data) =>
     data.jobs.some((job: Data) =>
       ["queued", "running", "retry_wait"].includes(job.state),
     ));
-export function useV2(path: string | null, poll = false) {
+export function useV2(path: string | null, poll: boolean | "always" = false) {
   const [result, setResult] = useState<{ path: string; data: Data } | null>(
     null,
   );
@@ -39,7 +39,11 @@ export function useV2(path: string | null, poll = false) {
         setResult({ path, data });
         setError("");
         setErrorStatus(null);
-        if (poll && active(data)) timer = setTimeout(() => void load(), 2000);
+        if (poll === "always" || (poll && active(data)))
+          timer = setTimeout(
+            () => void load(),
+            poll === "always" ? 5000 : 2000,
+          );
       } catch (e) {
         if (!live || controller.signal.aborted) return;
         setError(errorText(e));

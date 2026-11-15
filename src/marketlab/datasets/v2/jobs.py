@@ -7,6 +7,8 @@ from uuid import uuid4
 from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError
 
+from marketlab.execution_status import attach_execution_status
+
 from .common import V2Error, canonical_json, digest
 from .core import (
     PROTOCOL,
@@ -488,6 +490,7 @@ def cancel(engine: Engine, job_id: str, revision: int, key: str) -> dict[str, An
 def inspect_submission(engine: Engine, submission_id: str) -> dict[str, Any]:
     sid = uid(submission_id)
     with engine.connect() as connection:
+        connection.execution_options(isolation_level="REPEATABLE READ")
         current = one(
             connection, "SELECT * FROM v2_ingestion_submissions WHERE submission_id=:id", id=sid
         )
@@ -501,16 +504,7 @@ def inspect_submission(engine: Engine, submission_id: str) -> dict[str, Any]:
                 id=sid,
             ).mappings()
         ]
-        for row in rows:
-            row["attempts"] = [
-                dict(v)
-                for v in execute(
-                    connection,
-                    "SELECT * FROM v2_ingestion_attempts WHERE job_id=:id ORDER BY "
-                    "attempt_number LIMIT 3",
-                    id=row["job_id"],
-                ).mappings()
-            ]
+        attach_execution_status(connection, "ingestion", rows, include_raw_attempts=True)
         return cast(
             dict[str, Any],
             wire(

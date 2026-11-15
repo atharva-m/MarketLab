@@ -1,140 +1,297 @@
+/*
+ * Workspace (/v2) styles. Tokens only; the base vocabulary lives in
+ * src/styles.css. Layout helpers for pages:
+ *
+ *   .controls     Single-row filter/controls layout. Put labels (label above a
+ *                 compact control) and buttons as direct children; it wraps,
+ *                 and buttons sit on the bottom edge aligned with the inputs.
+ *   .fields       Responsive grid of labelled fields (form body); items wrap
+ *                 from 1 to 3 columns, bottom-aligned.
+ *   .split.roomy  A `.split` whose `.side` column is at least 384px wide.
+ *   .narrow       Caps a form page's content column at 760px (ingestion form,
+ *                 import). It stacks its children with the page rhythm.
+ *   .toolbar-group  Left group of a `.toolbar` (heading plus state tag).
+ *   .fields.lead  Fields grid with the first field on its own row and the
+ *                 rest two per row (research window).
+ *   .note         Muted inline note. Use beside a legend or label text:
+ *                 <legend>Instruments <span className="note">Up to 2</span></legend>
+ *   .checklist    Vertical stack of `.check` rows inside a fieldset.
+ *   .counter      Small right-aligned muted counter under a textarea, e.g.
+ *                 <span className="counter">12 of 8,192 bytes</span>
+ *   .cell-error   Small var(--down) error text for table cells; place it under
+ *                 the tag, inside the element that carries role="alert".
+ *   .code-row     A `code` line with a copy button at its right edge.
+ *   .meter        Progress (see Meter in parts.tsx); .count is the "3 of 62".
+ *   .chart-svg, .chart-axis, .chart-line, .chart-label
+ *                 SVG parts for the run price chart on `.chart-panel.graphite`.
+ */
 .v2-workspace {
-  max-width: 1500px;
-}
-.v2-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  border-bottom: 1px solid var(--line-strong);
-  padding: 0 0 16px;
-  margin-bottom: 24px;
-}
-.v2-tabs a {
-  padding: 7px 0;
-  text-decoration: none;
-  color: var(--muted);
-}
-.v2-tabs a[aria-current="page"] {
-  color: var(--ink);
-  border-bottom: 2px solid var(--ink);
-}
-.v2-capabilities {
-  margin: 0 0 24px;
-  padding: 14px;
-  border: 1px solid var(--line);
-}
-.v2-form {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: 18px;
-  align-items: start;
-}
-.v2-form > .actions,
-.v2-form > fieldset,
-.v2-form > h3,
-.v2-form > p,
-.v2-form > .v2-check {
-  grid-column: 1 / -1;
-}
-.v2-form label,
-.v2-workspace section > label {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  color: var(--ink-2);
-}
-.v2-form .v2-check,
-.v2-workspace .v2-check {
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 6px 0;
-}
-.v2-check input {
-  width: auto;
-  flex: 0 0 auto;
-  margin-top: 4px;
-}
-.v2-form fieldset {
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
-  padding: 12px 16px;
+  gap: 22px;
   min-width: 0;
 }
-.v2-form small {
-  color: var(--muted);
-}
-.v2-block {
-  display: block;
-  color: var(--muted);
-}
-.v2-workspace h2 {
-  margin: 24px 0 12px;
-}
-.v2-workspace h3 {
-  margin: 8px 0 12px;
-}
-.v2-workspace .panel {
-  margin: 20px 0;
-  padding: 20px;
-}
-.v2-pins {
-  max-height: 350px;
-  overflow: auto;
-  padding-left: 22px;
-}
-.v2-pins li {
-  padding: 5px 0;
-  overflow-wrap: anywhere;
-}
-.v2-wrap {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-.v2-workspace input[type="file"] {
-  max-width: 100%;
-}
-.v2-workspace textarea {
-  min-height: 120px;
-}
-.v2-workspace .table-scroll {
+
+/* Tabs */
+.v2-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 24px;
   overflow-x: auto;
+  overflow-y: hidden;
+  box-shadow: inset 0 -1px 0 var(--line);
 }
-.v2-workspace td {
-  vertical-align: top;
+.v2-tabs a {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: 36px;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
 }
-.v2-workspace .kv dd {
+.v2-tabs a:hover {
+  color: var(--ink);
+}
+.v2-tabs a.active {
+  border-bottom-color: var(--ink);
+  color: var(--ink);
+}
+
+/* Layout helpers */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 16px;
+}
+.controls > label {
+  flex: 1 1 160px;
+  max-width: 260px;
+  min-width: 0;
+}
+.fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  align-items: end;
+  gap: 14px 16px;
+}
+.split.roomy > .side {
+  flex: 1 1 384px;
+  min-width: min(100%, 384px);
+}
+.narrow {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 760px;
+  min-width: 0;
+}
+.toolbar-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.fields.lead {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.fields.lead > :first-child {
+  grid-column: 1 / -1;
+}
+.note {
+  margin-left: 8px;
+  color: var(--subtle);
+  font-size: 12px;
+}
+.checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.counter {
+  display: block;
+  margin-top: -6px;
+  color: var(--subtle);
+  font-size: 12px;
+  text-align: right;
+}
+.cell-error {
+  display: block;
+  color: var(--down);
+  font-size: 12px;
+  white-space: normal;
+}
+.code-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 8px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--canvas);
+}
+.code-row code {
   min-width: 0;
   overflow-wrap: anywhere;
+  color: var(--ink-2);
+  font-size: 12px;
 }
-.v2-result-array {
-  border-left: 1px solid var(--line-strong);
-  padding-left: 12px;
+
+/* Kit parts */
+.count {
+  font-size: 12px;
+  white-space: nowrap;
 }
-.v2-chart {
-  margin: 24px 0;
+.table-wrap.pins {
+  max-height: 264px;
+  overflow: auto;
 }
-.v2-chart svg {
-  width: 100%;
-  min-height: 160px;
+.pins table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.pins th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  height: 34px;
+  border-bottom: 1px solid var(--line);
   background: var(--surface-1);
 }
-.v2-axis {
-  fill: none;
-  stroke: var(--line-strong);
-  stroke-width: 1;
+.pins th,
+.pins td {
+  padding-right: 6px;
+  padding-left: 6px;
 }
-.v2-price {
+.pins th:first-child,
+.pins td:first-child {
+  padding-left: 12px;
+}
+.pins th:last-child,
+.pins td:last-child {
+  padding-right: 12px;
+}
+.pins td {
+  height: 36px;
+}
+.pins tbody tr:first-child td {
+  border-top: 0;
+}
+.meter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.meter-label {
+  color: var(--ink-2);
+}
+.meter-track {
+  flex: 1 1 200px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--surface-3);
+}
+.meter-fill {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+}
+.meter-text {
+  font-size: 12px;
+}
+.v2-memo-text p {
+  overflow-wrap: anywhere;
+}
+.chart-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.chart-axis {
   fill: none;
-  stroke: var(--up);
+  stroke: var(--gr-2);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.chart-line {
+  fill: none;
+  stroke: var(--gr-5);
   stroke-width: 1.5;
   vector-effect: non-scaling-stroke;
 }
+.chart-label {
+  fill: var(--gr-4);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
 @media (max-width: 650px) {
-  .v2-workspace .panel {
-    padding: 14px;
+  .fields.lead {
+    grid-template-columns: minmax(0, 1fr);
   }
   .v2-tabs {
-    gap: 4px 14px;
+    gap: 18px;
   }
+  .controls > label {
+    max-width: none;
+  }
+}
+
+/* Research run */
+.run-array {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.array-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  color: var(--ink-2);
+}
+.array-head .pagination {
+  margin: 0;
+}
+.chart-legend .unit {
+  color: var(--gr-3);
+}
+
+.execution-time {
+  white-space: nowrap;
+}
+.execution-worker {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  white-space: nowrap;
+}
+.execution-note {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+}
+.execution td:last-child,
+.worker-inventory td:last-child {
+  min-width: 12rem;
+  padding-block: 8px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.worker-work {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.worker-work li + li {
+  margin-top: 6px;
+}
+.ingestion-execution > td {
+  white-space: normal;
 }

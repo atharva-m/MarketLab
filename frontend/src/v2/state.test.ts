@@ -1,5 +1,6 @@
 import { afterEach, expect, it } from "vitest";
 import {
+  recordColumns,
   researchSpec,
   saveSelection,
   selected,
@@ -7,6 +8,7 @@ import {
   utc,
 } from "./state";
 import type { Dataset, Instrument } from "./api";
+import { keyLabel } from "../components";
 import { chartSegments } from "./Workspace";
 
 afterEach(() => localStorage.clear());
@@ -171,4 +173,25 @@ it("disconnects chart paths across missing/null bars instead of filling gaps", (
   expect(segments).toHaveLength(2);
   expect(segments[0]).toContain(" L");
   expect(segments[1]).not.toContain(" L");
+});
+
+it("finds table columns for arrays and objects of flat records", () => {
+  expect(recordColumns([{ a: "1" }, { b: null, a: "2" }])).toEqual(["a", "b"]);
+  expect(
+    recordColumns({
+      first_open: { value: "1", reason: null },
+      last_close: { value: "2", count: "3" },
+    }),
+  ).toEqual(["value", "reason", "count"]);
+  expect(recordColumns({ only: { value: "1" } })).toBeNull();
+  expect(recordColumns({ a: { value: "1" }, b: "x" })).toBeNull();
+  expect(recordColumns([{ a: { nested: "1" } }])).toBeNull();
+  expect(recordColumns([])).toBeNull();
+});
+
+it("humanises only snake_case keys", () => {
+  expect(keyLabel("first_open")).toBe("First open");
+  expect(keyLabel("binance:spot:BTCUSDT")).toBe("binance:spot:BTCUSDT");
+  expect(keyLabel("2025-03-01")).toBe("2025-03-01");
+  expect(keyLabel("A1")).toBe("A1");
 });

@@ -127,7 +127,7 @@ class MemoService:
         return {**self.inspect(run_id), "replayed": replayed}
 
     def inspect(self, run_id: str) -> dict[str, Any]:
-        info = store.inspect(self.engine, run_id)
+        info = store.inspect(self.engine, run_id, include_execution_status=True)
         if info["state"] == "succeeded":
             info["memo"], info["manifest"] = self.read(run_id)
         elif info["state"] != "failed" and info["execution"] != self.execution:

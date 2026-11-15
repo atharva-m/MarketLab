@@ -11,14 +11,14 @@ import {
   CopilotDetail,
 } from "./Pages";
 import { ResearchDetail } from "./Run";
-import { V2Workspace } from "./v2/Workspace";
+import { V2Workspace, workspaceTab } from "./v2/Workspace";
 import { Icon, runName, type IconName } from "./ui";
 const WORDMARK = [
   "█▀▄▀█ ▄▀█ █▀█ █▄▀ █▀▀ ▀█▀ █   ▄▀█ █▄▄",
   "█ ▀ █ █▀█ █▀▄ █ █ ██▄  █  █▄▄ █▀█ █▄█",
 ].join("\n");
 const NAV: [string, IconName, string][] = [
-  ["/v2/catalog", "datasets", "Workspace"],
+  ["/v2/catalog", "workspace", "Workspace"],
   ["/catalog", "datasets", "Datasets"],
   ["/ingestion/new", "ingestion", "Ingestion"],
   ["/jobs", "jobs", "Jobs"],
@@ -95,7 +95,16 @@ export default function App() {
     ["marketlab", "/catalog"],
     [SECTIONS[known][0], id ? SECTIONS[known][1] : undefined],
   ];
-  if (id && known === family)
+  if (family === "v2") {
+    const tab = workspaceTab(route);
+    const subId = route.split("/").filter(Boolean)[2];
+    crumbs.length = 1;
+    crumbs.push(
+      ["workspace", "/v2/catalog"],
+      [tab.label.toLowerCase(), subId ? tab.href : undefined],
+    );
+    if (subId) crumbs.push([subId.slice(0, 8)]);
+  } else if (id && known === family)
     crumbs.push([id === "new" ? "new" : id.slice(0, 8)]);
   const current = section(known);
   return (

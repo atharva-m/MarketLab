@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { expect, it, vi } from "vitest";
-import { Memo } from "./Copilot";
+import { Memo } from "./Memo";
 
 const fixture = vi.hoisted(() => ({
   data: null as Record<string, any> | null,
@@ -22,8 +22,8 @@ it("keeps a failed memo supplemental and terminal without reset controls", () =>
   fixture.errorStatus = null;
   const html = renderToStaticMarkup(<Memo id={id} available />);
   expect(html).toContain("model_unavailable");
-  expect(html).toContain("The numerical result is retained");
-  expect(html).not.toContain("Queue supplemental memo");
+  expect(html).toContain('role="alert"');
+  expect(html).not.toContain("Queue memo");
 });
 it("reads completed plain-text memo even when enqueue capability is unavailable", () => {
   fixture.data = {
@@ -44,11 +44,11 @@ it("distinguishes a missing memo from an unavailable read", () => {
   fixture.error = "Missing memo";
   fixture.errorStatus = 404;
   let html = renderToStaticMarkup(<Memo id={id} available />);
-  expect(html).toContain("Queue supplemental memo");
+  expect(html).toContain("Queue memo");
   expect(html).not.toContain('role="alert"');
   fixture.error = "Storage unavailable";
   fixture.errorStatus = 503;
   html = renderToStaticMarkup(<Memo id={id} available />);
   expect(html).toContain("Storage unavailable");
-  expect(html).not.toContain("Queue supplemental memo");
+  expect(html).not.toContain("Queue memo");
 });

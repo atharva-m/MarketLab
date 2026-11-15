@@ -7,6 +7,7 @@ from sqlalchemy.engine import Connection, Engine
 from marketlab.copilot.v2 import durable
 from marketlab.datasets.v2.common import V2Error, canonical_json, digest
 from marketlab.datasets.v2.core import execute, lock, one, transaction, uid, wire
+from marketlab.execution_status import attach_execution_status
 from marketlab.research.v2.store import key_value
 
 
@@ -88,9 +89,13 @@ def enqueue(
         return replayed
 
 
-def inspect(engine: Engine, run_id: str) -> dict[str, Any]:
+def inspect(
+    engine: Engine, run_id: str, *, include_execution_status: bool = False
+) -> dict[str, Any]:
     uid(run_id)
     with engine.connect() as connection:
+        if include_execution_status:
+            connection.execution_options(isolation_level="REPEATABLE READ")
         row = one(connection, "SELECT * FROM v2_memo_jobs WHERE run_id=:id", id=run_id)
         if row is None:
             raise V2Error("not_found", "Supplemental memo not found")
@@ -108,4 +113,6 @@ def inspect(engine: Engine, run_id: str) -> dict[str, Any]:
                 id=run_id,
             ).mappings()
         ]
+        if include_execution_status:
+            attach_execution_status(connection, "memo", [result])
     return wire({"schema": "memo-status-v2", **result})  # type: ignore[no-any-return]

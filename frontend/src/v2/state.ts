@@ -4,7 +4,35 @@ import type { Dataset, Instrument } from "./api";
 const SELECTED = "marketlab.v2.selection";
 const HASH = /^[a-f0-9]{64}$/;
 export const instrumentLabel = (v: Instrument) =>
-  `${v.display_name} · Binance spot · ${v.base_asset}/${v.quote_asset}${v.enabled ? "" : " · retained only"}`;
+  `${v.display_name} (${v.base_asset}/${v.quote_asset})${v.enabled ? "" : " read only"}`;
+const isScalar = (value: unknown) =>
+  value === null || typeof value !== "object";
+/** True for a plain object (not null, not an array). */
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === "object" && !Array.isArray(value);
+/** True for a plain object whose own values are all scalars or null. */
+export const isFlatRecord = (
+  value: unknown,
+): value is Record<string, unknown> =>
+  isRecord(value) && Object.values(value).every(isScalar);
+/**
+ * Union of the keys of `items` in first-seen order, or null when the items
+ * cannot render as one table: `items` is an array (or an object of at least
+ * two entries) whose values are all flat records.
+ */
+export function recordColumns(value: unknown): string[] | null {
+  const items = Array.isArray(value)
+    ? value
+    : isRecord(value) && Object.keys(value).length >= 2
+      ? Object.values(value)
+      : [];
+  if (!items.length || !items.every(isFlatRecord)) return null;
+  const columns: string[] = [];
+  for (const item of items)
+    for (const key of Object.keys(item))
+      if (!columns.includes(key)) columns.push(key);
+  return columns;
+}
 export function selected(): Dataset[] {
   try {
     const rows = JSON.parse(localStorage.getItem(SELECTED) ?? "[]");

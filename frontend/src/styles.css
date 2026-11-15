@@ -108,7 +108,8 @@ pre {
 .dim {
   color: var(--subtle);
 }
-.sr-only {
+.sr-only,
+caption {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -252,9 +253,45 @@ label {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+label input,
+label select,
+label textarea {
+  color: var(--ink);
+  font-size: 13px;
 }
 label small {
   line-height: 1.4;
+}
+input[type="file"] {
+  min-height: 36px;
+  max-width: 100%;
+  padding: 3px 10px 3px 3px;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+input[type="file"]::file-selector-button {
+  height: 28px;
+  margin-right: 10px;
+  padding: 0 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+input[type="file"]:hover::file-selector-button {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+input[type="file"]:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 fieldset {
   margin: 0;
@@ -267,11 +304,35 @@ legend {
   color: var(--subtle);
   font-size: 12px;
 }
+/* Inside a panel a fieldset is a labelled group, not a second box. The legend
+   floats full width so it lays out as a normal block in every engine. */
+.panel fieldset {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+.panel fieldset > legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 8px;
+  padding: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.panel fieldset > legend + * {
+  clear: both;
+}
+.panel legend .note {
+  margin-left: 8px;
+  color: var(--subtle);
+}
 .check {
   flex-direction: row;
   align-items: center;
   gap: 10px;
   min-height: 30px;
+  color: var(--ink-2);
+  font-size: 13px;
 }
 .form-grid {
   display: grid;
@@ -511,12 +572,6 @@ main:focus {
   align-items: center;
   gap: 10px;
 }
-.intro {
-  max-width: 70ch;
-  font-family: var(--sans);
-  font-size: 14px;
-  color: var(--muted);
-}
 .panel {
   padding: 18px 20px;
   border: 1px solid var(--line);
@@ -622,6 +677,7 @@ td:last-child {
 }
 .num {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 td button,
 td .button {
@@ -659,7 +715,10 @@ td .muted {
 .tag.succeeded,
 .tag.ready,
 .tag.verified,
-.tag.submitted {
+.tag.submitted,
+.tag.active,
+.tag.available,
+.tag.published {
   background: rgba(63, 192, 122, 0.12);
   color: var(--up);
 }
@@ -667,13 +726,23 @@ td .muted {
 .tag.pending,
 .tag.running,
 .tag.retry_wait,
-.tag.needs_clarification {
+.tag.needs_clarification,
+.tag.awaiting_upload,
+.tag.uploading,
+.tag.uploaded {
   background: rgba(224, 176, 74, 0.12);
   color: var(--warn);
 }
-.tag.failed {
+.tag.failed,
+.tag.upload_failed {
   background: rgba(239, 91, 107, 0.12);
   color: var(--down);
+}
+.tag.cancelled,
+.tag.read_only,
+.tag.unavailable {
+  background: rgba(127, 133, 141, 0.12);
+  color: var(--muted);
 }
 .hash {
   color: var(--muted);
@@ -1748,4 +1817,11 @@ details > summary {
 }
 .split > .side:only-child {
   max-width: 520px;
+}
+
+/* Legacy form details */
+.revision-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
 }

@@ -90,12 +90,12 @@ test("empty catalog shows onboarding and does not invent default instruments or 
   await mocks(page, true);
   await page.goto("/#/v2/catalog");
   await expect(
-    page.getByRole("heading", { name: "No registered data in this view" }),
+    page.getByRole("heading", { name: "No datasets yet" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("link", { name: "Import a canonical file", exact: true }),
+    page.getByRole("link", { name: "Import a file", exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel("From UTC date (inclusive)")).toHaveValue("");
+  await expect(page.getByLabel("From", { exact: true })).toHaveValue("");
   await expect(page.getByLabel("Instrument", { exact: true })).toHaveValue("");
 });
 
@@ -116,15 +116,11 @@ test("catalog preserves exact counts, escapes metadata, pins March data and rest
   await page
     .getByRole("checkbox", { name: /Pin binance:spot:SOLUSDT/ })
     .check();
-  await page.getByRole("link", { name: "Research this selection" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Explicit pinned versions · 1/62" }),
-  ).toBeVisible();
+  await page.getByRole("link", { name: "Run research" }).click();
+  await expect(page.getByTestId("pin-count")).toHaveText("1 of 62");
   await page.reload();
-  await expect(
-    page.getByRole("heading", { name: "Explicit pinned versions · 1/62" }),
-  ).toBeVisible();
-  await expect(page.getByLabel("History start UTC (inclusive)")).toHaveValue(
+  await expect(page.getByTestId("pin-count")).toHaveText("1 of 62");
+  await expect(page.getByLabel("History start", { exact: true })).toHaveValue(
     "",
   );
 });
@@ -156,30 +152,20 @@ test("coverage suggestions require confirmation and submit only exact pinned num
   await expect(
     page.getByRole("checkbox", { name: /SOL <script>/ }),
   ).toBeChecked();
-  await page
-    .getByLabel("Coverage from UTC date", { exact: true })
-    .fill("2025-03-01");
-  await page
-    .getByLabel("Coverage before UTC date (exclusive)")
-    .fill("2025-03-02");
-  await page.getByRole("button", { name: "Load registered coverage" }).click();
-  await page
-    .getByRole("button", { name: "Use latest unambiguous registered interval" })
-    .click();
-  await expect(page.getByLabel("Evaluation start UTC (inclusive)")).toHaveValue(
-    "2025-03-01T01:00:00Z",
-  );
-  await page
-    .getByRole("button", { name: "Submit pinned numerical research" })
-    .click();
+  await page.getByLabel("Coverage from", { exact: true }).fill("2025-03-01");
+  await page.getByLabel("Coverage before", { exact: true }).fill("2025-03-02");
+  await page.getByRole("button", { name: "Load coverage" }).click();
+  await page.getByRole("button", { name: "Use latest interval" }).click();
+  await expect(
+    page.getByLabel("Evaluation start", { exact: true }),
+  ).toHaveValue("2025-03-01T01:00:00Z");
+  await page.getByRole("button", { name: "Run research" }).click();
   await expect(page.getByRole("alert")).toContainText("Confirm");
   expect(submitted).toBeUndefined();
   await page
-    .getByRole("checkbox", { name: /I confirm these exact versions/ })
+    .getByRole("checkbox", { name: /Confirm these versions and time range/ })
     .check();
-  await page
-    .getByRole("button", { name: "Submit pinned numerical research" })
-    .click();
+  await page.getByRole("button", { name: "Run research" }).click();
   await expect(page).toHaveURL(new RegExp(`/v2/runs/${run}`));
   expect(submitted).toEqual({
     schema: "research-spec-v2",
@@ -266,23 +252,21 @@ test("real browser worker hashes a File and upload status avoids persistent capa
   await expect(page.getByLabel("Instrument", { exact: true })).toHaveValue(
     instrument.instrument_id,
   );
-  await page.getByLabel("Trade UTC date").fill("2025-03-01");
+  await page.getByLabel("Trade date", { exact: true }).fill("2025-03-01");
   await page
     .getByLabel("Source name", { exact: true })
     .fill("verified-binance-conversion");
   await page
-    .getByRole("checkbox", { name: /I confirm this is Binance-origin/ })
+    .getByRole("checkbox", { name: /This is Binance spot trade data/ })
     .check();
-  await page.getByLabel("Canonical daily file", { exact: true }).setInputFiles({
+  await page.getByLabel("File", { exact: true }).setInputFiles({
     name: "source.csv",
     mimeType: "text/csv",
     buffer: content,
   });
-  await page
-    .getByRole("button", { name: "Hash and upload canonical file" })
-    .click();
+  await page.getByRole("button", { name: "Upload" }).click();
   await expect(
-    page.getByRole("button", { name: "Finalize verified import" }),
+    page.getByRole("button", { name: "Finalize import" }),
   ).toBeVisible();
   expect(body.manifest.source_sha256).toBe(expected);
   expect(body.content_length).toBe(content.length);
@@ -295,34 +279,28 @@ test("real browser worker hashes a File and upload status avoids persistent capa
   await expect(page.getByLabel("Instrument", { exact: true })).toHaveValue(
     instrument.instrument_id,
   );
-  await page.getByLabel("Trade UTC date").fill("2025-03-01");
+  await page.getByLabel("Trade date", { exact: true }).fill("2025-03-01");
   await page
     .getByLabel("Source name", { exact: true })
     .fill("verified-binance-conversion");
   await page
-    .getByRole("checkbox", { name: /I confirm this is Binance-origin/ })
+    .getByRole("checkbox", { name: /This is Binance spot trade data/ })
     .check();
-  await page
-    .getByLabel("Canonical daily file", { exact: true })
-    .setInputFiles({
-      name: "source.csv",
-      mimeType: "text/csv",
-      buffer: content,
-    });
-  await page
-    .getByRole("button", { name: "Hash and upload canonical file" })
-    .click();
+  await page.getByLabel("File", { exact: true }).setInputFiles({
+    name: "source.csv",
+    mimeType: "text/csv",
+    buffer: content,
+  });
+  await page.getByRole("button", { name: "Upload" }).click();
   await expect(
-    page.getByRole("button", { name: "Finalize verified import" }),
+    page.getByRole("button", { name: "Finalize import" }),
   ).toBeVisible();
   expect(puts).toBe(1);
   await expect(page.getByRole("status")).toContainText(
-    "No file bytes were retried automatically",
+    "This import already exists",
   );
   await page.reload();
-  await expect(
-    page.getByLabel("Canonical daily file", { exact: true }),
-  ).toHaveValue("");
+  await expect(page.getByLabel("File", { exact: true })).toHaveValue("");
 });
 
 test("a sole last-page instrument never becomes a unique-catalog default", async ({
@@ -386,11 +364,9 @@ test("official success exposes the actual result_version without changing the jo
   );
   await page.goto(`/#/v2/submissions/${imported}`);
   await expect(
-    page.getByText("Published version:", { exact: false }),
+    page.getByRole("columnheader", { name: "Version" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("link", { name: "Open catalog and pin this version" }),
-  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Open catalog" })).toBeVisible();
   await expect(page.locator('code[title="' + version + '"]')).toBeVisible();
 });
 
@@ -443,27 +419,25 @@ test("replayed creation reads current durable status and never automatically rep
   await expect(page.getByLabel("Instrument", { exact: true })).toHaveValue(
     instrument.instrument_id,
   );
-  await page.getByLabel("Trade UTC date").fill("2025-03-01");
+  await page.getByLabel("Trade date", { exact: true }).fill("2025-03-01");
   await page
     .getByLabel("Source name", { exact: true })
     .fill("binance-retained");
   await page
-    .getByRole("checkbox", { name: /I confirm this is Binance-origin/ })
+    .getByRole("checkbox", { name: /This is Binance spot trade data/ })
     .check();
-  await page.getByLabel("Canonical daily file", { exact: true }).setInputFiles({
+  await page.getByLabel("File", { exact: true }).setInputFiles({
     name: "source.csv",
     mimeType: "text/csv",
     buffer: content,
   });
-  await page
-    .getByRole("button", { name: "Hash and upload canonical file" })
-    .click();
+  await page.getByRole("button", { name: "Upload" }).click();
   await expect(
-    page.getByRole("button", { name: "Finalize verified import" }),
+    page.getByRole("button", { name: "Finalize import" }),
   ).toBeVisible();
   expect(puts).toBe(0);
   await expect(page.getByRole("status")).toContainText(
-    "No file bytes were retried automatically",
+    "This import already exists",
   );
 });
 
@@ -504,27 +478,19 @@ test("changing coverage dates discards a pending response and cannot restore sta
   await expect(
     page.getByRole("checkbox", { name: /SOL <script>/ }),
   ).toBeChecked();
-  await page
-    .getByLabel("Coverage from UTC date", { exact: true })
-    .fill("2025-03-01");
-  await page
-    .getByLabel("Coverage before UTC date (exclusive)")
-    .fill("2025-03-02");
-  await page.getByRole("button", { name: "Load registered coverage" }).click();
+  await page.getByLabel("Coverage from", { exact: true }).fill("2025-03-01");
+  await page.getByLabel("Coverage before", { exact: true }).fill("2025-03-02");
+  await page.getByRole("button", { name: "Load coverage" }).click();
   await requested;
-  await page
-    .getByLabel("Coverage from UTC date", { exact: true })
-    .fill("2025-03-02");
+  await page.getByLabel("Coverage from", { exact: true }).fill("2025-03-02");
   release?.();
   await expect(
-    page.getByRole("button", { name: "Load registered coverage" }),
+    page.getByRole("button", { name: "Load coverage" }),
   ).toBeEnabled();
   await expect(
     page.getByRole("button", {
-      name: "Use latest unambiguous registered interval",
+      name: "Use latest interval",
     }),
   ).toHaveCount(0);
-  await expect(
-    page.getByRole("heading", { name: "Explicit pinned versions · 0/62" }),
-  ).toBeVisible();
+  await expect(page.getByTestId("pin-count")).toHaveText("0 of 62");
 });
