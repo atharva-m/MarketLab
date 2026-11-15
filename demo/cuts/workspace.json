@@ -1,0 +1,96 @@
+{
+  "id": "workspace",
+  "loop": true,
+  "captionSeconds": 2.6,
+  "zoom": 1.6,
+  "urls": [
+    { "at": 0, "url": "http://127.0.0.1:55262/#/v2/catalog" },
+    { "at": 10.9, "url": "http://127.0.0.1:55262/#/v2/research/new" },
+    {
+      "at": 324.9,
+      "url": "http://127.0.0.1:55262/#/v2/runs/dfe84bdd-0efb-4030-b9f9-3fd9230e1272"
+    },
+    { "at": 342.3, "url": "http://127.0.0.1:55262/#/v2/workers" },
+    {
+      "at": 349.2,
+      "url": "http://127.0.0.1:55262/#/v2/runs/dfe84bdd-0efb-4030-b9f9-3fd9230e1272"
+    },
+    { "at": 1112, "url": "http://127.0.0.1:55262/#/v2/copilot/new" },
+    {
+      "at": 1399.3,
+      "url": "http://127.0.0.1:55262/#/v2/copilot/b92b3d06-f7bb-4472-9323-da867f419dbc"
+    },
+    {
+      "at": 1745.7,
+      "url": "http://127.0.0.1:55262/#/v2/runs/f894756a-df5d-47e1-87e9-8b1d404d9abf"
+    },
+    { "at": 2094.7, "url": "http://127.0.0.1:55262/#/v2/workers" }
+  ],
+  "focus": [
+    { "from": 4.0, "to": 10.4, "x": 640, "y": 300, "zoom": 1.45 },
+    { "from": 11.6, "to": 21.6, "x": 620, "y": 400, "zoom": 1.4 },
+    { "from": 337.6, "to": 340.8, "x": 860, "y": 330, "zoom": 1.4 },
+    { "from": 343.0, "to": 348.6, "x": 860, "y": 500, "zoom": 1.4 },
+    { "from": 397.6, "to": 400.8, "x": 860, "y": 600, "zoom": 1.4 },
+    { "from": 403.6, "to": 405.4, "x": 860, "y": 600, "zoom": 1.4 },
+    { "from": 710.4, "to": 723.2, "x": 860, "y": 590, "zoom": 1.4 },
+    { "from": 725.6, "to": 728.8, "x": 975, "y": 560, "zoom": 1.4 },
+    { "from": 746.2, "to": 749.5, "x": 850, "y": 560, "zoom": 1.3 },
+    { "from": 1103.5, "to": 1106.9, "x": 700, "y": 560, "zoom": 1.45 },
+    { "from": 1113.6, "to": 1121.4, "x": 620, "y": 330, "zoom": 1.45 },
+    { "from": 1418.2, "to": 1420.9, "x": 660, "y": 420, "zoom": 1.45 },
+    { "from": 1421.2, "to": 1424.6, "x": 660, "y": 640, "zoom": 1.4 },
+    { "from": 1742.6, "to": 1745.4, "x": 640, "y": 400, "zoom": 1.4 },
+    { "from": 2096.2, "to": 2099.6, "x": 860, "y": 300, "zoom": 1.35 },
+    { "from": 2100.0, "to": 2104.2, "x": 860, "y": 480, "zoom": 1.35 }
+  ],
+  "segments": [
+    { "from": 0.8, "to": 3.5, "speed": 3 },
+    { "from": 3.5, "to": 10.9, "speed": 1.5 },
+    { "from": 10.9, "to": 21.9, "speed": 2 },
+    { "from": 324.9, "to": 327.5, "speed": 1.5 },
+    { "from": 336.8, "to": 341.0, "speed": 1.3 },
+    { "from": 341.0, "to": 350.2, "speed": 1.5 },
+    { "from": 350.2, "to": 397.3, "speed": 25 },
+    { "from": 397.3, "to": 401.0, "speed": 1.3 },
+    { "from": 402.8, "to": 405.5, "speed": 1.2 },
+    { "from": 405.5, "to": 707.6, "speed": 150 },
+    { "from": 707.6, "to": 720.3, "speed": 1.6 },
+    { "from": 720.3, "to": 723.4, "speed": 2 },
+    { "from": 723.4, "to": 728.9, "speed": 1.8 },
+    { "from": 728.9, "to": 734.6, "speed": 3 },
+    { "from": 745.8, "to": 749.6, "speed": 1.1 },
+    { "from": 749.6, "to": 751.0, "speed": 1.5 },
+    { "from": 1100.2, "to": 1103.2, "speed": 2 },
+    { "from": 1103.2, "to": 1107.0 },
+    { "from": 1107.0, "to": 1110.7, "speed": 3 },
+    { "from": 1110.7, "to": 1113.2, "speed": 1.5 },
+    { "from": 1113.2, "to": 1121.6, "speed": 2 },
+    { "from": 1399.3, "to": 1403.4, "speed": 2 },
+    { "from": 1403.4, "to": 1417.6, "speed": 8 },
+    { "from": 1417.6, "to": 1421.0, "speed": 1.1 },
+    { "from": 1421.0, "to": 1425.8, "speed": 1.5 },
+    { "from": 1425.8, "to": 1742.2, "speed": 160 },
+    { "from": 1742.2, "to": 1745.7, "speed": 1.3 },
+    { "from": 1745.7, "to": 1747.7, "speed": 1.3 },
+    { "from": 1757.0, "to": 1759.2, "speed": 1.2 },
+    { "from": 1759.2, "to": 2083.8, "speed": 170 },
+    { "from": 2083.8, "to": 2085.6, "speed": 1.3 },
+    { "from": 2092.9, "to": 2094.6, "speed": 1.5 },
+    { "from": 2094.6, "to": 2104.6, "speed": 1.4 }
+  ],
+  "chapters": [
+    { "at": 0.9, "label": "Pin exact dataset versions" },
+    { "at": 11.0, "label": "Describe a deterministic research run" },
+    { "at": 337.0, "label": "A worker on a remote host claims the run" },
+    { "at": 350.3, "label": "That worker is killed; its lease expires" },
+    { "at": 403.0, "label": "A worker on another machine takes over" },
+    { "at": 708.0, "label": "The run completes across hosts and platforms" },
+    { "at": 723.6, "label": "Inspect exact results and charts" },
+    { "at": 1100.3, "label": "Read the grounded research memo" },
+    { "at": 1111.0, "label": "Or ask the local copilot" },
+    { "at": 1417.8, "label": "It asks when something is missing" },
+    { "at": 1742.4, "label": "A validated request queues the same run" },
+    { "at": 2094.8, "label": "Every worker and host is on record" }
+  ]
+}

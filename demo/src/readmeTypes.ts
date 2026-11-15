@@ -8,6 +8,8 @@ export type ReadmeTimeline = {
   durationInFrames: number;
   viewport: { width: number; height: number };
   loop: boolean;
+  // False when the footage already contains the cursor.
+  cursor?: boolean;
   pointer: Point[];
   clicks: (Point & { zoom?: number })[];
   // Reading moments chosen in the cut list, zoomed like a click.

@@ -208,6 +208,9 @@ for (const e of navs) {
   const f = map(e.c);
   if (f !== null) urls.push({ f, url: e.url });
 }
+// A recording without navigation events names its pages in the cut list.
+for (const u of cut.urls ?? []) urls.push({ f: mapClamp(u.at), url: u.url });
+urls.sort((a, b) => a.f - b.f);
 
 const timeline = {
   schema: "marketlab-readme-timeline-v1",
@@ -215,6 +218,8 @@ const timeline = {
   durationInFrames,
   viewport: capture.viewport,
   loop: Boolean(cut.loop),
+  // A plain recording already shows its own cursor.
+  cursor: capture.cursor !== "recorded",
   pointer,
   clicks,
   focus,

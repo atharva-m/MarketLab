@@ -59,9 +59,10 @@ function RecentRuns({ route }: { route: string }) {
           href={`#/runs/${run.run_id}`}
           aria-current={route === `/runs/${run.run_id}` ? "page" : undefined}
         >
-          <span className={`state-mark ${run.state}`} aria-hidden="true" />
           <span className="label">{runName(run)}</span>
-          <code className="id">{String(run.run_id).slice(0, 8)}</code>
+          <code className={`id tag ${run.state}`} title={run.state}>
+            {String(run.run_id).slice(0, 8)}
+          </code>
         </a>
       ))}
     </nav>

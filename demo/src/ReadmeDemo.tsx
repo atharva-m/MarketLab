@@ -303,7 +303,7 @@ export const ReadmeDemo = ({ timeline }: ReadmeProps) => {
         }}
       >
         <BrowserWindow timeline={timeline} />
-        <Cursor timeline={timeline} />
+        {timeline.cursor !== false && <Cursor timeline={timeline} />}
       </div>
       <Caption timeline={timeline} />
       {timeline.loop && (

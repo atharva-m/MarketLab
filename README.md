@@ -1,48 +1,49 @@
 # MarketLab
 
-MarketLab is a local workspace for reproducible research on January 2025 Binance Spot
-BTCUSDT and ETHUSDT trades. Ingest verified data, run deterministic analyses, explore
-results in your browser, and optionally use a local copilot and grounded research memos.
+MarketLab is a local research workspace for Binance spot trade data. It turns official
+daily trade archives into verified, immutable dataset versions and runs deterministic
+research over the versions you pin: market profiles, cross-asset comparisons and
+volatility clusters on five-minute bars.
 
-The explicit [v2 ingestion CLI](docs/v2/phase-2-usage.md) adds registered Binance
-spot instruments/dates and Binance-origin CSV/Parquet imports with durable jobs
-and a unified read catalog. Generalized browser research remains a later phase;
-the existing workspace and research commands below retain their January BTC/ETH
-scope. See [Phase 2 verification](docs/v2/phase-2-verification.md) for actual
-acceptance status and limits.
+Every figure on screen is exact and reproducible from its pinned inputs. A local language
+model can interpret a research request or write a separate memo, but it never produces or
+changes a numerical result. Everything runs on your own machine.
 
-## Demo
+![MarketLab workspace: pin BTC/USDT dataset versions in the catalog and submit a research run; a worker on a remote host claims it and is killed, its lease expires and a worker on another machine finishes the run; inspect the attempt history, exact results and a price chart, read the generated memo, ask the local copilot, which requests one clarification before queueing the same run, then view the worker inventory across both hosts](docs/assets/marketlab-workspace-demo.gif)
 
-![MarketLab workflow: pin January BTCUSDT dataset versions, submit a deterministic research run, execute it with a local worker, then inspect exact results, a candle chart and the generated memo](docs/assets/marketlab-demo.gif)
-
-Recorded from the real local workspace; waits for local workers are sped up.
+Recorded from the real workspace with workers on two hosts, one local and one in the
+cloud, on different operating systems and sharing object storage. Waits are sped up or
+cut.
 
 ## What you can do
 
-- Download official daily trade archives, verify checksums, and keep immutable dataset versions.
-- Run descriptive market profiles, cross-asset comparisons, and volatility-cluster analysis.
-- Inspect exact numerical results, bounded price/volume charts, and source provenance.
-- Turn a natural-language request into validated research, with explicit clarification when needed.
-- Generate a separate three-paragraph memo without making numerical results depend on a model.
-- Inspect durable jobs and resume eligible work with bounded local workers.
+- Ingest official Binance daily trade archives, or import your own Binance trade files as
+  CSV or Parquet, with checksums verified before anything is published.
+- Browse the catalog and pin the exact dataset versions a piece of research may use.
+- Run market profiles, cross-asset comparisons and volatility-cluster analysis.
+- Read exact numerical results, price charts and full provenance for every run.
+- Describe a run to the local copilot. It asks when something is missing and queues
+  research only after the request validates.
+- Read a three-paragraph memo generated from a run's verified summary.
+- See which worker and host ran each attempt, including retries that moved to another host.
 
-Research uses explicit dataset versions, UTC dates, and history windows. The statistics
-describe market data; they are not strategy returns or forecasts.
+The statistics describe market data. They are not strategy returns, forecasts or advice.
 
-## Prerequisites
+## Requirements
 
-The instructions below use PowerShell on Windows.
+The commands below use PowerShell on Windows.
 
-- Python **3.13** with the `py` launcher.
-- Git and Node.js **22.12 or newer**, with npm.
-- Docker Desktop using Linux containers, with Docker Compose v2 and `--wait` support.
-- Optional: Ollama and the pinned `qwen3.5:9b-q4_K_M` model for copilot and memo generation.
+- Python **3.13** with the `py` launcher
+- Git, and Node.js **22.12 or newer** with npm
+- Docker Desktop using Linux containers, with Docker Compose v2
+- Optional: [Ollama](https://ollama.com) with the `qwen3.5:9b-q4_K_M` model, for the
+  copilot and memos
 
-Manual research and numerical readback work without Ollama. PostgreSQL is required;
-Redis is an optional cache. The quickstart starts PostgreSQL and Redis in Docker and
-runs the API, browser workspace, and workers from the source checkout.
+Research, results and charts work without Ollama. PostgreSQL is required and Redis is an
+optional cache; the setup below runs both in Docker and runs the API, the browser
+workspace and the workers from the source checkout.
 
-## Quickstart
+## Setup
 
 ### 1. Get the source and install dependencies
 
@@ -52,21 +53,21 @@ Set-Location MarketLab
 .\scripts\bootstrap.ps1
 ```
 
-The bootstrap creates `.venv`, installs uv 0.13.5, copies `.env.example` to `.env`
-if needed, and installs the locked Python dependencies. It preserves an existing `.env`.
+The bootstrap creates `.venv`, installs the locked Python dependencies and copies
+`.env.example` to `.env` if you do not have one.
 
-### 2. Start the database and cache
+### 2. Start the database and prepare storage
 
 Review `.env`, then run from the repository root:
 
 ```powershell
 docker compose up -d --wait postgres redis
 .\.venv\Scripts\uv.exe run --locked alembic upgrade head
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli v2 capacity-initialize
 ```
 
-The default host connections are PostgreSQL on `127.0.0.1:5432` and Redis on
-`127.0.0.1:6379`. Set `MARKETLAB_STORAGE_PATH` to the artifact directory you want
-this installation to use; its default is the ignored `data/` directory.
+Datasets and results are stored under `MARKETLAB_STORAGE_PATH`, which defaults to the
+ignored `data/` directory.
 
 ### 3. Start the API
 
@@ -76,12 +77,9 @@ Keep this terminal open:
 .\.venv\Scripts\uv.exe run --locked uvicorn marketlab.app:create_app --factory --host 127.0.0.1 --port 8000 --loop asyncio:SelectorEventLoop --no-access-log
 ```
 
-Keep the explicit selector event loop on Windows for psycopg compatibility.
-Start this API from the Git checkout so new research can record its source identity.
+### 4. Start the workspace
 
-### 4. Start the browser workspace
-
-Open another terminal in the same repository root:
+In a second terminal at the repository root:
 
 ```powershell
 Set-Location frontend
@@ -89,157 +87,151 @@ npm ci
 npm run dev
 ```
 
-Open [the workspace](http://127.0.0.1:5173). The API documentation is at
-[127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+Open [127.0.0.1:5173](http://127.0.0.1:5173). The catalog is empty on first launch.
+If a port is already in use, see [alternate ports](docs/user-reference.md#alternate-ports).
 
-An empty catalog on first launch is expected. Use ingestion below to add data.
-If a port is already occupied, see the [alternate-port setup](docs/user-reference.md#alternate-ports).
+### 5. Optional: set up the local model
 
-## First research run
-
-### Add a day of data
-
-In the workspace, open **Ingestion** and select BTCUSDT with first date `2025-01-01`
-and before date `2025-01-02`. Submit, then copy the submission ID.
-
-In a terminal at the repository root, replace `SUBMISSION_UUID` and run:
-
-```powershell
-.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli worker --max-jobs 1 --submission SUBMISSION_UUID
-```
-
-Refresh the submission page and confirm completion. Open **Dataset catalog** and select
-the resulting version. Selecting a version pins that exact dataset; catalog metadata
-is distinct from a complete artifact verification.
-
-### Submit manual research
-
-Open **Manual research** and use:
-
-| Field | Value |
-| --- | --- |
-| Workflow | Market profile |
-| Asset | BTCUSDT |
-| Evaluation start | `2025-01-01T01:00:00Z` |
-| Evaluation end, exclusive | `2025-01-02T00:00:00Z` |
-| History start | `2025-01-01T00:00:00Z` |
-| Metrics | profile |
-| Dataset version | The registered version selected above |
-
-Submit and copy the run ID. Validation checks data coverage and warm-up before
-returning a queued run, so a large request may take time.
-
-```powershell
-.\.venv\Scripts\uv.exe run --locked python -m marketlab.research_cli worker --max-runs 1 --run RUN_UUID
-```
-
-Refresh the run to inspect numerical results, charts, and provenance. Exact strings
-in tables and tooltips are authoritative; chart coordinates are approximate. Missing
-bars remain missing, and undefined statistics show a null reason.
-
-For a full-month or cross-asset request, first ingest and explicitly select every
-required day and asset. See the [command and API reference](docs/user-reference.md).
-
-## Copilot and memos
-
-### Set up local inference
-
-Install and start Ollama separately. Model installation is an explicit download:
+Install and start Ollama, then download the model:
 
 ```powershell
 ollama pull qwen3.5:9b-q4_K_M
 ```
 
-The application expects digest
-`56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90`.
-A downloaded tag must match that pin; mismatches fail safely. The application does
-not pull, update, or fall back to another model automatically.
+MarketLab checks the model against a pinned digest and never downloads, updates or
+substitutes a model on its own.
 
-### Ask the copilot
+## Using the workspace
 
-Open **Copilot**, provide explicit dataset versions, and try:
+Open **Workspace** in the sidebar. Its tabs are Catalog, Research, Copilot, Ingestion,
+Import, Instruments and Workers.
 
-> Compute a descriptive OHLCV market profile for BTCUSDT using five-minute bars and
-> profile metrics. Evaluation starts 2025-01-01T01:00:00Z and ends, exclusively,
-> 2025-01-02T00:00:00Z. History starts 2025-01-01T00:00:00Z.
+The workspace submits and tracks work; it does not run it. Each queued item shows the
+worker command to run in a terminal at the repository root. The commands below use the
+project environment, for example
+`.\.venv\Scripts\uv.exe run --locked python -m marketlab.research_cli v2 worker ...`.
 
-Submit and copy the request ID. Run interpretation from the repository root:
+### 1. Add data
 
-```powershell
-.\.venv\Scripts\uv.exe run --locked python -m marketlab.copilot_cli worker --max-jobs 1 --request REQUEST_UUID
-```
+BTC/USDT and ETH/USDT are registered out of the box. Add other Binance spot pairs under
+**Instruments**.
 
-Refresh the request. Answer any clarification using the displayed revision, then run
-the worker again. A submitted interpretation links to a queued numerical run; execute
-that run with the research worker shown above. Model output must pass independent
-validation before it can create research.
-
-### Generate and read a memo
-
-Successful numerical execution queues memo work separately. Run the shared inference
-worker, which gives pending copilot requests priority over pending memos:
+Open **Ingestion**, pick one or two instruments and a date range of days that have
+already ended (UTC), confirm and choose **Start ingestion**. Then run the worker shown on
+the page:
 
 ```powershell
-.\.venv\Scripts\uv.exe run --locked python -m marketlab.inference_cli worker --max-jobs 1
-.\.venv\Scripts\uv.exe run --locked python -m marketlab.memo_cli inspect --run RUN_UUID
-.\.venv\Scripts\uv.exe run --locked python -m marketlab.memo_cli read --run RUN_UUID --markdown
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli v2 worker --max-jobs 1 --submission SUBMISSION_UUID
 ```
 
-Each invocation processes at most the requested number of eligible jobs; invoke it
-again as needed. Memos use verified summaries and remain separate from numerical
-results. A pending or failed memo does not prevent reading successful research.
+Raise `--max-jobs` to process more daily jobs in one invocation. To bring in your own
+Binance trade file instead, use **Import**; its **File format** panel lists the required
+columns.
 
-## Workers and saved operations
+### 2. Pin versions
 
-The browser submits and inspects jobs; it does not start workers. Run workers from
-the same checkout and with the same database and storage settings as the API.
+Open **Catalog**, filter by instrument or date, and tick the daily versions to use.
+Include enough earlier data for warm-up: 12 five-minute bars for profiles and
+comparisons, 300 for volatility clusters. Choose **Run research**.
 
-| Work | Command |
+### 3. Run research
+
+On **New research**, choose the workflow and instruments and enter the window in UTC on
+five-minute boundaries, for example:
+
+| Field | Value |
 | --- | --- |
-| Ingest selected submission | `python -m marketlab.dataset_cli worker --max-jobs 62 --submission SUBMISSION_UUID` |
-| Execute selected research run | `python -m marketlab.research_cli worker --max-runs 1 --run RUN_UUID` |
-| Interpret selected copilot request | `python -m marketlab.copilot_cli worker --max-jobs 1 --request REQUEST_UUID` |
-| Process pending copilot/memo jobs | `python -m marketlab.inference_cli worker --max-jobs 1` |
+| History start | `2025-01-29T00:00:00Z` |
+| Evaluation start | `2025-01-29T01:00:00Z` |
+| Evaluation end | `2025-02-01T00:00:00Z` |
 
-Use the project Python through `.\.venv\Scripts\uv.exe run --locked` as in the examples.
-These are finite operator commands, not a scheduler.
+The evaluation end is exclusive. Confirm and choose **Run research**, then run the
+worker shown on the run page:
 
-If a response is lost, reuse the saved operation key and exact request body.
-Reloading a page does not resubmit it. Reusing a key with a changed request conflicts;
-creating a new key creates a deliberate new operation. Closing the browser does not
-cancel accepted durable work. See the [operating guide](docs/r9-operations.md).
+```powershell
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.research_cli v2 worker --max-runs 1 --run RUN_UUID
+```
+
+### 4. Read results
+
+The run page shows the summary figures, the full results, a price chart for any window
+inside the run (up to 1,440 bars across 5 days) and the pinned versions and provenance
+behind them. Values in tables are exact; only chart coordinates are approximate. Missing
+bars stay missing, and an undefined statistic shows `null` with its reason.
+
+### 5. Read the memo
+
+A finished run queues a memo. Run the memo worker and it appears on the run page:
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.memo_cli v2 worker --max-jobs 1 --run RUN_UUID
+```
+
+A pending or failed memo never blocks reading the numerical results.
+
+### 6. Ask the copilot
+
+Pin versions, open **Copilot** and describe one run. Being explicit works best:
+
+> descriptive OHLCV market profile for BTCUSDT; history_start 2025-01-29T00:00:00Z;
+> start 2025-01-29T01:00:00Z; exclusive end 2025-02-01T00:00:00Z; 5m; metrics profile.
+
+Choose **Ask copilot**, then run its worker:
+
+```powershell
+.\.venv\Scripts\uv.exe run --locked python -m marketlab.copilot_cli v2 worker --max-jobs 1 --request REQUEST_UUID
+```
+
+If something is missing, the request page asks a question. Answer it and run the worker
+again. Once the request validates, **Open run** takes you to a queued run, which you
+execute with the research worker as in step 3. Copilot work is served before memos, so
+finish an open copilot request before expecting a memo.
+
+### 7. See who ran it
+
+Every run, ingestion job, copilot revision and memo has an **Execution** table listing its
+attempts in order: host, worker, start time, duration and outcome. If a lease expires and
+another worker takes over, the table says so. The **Workers** tab lists the registered
+workers with their host, state, last heartbeat and the jobs they currently hold.
+
+Hosts and workers are recorded when workers run on several hosts. On a single-machine
+setup the Workers tab is empty and attempts show no host.
+
+### Other pages
+
+**Datasets**, **Ingestion**, **Jobs**, **Research** and **Copilot** in the sidebar are a
+focused view of January 2025 BTC/USDT and ETH/USDT, with a day-by-day activity matrix for
+pinning. They use their own worker commands, shown on each queued item and listed in the
+[command reference](docs/user-reference.md).
 
 ## Configuration
 
 Settings are read from `.env` in the repository root and from process environment
-variables. Process environment variables take precedence. Keep local
-configuration, credentials, data, and model weights out of Git.
+variables, which take precedence. Keep configuration, credentials, data and model
+weights out of Git.
 
 | Setting | Purpose |
 | --- | --- |
-| `MARKETLAB_DATABASE_URL` | Host PostgreSQL URL, using `postgresql+psycopg://` |
-| `MARKETLAB_DATABASE_PASSWORD` | Optional literal password override, avoiding URL escaping |
-| `MARKETLAB_STORAGE_PATH` | Shared dataset/research artifact root |
-| `MARKETLAB_STORAGE_BACKEND` | Artifact write backend. Defaults to `local`. |
-| `MARKETLAB_WORKER_ROOT_ID` | Provisioned root UUID for the current distributed host |
-| `MARKETLAB_REDIS_URL` | Optional Redis cache endpoint |
-| `MARKETLAB_OLLAMA_URL` | Host Ollama endpoint, normally `http://127.0.0.1:11434` |
-| `MARKETLAB_COPILOT_MODEL` | Shared copilot/memo model, default `qwen3.5:9b-q4_K_M` |
-| `MARKETLAB_COPILOT_MODEL_DIGEST` | Expected digest for the selected model |
-| `POSTGRES_PORT`, `REDIS_PORT`, `POSTGRES_PASSWORD` | Compose database/cache configuration |
-| `API_PORT` | Published port when running the Compose API |
-| `MARKETLAB_METRICS_PORT` | Optional per-worker exporter port; `0` disables it |
+| `MARKETLAB_DATABASE_URL` | PostgreSQL URL, using `postgresql+psycopg://` |
+| `MARKETLAB_DATABASE_PASSWORD` | Optional password override, avoiding URL escaping |
+| `MARKETLAB_STORAGE_PATH` | Root directory for datasets and results |
+| `MARKETLAB_STORAGE_BACKEND` | Where artifacts are written: `local` (default) or `s3` |
+| `MARKETLAB_REDIS_URL` | Optional Redis cache |
+| `MARKETLAB_OLLAMA_URL` | Ollama endpoint, normally `http://127.0.0.1:11434` |
+| `MARKETLAB_COPILOT_MODEL` | Copilot and memo model, default `qwen3.5:9b-q4_K_M` |
+| `MARKETLAB_COPILOT_MODEL_DIGEST` | Expected digest for that model |
+| `MARKETLAB_WORKER_ROOT_ID` | Root UUID of this host when workers run on several hosts |
+| `MARKETLAB_METRICS_PORT` | Optional per-worker metrics port; `0` disables it |
+| `POSTGRES_PORT`, `REDIS_PORT`, `POSTGRES_PASSWORD`, `API_PORT` | Docker Compose settings |
 
-See [.env.example](.env.example) and the
-[configuration reference](docs/user-reference.md#configuration-details) for passwords,
-container URLs, and alternate ports.
+Run the API and every worker from the same checkout with the same database and storage
+settings. See [.env.example](.env.example) and the
+[configuration reference](docs/user-reference.md#configuration-details).
 
-### Use your own AWS bucket
+### Store artifacts in your own S3 bucket
 
-The default quickstart uses local storage and needs no AWS credentials. For
-managed v2 artifact storage on S3, edit the same `.env` before initializing
-storage. Fill in the bucket name, region and credentials from your own AWS
-account. Each worker still uses local scratch and cache space.
+Local storage is the default and needs no cloud account. To use S3, set these in `.env`
+before running `capacity-initialize`:
 
 ```dotenv
 MARKETLAB_STORAGE_BACKEND=s3
@@ -251,73 +243,33 @@ AWS_SECRET_ACCESS_KEY=
 # MARKETLAB_STORAGE_S3_PREFIX=marketlab
 ```
 
-Use an existing private bucket with versioning enabled and a dedicated prefix.
-The supplied credentials need versioning inspection, exact-version reads and
-scoped writes including conditional creation and multipart operations. Set
-`AWS_SESSION_TOKEN` for temporary credentials. The application uses the AWS
-regional HTTPS endpoint by default. Set `MARKETLAB_STORAGE_S3_ENDPOINT` for
-an S3-compatible service or an explicit AWS endpoint. Existing installations
-should keep their registered endpoint, bucket, region and prefix.
+Use an existing private bucket with versioning enabled and a dedicated prefix. Set
+`MARKETLAB_STORAGE_S3_ENDPOINT` for an S3-compatible service. Workers still use local
+scratch space. See [storage setup and permissions](docs/v2/phase-6-operations.md), and
+[running workers on a second host](docs/v2/phase-7-operations.md#explicit-configuration-and-identities).
 
-The application reads those credentials directly. Buckets, IAM permissions,
-EC2 instances and private connections are provisioned separately. For the
-host quickstart, run this after `alembic upgrade head` and before starting
-the API or workers on the fresh root:
-
-```powershell
-.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli v2 capacity-initialize
-```
-
-Use the same storage settings for initialization, API and workers. Review the
-binding steps before changing a stack that already has data.
-[Storage setup and permissions](docs/v2/phase-6-operations.md)
-
-Use the v2 commands with managed storage. After submitting a v2 ingestion
-request or research run, start the corresponding bounded worker. Replace the
-placeholder with the ID returned by your submission.
-
-```powershell
-.\.venv\Scripts\uv.exe run --locked python -m marketlab.dataset_cli v2 worker --max-jobs 1 --submission SUBMISSION_UUID
-.\.venv\Scripts\uv.exe run --locked python -m marketlab.research_cli v2 worker --max-runs 1 --run RUN_UUID
-```
-
-Host commands read the repository `.env`. For the Docker API, Compose forwards
-the listed storage, worker and model settings from the same file or process
-environment. Use the same variable name in both places when overriding a
-Compose setting. Keep the API and local-mode workers on the same runtime and
-storage root. Compose's named data volume differs from the host's `./data`.
-
-For a second host such as EC2, install the same locked checkout there and create
-its own protected `.env`. Point both hosts at the shared private PostgreSQL
-database and same versioned S3 namespace. Provision a separate filesystem root
-and root UUID on each host before enabling distributed mode. Manage any SSH
-connection separately from application configuration.
-[Distributed worker setup](docs/v2/phase-7-operations.md#explicit-configuration-and-identities)
-
-## Health and troubleshooting
+## Troubleshooting
 
 | Symptom | What to check |
 | --- | --- |
-| Empty catalog | Ingest data into the configured database/storage pair; a clone contains no market dataset. |
-| Job stays queued | Start the appropriate bounded worker and inspect its attempt/state history. |
-| Coverage or warm-up error | Select all required versions and enough preceding history; requests never silently shorten their period. |
-| Copilot or memo fails | Check Ollama availability and the exact model digest. Manual research remains available. |
-| Cache shows BYPASS | Redis is unavailable or the value is not cacheable; verified reads can still succeed. |
-| Windows API reports an async-loop error | Keep `--loop asyncio:SelectorEventLoop` in the host API command. |
-| Port already in use | Follow the alternate-port instructions rather than stopping an unrelated service. |
-| Lost response or stale clarification | Reuse the saved request/key, or refresh the current revision before answering. |
+| Empty catalog | Ingest or import data first; a fresh clone contains no market data. |
+| Job stays queued | Run the worker command shown on the page. |
+| Coverage or warm-up error | Pin every required day and enough earlier history. A request is never shortened silently. |
+| Copilot or memo fails | Check that Ollama is running and the model digest matches. Research itself does not need the model. |
+| Memo stays queued | Finish any open copilot request first; copilot work is served before memos. |
+| API reports an async-loop error on Windows | Keep `--loop asyncio:SelectorEventLoop` in the API command. |
+| Port already in use | Follow [alternate ports](docs/user-reference.md#alternate-ports). |
+| A response was lost | Retry from the same page. The saved request is resent with the same key, so it cannot be applied twice. |
 
-Use [liveness](http://127.0.0.1:8000/health/live),
-[readiness](http://127.0.0.1:8000/health/ready), and
-[dependency status](http://127.0.0.1:8000/health/dependencies) to inspect the API.
-Unavailable Redis or Ollama reports degraded readiness; unavailable PostgreSQL or
-storage prevents readiness. API metrics are at
-[127.0.0.1:8000/metrics](http://127.0.0.1:8000/metrics).
-The optional [monitoring guide](monitoring/README.md) covers worker exporters and
-local operational views.
+The API reports [liveness](http://127.0.0.1:8000/health/live),
+[readiness](http://127.0.0.1:8000/health/ready) and
+[dependency status](http://127.0.0.1:8000/health/dependencies). Its interactive
+documentation is at [127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) and its metrics at
+[127.0.0.1:8000/metrics](http://127.0.0.1:8000/metrics). The
+[monitoring guide](monitoring/README.md) covers worker metrics and dashboards.
 
-Stop host processes with Ctrl+C. `docker compose down` stops this Compose stack and
-preserves its persistent volumes; adding `--volumes` deletes stored contents.
+Stop the API and workspace with Ctrl+C. `docker compose down` stops the database and
+cache and keeps their data; adding `--volumes` deletes it.
 
 ## More documentation
 
@@ -325,4 +277,4 @@ preserves its persistent volumes; adding `--volumes` deletes stored contents.
 - [Operating guide](docs/r9-operations.md)
 - [Research fields and numerical definitions](docs/r4-research.md)
 - [Dataset integrity and storage](docs/r1-datasets.md)
-- [Build the demo locally](demo/README.md)
+- [Recording the demo](demo/README.md)

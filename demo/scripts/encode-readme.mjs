@@ -1,9 +1,11 @@
 // Encodes a rendered README master for GitHub.
 // Usage:
-//   node scripts/encode-readme.mjs gif <master.mp4> <out.gif> [--no-limit]
+//   node scripts/encode-readme.mjs gif <master.mp4> <out.gif> [--no-limit|--max-mb=<n>]
 //   node scripts/encode-readme.mjs mp4 <master.mp4> <out.mp4>
 // By default output fits GitHub's 10 MB attachment upload. --no-limit makes a
-// higher-quality GIF for committing to the repository instead.
+// higher-quality GIF for committing to the repository instead; --max-mb=<n>
+// does the same but steps quality down until the GIF fits n MB (GitHub rejects
+// repository files over 100 MB).
 import { mkdtemp, rm, stat } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -12,14 +14,17 @@ import { ffmpeg, probeDuration } from "./ffmpeg.mjs";
 const [kind, masterArg, outputArg, option] = process.argv.slice(2);
 if (!["gif", "mp4"].includes(kind) || !masterArg || !outputArg)
   throw new Error(
-    "Usage: encode-readme.mjs gif|mp4 <master.mp4> <output> [--no-limit]",
+    "Usage: encode-readme.mjs gif|mp4 <master.mp4> <output> [--no-limit|--max-mb=<n>]",
   );
 const master = path.resolve(masterArg);
 const output = path.resolve(outputArg);
-const unlimited = option === "--no-limit";
+const maxMb = /^--max-mb=(\d+)$/.exec(option ?? "")?.[1];
+if (option && option !== "--no-limit" && !maxMb)
+  throw new Error("Unknown option: use --no-limit or --max-mb=<n>");
+const unlimited = option === "--no-limit" || Boolean(maxMb);
 // GitHub caps attachment images/GIFs and free-plan videos at 10 MB; keep a
 // decimal margin below it.
-const limit = unlimited ? Infinity : 9.5e6;
+const limit = maxMb ? Number(maxMb) * 1e6 : unlimited ? Infinity : 9.5e6;
 const work = await mkdtemp(path.join(os.tmpdir(), "readme-encode-"));
 const megabytes = async (file) => (await stat(file)).size / 1024 / 1024;
 

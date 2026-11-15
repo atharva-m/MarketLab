@@ -170,6 +170,49 @@ down until it fits GitHub's 10 MB attachment upload. The highlight MP4 is sized 
 that upload too; GitHub plays a video inline only from a user-attachments URL.
 Captures, masters and prepared media stay in ignored folders.
 
+### Workspace walkthrough
+
+`--workspace` records the same story on the Binance spot workspace (`/v2`):
+catalog filter and pins, a research run, its worker, exact results, a price
+chart, the memo, then a copilot request that needs one clarification. It uses
+the v2 worker commands. `cuts/workspace.json` holds its cut list; the
+composition is still `ReadmeHero`.
+
+```powershell
+npm run capture:readme -- ../artifacts/rd/connection-private.json ../artifacts/rd/capture-ws-4 --workspace
+npm run prepare:readme -- ../artifacts/rd/capture-ws-4 cuts/workspace.json ../artifacts/rd/workspace-props.json
+npm run render:readme -- ../artifacts/rd/workspace-props.json ../artifacts/rd/out/workspace-master.mp4 ReadmeHero
+npm run encode:readme -- gif ../artifacts/rd/out/workspace-master.mp4 ../docs/assets/marketlab-workspace-demo.gif --max-mb=95
+```
+
+The owned database must be on the current schema with storage capacity
+initialized, and no copilot job may be left queued from an earlier take: the
+inference worker serves copilot jobs before memos, so a stale one stalls the
+memo step. A walkthrough of about a minute is too large for `--no-limit`;
+`--max-mb=<n>` steps the GIF down until it fits (GitHub rejects repository
+files over 100 MB).
+
+### From an existing recording
+
+The repository GIF is cut from a plain screen recording of a two-host run, which
+`capture-workflow.mjs` cannot stage. `import-recording.mjs` wraps such a video
+as a capture directory: it crops the page region and converts an event list
+(`[{ "t": seconds, "event": name }]`, with `record-end`) into the capture log.
+The recording keeps its own cursor, so the composition draws none and has no
+click zooms. All zooms come from `focus` entries in the cut list, and page
+addresses from its `urls` entries.
+
+```powershell
+node scripts/import-recording.mjs ../artifacts/rd/walkthrough-live-3/walkthrough.mkv ../artifacts/rd/walkthrough-live-3/events.json ../artifacts/rd/capture-live-3 --crop=1440:810:0:0
+npm run prepare:readme -- ../artifacts/rd/capture-live-3 cuts/workspace.json ../artifacts/rd/workspace-live-props.json
+npm run render:readme -- ../artifacts/rd/workspace-live-props.json ../artifacts/rd/out/workspace-live-master.mp4 ReadmeHero
+npm run encode:readme -- gif ../artifacts/rd/out/workspace-live-master.mp4 ../docs/assets/marketlab-workspace-demo.gif --max-mb=95
+```
+
+`cuts/workspace.json` is timed for that recording. Cut times and coordinates
+are seconds and pixels of the cropped video. A new `--workspace` capture needs
+its own cut list.
+
 ## Versions and provenance
 
 provenance.json pins the official skill commit and reviewed file blobs. Skills

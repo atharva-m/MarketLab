@@ -465,25 +465,6 @@ legend {
 .recent .id {
   color: var(--subtle);
 }
-.state-mark {
-  flex: none;
-  width: 6px;
-  height: 6px;
-  background: var(--subtle);
-}
-.state-mark.succeeded,
-.state-mark.ready {
-  background: var(--up);
-}
-.state-mark.queued,
-.state-mark.pending,
-.state-mark.retry_wait,
-.state-mark.running {
-  background: var(--warn);
-}
-.state-mark.failed {
-  background: var(--down);
-}
 .main-column {
   flex: 1;
   min-width: 0;
@@ -694,23 +675,10 @@ td .muted {
 }
 
 /* Shared parts */
+/* State is plain coloured text: no pill, no marker. */
 .tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 24px;
-  padding: 0 10px;
-  border-radius: 999px;
-  background: rgba(127, 133, 141, 0.12);
   color: var(--muted);
-  font-size: 12px;
   white-space: nowrap;
-}
-.tag::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  background: currentColor;
 }
 .tag.succeeded,
 .tag.ready,
@@ -718,8 +686,8 @@ td .muted {
 .tag.submitted,
 .tag.active,
 .tag.available,
-.tag.published {
-  background: rgba(63, 192, 122, 0.12);
+.tag.published,
+.tag.fresh {
   color: var(--up);
 }
 .tag.queued,
@@ -729,19 +697,18 @@ td .muted {
 .tag.needs_clarification,
 .tag.awaiting_upload,
 .tag.uploading,
-.tag.uploaded {
-  background: rgba(224, 176, 74, 0.12);
+.tag.uploaded,
+.tag.draining,
+.tag.stale {
   color: var(--warn);
 }
 .tag.failed,
 .tag.upload_failed {
-  background: rgba(239, 91, 107, 0.12);
   color: var(--down);
 }
 .tag.cancelled,
 .tag.read_only,
 .tag.unavailable {
-  background: rgba(127, 133, 141, 0.12);
   color: var(--muted);
 }
 .hash {
