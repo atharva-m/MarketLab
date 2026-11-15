@@ -51,3 +51,9 @@ skills-lock.json
 ROADMAP.md
 ROADMAP_v2.md
 AGENTS.md
+
+# Local-only contributor plans and private working evidence
+AGENTS.md
+[Rr][Oo][Aa][Dd][Mm][Aa][Pp]*.md
+/docs/*
+!/docs/assets/
