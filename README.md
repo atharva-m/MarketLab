@@ -12,8 +12,7 @@ changes a numerical result. Everything runs on your own machine.
 ![MarketLab workspace: pin BTC/USDT dataset versions in the catalog and submit a research run; a worker on a remote host claims it and is killed, its lease expires and a worker on another machine finishes the run; inspect the attempt history, exact results and a price chart, read the generated memo, ask the local copilot, which requests one clarification before queueing the same run, then view the worker inventory across both hosts](docs/assets/marketlab-workspace-demo.gif)
 
 Recorded from the real workspace with workers on two hosts, one local and one in the
-cloud, on different operating systems and sharing object storage. Waits are sped up or
-cut.
+cloud, on different operating systems and sharing object storage.
 
 ## What you can do
 
